@@ -94,6 +94,7 @@ export function Technologies({
               size="icon"
               onClick={() => setViewMode(viewMode === "grid" ? "cloud" : "grid")}
               aria-label="Cambiar vista"
+              className="dark:hover:text-blue-100"
             >
               {viewMode === "grid" ? (
                 <Cloud className="h-5 w-5" />
@@ -139,7 +140,7 @@ export function Technologies({
           </div>
         ) : (
           // --- VISTA DE NUBE (Magic UI) ---
-          <div className="relative flex h-full w-full max-w-4xl mx-auto items-center justify-center overflow-hidden rounded-lg bg-background py-16">
+          <div className="relative flex h-full w-full max-w-4xl mx-auto items-center justify-center overflow-hidden rounded-lg">
             <IconCloud images={allLogoUrls} />
           </div>
         )}

@@ -3,6 +3,8 @@
 import { useLanguage } from "@/context/language-context"
 import { Button } from "@/components/ui/button"
 import { ArrowRight, Download } from "lucide-react"
+import { TypingAnimation } from "../ui/typing-animation"
+import { AuroraText } from "../ui/aurora-text"
 
 // --- Tipo de Datos (debe coincidir con page.tsx) ---
 interface HeroData {
@@ -56,13 +58,15 @@ export function Hero({ heroData }: { heroData: HeroData | null }) {
               {heroData.greeting}
             </p>
             <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold text-foreground leading-tight">
-              {heroData.title}
+              <AuroraText colors={["#007BFF", "#7B68EE", "#00C0FF"]} speed={2}>
+                {heroData.title}
+              </AuroraText>
             </h1>
           </div>
 
           {/* Subtitle */}
           <p className="text-lg sm:text-xl text-muted-foreground leading-relaxed max-w-3xl text-pretty">
-            {heroData.subtitle}
+            <TypingAnimation className="leading-0" duration={40}>{heroData.subtitle}</TypingAnimation>
           </p>
 
           {/* CTA Buttons */}

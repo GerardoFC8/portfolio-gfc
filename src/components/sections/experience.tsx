@@ -2,9 +2,10 @@
 
 import { useLanguage } from "@/context/language-context"
 import { Card } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 import { Building2, Calendar } from "lucide-react"
+import { BlurFade } from "@/components/ui/blur-fade"
 
-// --- Tipo de Datos (debe coincidir con page.tsx) ---
 interface ExperienceData {
   id: string
   position: string
@@ -49,62 +50,74 @@ export function Experience({
           </p>
         </div>
 
-        {/* Timeline */}
-        <div className="space-y-8">
+        {/* Timeline Container */}
+        <div className="relative flex flex-col">
           {experiences.map((exp, index) => (
-            <div key={exp.id} className="relative">
-              {/* Timeline line */}
-              {index !== experiences.length - 1 && (
-                <div className="absolute left-6 top-20 bottom-0 w-0.5 bg-linear-to-b from-primary to-primary/20"></div>
-              )}
+            // Animación con BlurFade para cada item
+            <BlurFade key={exp.id} delay={0.25 + index * 0.1} inView>
+              <div className="relative flex gap-6 md:gap-8">
+                
+                {/* 1. Línea de tiempo (Punto y Línea) */}
+                <div className="relative z-10">
+                  {/* El Punto */}
+                  <div className="absolute top-1.5 h-3 w-3 rounded-full bg-primary ring-4 ring-background" />
+                  
+                  {/* La Línea (solo si no es el último) */}
+                  {index !== experiences.length - 1 && (
+                    <div className="absolute left-[5.5px] top-6 bottom-0 w-0.5 bg-border" />
+                  )}
+                </div>
 
-              <Card className="p-6 md:p-8 bg-card border-border hover:shadow-lg transition-all duration-300 relative">
-                {/* ... (código del timeline dot sin cambios) ... */}
-                <div className="md:pl-6">
-                  {/* Header */}
-                  <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-4">
-                    <div>
-                      <h3 className="text-2xl font-bold text-card-foreground mb-2">
-                        {exp.position}
-                      </h3>
-                      <div className="flex items-center gap-2 text-primary font-semibold">
-                        <Building2 className="w-4 h-4" />
-                        {exp.company}
+                {/* 2. Contenido de la Tarjeta */}
+                {/* La tarjeta ahora es un 'sibling' de la línea, no un 'parent' */}
+                <Card className="flex-1 mb-10 dark:hover:shadow-blue-950">
+                  <div className="p-6 md:p-8">
+                    {/* Header */}
+                    <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-4">
+                      <div>
+                        <h3 className="text-2xl font-bold text-card-foreground mb-2">
+                          {exp.position}
+                        </h3>
+                        <div className="flex items-center gap-2 text-primary font-semibold">
+                          <Building2 className="w-4 h-4" />
+                          {exp.company}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 text-muted-foreground text-sm md:text-base whitespace-nowrap">
+                        <Calendar className="w-4 h-4" />
+                        {exp.period}
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 text-muted-foreground text-sm md:text-base whitespace-nowrap">
-                      <Calendar className="w-4 h-4" />
-                      {exp.period}
+
+                    {/* Description */}
+                    <ul className="space-y-2 mb-6">
+                      {exp.description_items.map((desc, idx) => (
+                        <li
+                          key={idx}
+                          className="flex items-start gap-3 text-muted-foreground"
+                        >
+                          <span className="text-primary mt-1">▹</span>
+                          {desc}
+                        </li>
+                      ))}
+                    </ul>
+
+                    {/* Technologies (ahora con Badges) */}
+                    <div className="flex flex-wrap gap-2">
+                      {exp.technologies.map((tech) => (
+                        <Badge
+                          key={tech}
+                          variant="secondary"
+                          className="font-medium"
+                        >
+                          {tech}
+                        </Badge>
+                      ))}
                     </div>
                   </div>
-
-                  {/* Description */}
-                  <ul className="space-y-2 mb-6">
-                    {exp.description_items.map((desc, idx) => (
-                      <li
-                        key={idx}
-                        className="flex items-start gap-3 text-muted-foreground"
-                      >
-                        <span className="text-primary mt-1">▹</span>
-                        {desc}
-                      </li>
-                    ))}
-                  </ul>
-
-                  {/* Technologies */}
-                  <div className="flex flex-wrap gap-2">
-                    {exp.technologies.map((tech) => (
-                      <span
-                        key={tech}
-                        className="px-3 py-1 bg-primary/10 text-primary text-xs rounded-full font-medium"
-                      >
-                        {tech}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </Card>
-            </div>
+                </Card>
+              </div>
+            </BlurFade>
           ))}
         </div>
       </div>

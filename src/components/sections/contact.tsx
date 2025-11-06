@@ -23,32 +23,27 @@ export function Contact() {
     setFormData((prev) => ({ ...prev, [name]: value }))
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsSubmitting(true)
+  // const handleSubmit = async (e: React.FormEvent) => {
+  //   e.preventDefault()
+  //   setIsSubmitting(true)
 
-    try {
-      // Simulate form submission
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-      setSubmitStatus("success")
-      setFormData({ name: "", email: "", message: "" })
-      setTimeout(() => setSubmitStatus("idle"), 3000)
-    } catch {
-      setSubmitStatus("error")
-      setTimeout(() => setSubmitStatus("idle"), 3000)
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
+  //   try {
+  //     // Simulate form submission
+  //     await new Promise((resolve) => setTimeout(resolve, 1000))
+  //     setSubmitStatus("success")
+  //     setFormData({ name: "", email: "", message: "" })
+  //     setTimeout(() => setSubmitStatus("idle"), 3000)
+  //   } catch {
+  //     setSubmitStatus("error")
+  //     setTimeout(() => setSubmitStatus("idle"), 3000)
+  //   } finally {
+  //     setIsSubmitting(false)
+  //   }
+  // }
 
-  const sendEmail = () => {
-    window.location.href = `mailto:hello@gerardofranco.dev?subject=Proyecto%20para%20${formData.name}&body=${encodeURIComponent(formData.message)}`
-  }
-
-  const sendWhatsApp = () => {
-    const message = encodeURIComponent(`Hola Gerardo, me gustaría contactarte sobre: ${formData.message}`)
-    window.open(`https://wa.me/1234567890?text=${message}`, "_blank")
-  }
+  // const sendEmail = () => {
+  //   window.location.href = `mailto:hello@gerardofranco.dev?subject=Proyecto%20para%20${formData.name}&body=${encodeURIComponent(formData.message)}`
+  // }
 
   return (
     <section id="contact" className="py-20 px-4 sm:px-6 lg:px-8 bg-background/60">
@@ -74,7 +69,7 @@ export function Contact() {
               {t("contact_subtitle_email")}
             </p>
             <a
-              href="mailto:hello@gerardofranco.dev"
+              href={`mailto:${t("contact_email_address")}`}
               className="text-primary hover:text-primary/80 font-semibold text-sm"
             >
               {t("contact_email_address")}
@@ -95,7 +90,7 @@ export function Contact() {
               {t("contact_subtitle_whatsapp")}
             </p>
             <a
-              href="https://wa.me/{t'1234567890'}"
+              href={`https://wa.me/${t("contact_whatsapp_number")}`}
               target="_blank"
               rel="noopener noreferrer"
               className="text-primary hover:text-primary/80 font-semibold text-sm"
@@ -118,7 +113,7 @@ export function Contact() {
               {t("contact_subtitle_linkedin")}
             </p>
             <a
-              href="https://www.linkedin.com/in/gerardofranco/"
+              href={t("contact_linkedin_profile")}
               target="_blank"
               rel="noopener noreferrer"
               className="text-primary hover:text-primary/80 font-semibold text-sm"
@@ -129,7 +124,7 @@ export function Contact() {
         </div>
 
         {/* Contact Form */}
-        <Card className="p-8 bg-card border-border">
+        {/* <Card className="p-8 bg-card border-border">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
@@ -180,7 +175,6 @@ export function Contact() {
               ></textarea>
             </div>
 
-            {/* Status Messages */}
             {submitStatus === "success" && (
               <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-lg text-green-600 text-sm font-medium">
                 ¡Mensaje enviado correctamente! Te responderé pronto.
@@ -192,7 +186,6 @@ export function Contact() {
               </div>
             )}
 
-            {/* Submit Button */}
             <Button
               type="submit"
               disabled={isSubmitting}
@@ -212,7 +205,7 @@ export function Contact() {
               )}
             </Button>
           </form>
-        </Card>
+        </Card> */}
       </div>
     </section>
   )
