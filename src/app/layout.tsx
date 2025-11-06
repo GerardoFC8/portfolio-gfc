@@ -5,7 +5,7 @@ import "@/app/globals.css"
 import ClientLayout from "@/app/client-layout"
 import { createClient } from "@/lib/supabase/server"
 import { cookies } from "next/headers"
-
+import { Analytics } from "@vercel/analytics/next"
 const _geist = Geist({ subsets: ["latin"] })
 const _geistMono = Geist_Mono({ subsets: ["latin"] })
 
@@ -49,6 +49,7 @@ export default async function RootLayout({
   return (
     <ClientLayout initialLang={langKey} generalText={generalTranslations}>
       {children}
+      <Analytics/>
     </ClientLayout>
   )
 }
