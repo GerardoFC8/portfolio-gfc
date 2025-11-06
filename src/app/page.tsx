@@ -1,65 +1,159 @@
-import Image from "next/image";
+import { Navbar } from "@/components/navbar"
+import { Hero } from "@/components/sections/hero"
+import { Projects } from "@/components/sections/projects"
+import { Technologies } from "@/components/sections/technologies"
+import { Experience } from "@/components/sections/experience"
+import { Contact } from "@/components/sections/contact"
+import { Footer } from "@/components/footer"
+import { createClient } from "@/lib/supabase/server"
+import { cookies } from "next/headers"
+import MatrixRain from "@/components/matrix-rain" // Importamos el nuevo componente
 
-export default function Home() {
+type Language = "es" | "en"
+
+interface HeroData {
+  greeting: string
+  title: string
+  subtitle: string
+  cv_url: string
+}
+interface ProjectData {
+  id: string
+  title: string
+  description: string
+  image_url: string
+  gallery_urls: string[]
+  tech: string[]
+  live_url?: string
+  github_url?: string
+}
+interface ExperienceData {
+  id: string
+  position: string
+  company: string
+  period: string
+  description_items: string[]
+  technologies: string[]
+}
+interface TechnologyData {
+  id: string
+  name: string
+  logo_url: string
+  category: "dominant" | "knowledge"
+}
+
+// --- Función para Cargar TODO el contenido de la página ---
+async function getPageContent(supabase: any, lang: Language) {
+  const langKey = lang
+
+  // Usamos Promise.all para cargar todo en paralelo
+  const [heroRes, projectsRes, experienceRes, technologiesRes] =
+    await Promise.all([
+      // 1. Fetch Hero
+      supabase
+        .from("hero")
+        .select(`greeting_${langKey}, title, subtitle_${langKey}, cv_url`)
+        .limit(1)
+        .single(),
+      // 2. Fetch Projects
+      supabase
+        .from("projects")
+        .select(
+          `id, title_${langKey}, description_${langKey}, image_url, gallery_urls, tech, live_url, github_url`
+        )
+        .order("order", { ascending: true }),
+      // 3. Fetch Experience
+      supabase
+        .from("experience")
+        .select(
+          `id, position_${langKey}, company, period_${langKey}, description_items_${langKey}, technologies`
+        )
+        .order("order", { ascending: true }),
+      // 4. Fetch Technologies
+      supabase
+        .from("technologies")
+        .select(`id, name, logo_url, category`)
+        .order("order", { ascending: true }),
+    ])
+
+  // Manejo de datos y errores (simple)
+  const heroData: HeroData = heroRes.data
+    ? {
+        greeting: heroRes.data[`greeting_${langKey}`],
+        title: heroRes.data.title,
+        subtitle: heroRes.data[`subtitle_${langKey}`],
+        cv_url: heroRes.data.cv_url,
+      }
+    : (null as any) // Deberías manejar el caso nulo
+
+  const projectsData: ProjectData[] = projectsRes.data
+    ? projectsRes.data.map((p: any) => ({
+        id: p.id,
+        title: p[`title_${langKey}`],
+        description: p[`description_${langKey}`],
+        image_url: p.image_url,
+        gallery_urls: p.gallery_urls,
+        tech: p.tech,
+        live_url: p.live_url,
+        github_url: p.github_url,
+      }))
+    : []
+
+  const experienceData: ExperienceData[] = experienceRes.data
+    ? experienceRes.data.map((e: any) => ({
+        id: e.id,
+        position: e[`position_${langKey}`],
+        company: e.company,
+        period: e[`period_${langKey}`],
+        description_items: e[`description_items_${langKey}`],
+        technologies: e.technologies,
+      }))
+    : []
+
+  const technologiesData: TechnologyData[] = technologiesRes.data || []
+
+  if (
+    heroRes.error ||
+    projectsRes.error ||
+    experienceRes.error ||
+    technologiesRes.error
+  ) {
+    console.error("Error fetching page content. Logging non-null errors:")
+    if (heroRes.error) console.error("Hero Error:", heroRes.error)
+    if (projectsRes.error) console.error("Projects Error:", projectsRes.error)
+    if (experienceRes.error)
+      console.error("Experience Error:", experienceRes.error)
+    if (technologiesRes.error)
+      console.error("Technologies Error:", technologiesRes.error)
+  }
+
+  return { heroData, projectsData, experienceData, technologiesData }
+}
+
+export default async function Home() {
+  const cookieStore = await cookies()
+  const supabase = await createClient()
+
+  // 1. Leer la cookie de idioma
+  const lang = (cookieStore.get("lang")?.value || "es") as Language
+
+  // 2. Cargar todo el contenido de la página en el servidor
+  const { heroData, projectsData, experienceData, technologiesData } =
+    await getPageContent(supabase, lang)
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
-  );
+    <main className="min-h-screen bg-background text-foreground relative z-0">
+      <MatrixRain />
+      
+      <Navbar />
+      <div className="pt-16">
+        <Hero heroData={heroData} />
+        <Projects projectsData={projectsData} />
+        <Technologies technologiesData={technologiesData} />
+        <Experience experienceData={experienceData} />
+        <Contact />
+      </div>
+      <Footer />
+    </main>
+  )
 }
