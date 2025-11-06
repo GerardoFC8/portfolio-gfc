@@ -1,29 +1,33 @@
 "use client"
 
 import { useLanguage } from "@/context/language-context"
-import { Heart, Github, Linkedin, Twitter } from "lucide-react"
+// Importamos los íconos que usaremos y también el tipo 'LucideIcon'
+import { Heart, Github, Linkedin, Twitter, Youtube, Instagram, Mail, MessageSquare, Link, type LucideIcon } from "lucide-react"
 
-export function Footer() {
+interface FooterData {
+  name: string
+  icon: string // Esto sigue siendo un string, ej: "github"
+  href: string
+}
+
+// Creamos un "mapa" para traducir los strings a componentes
+// La llave (key) es el string que viene de Supabase (ej: "github")
+// El valor (value) es el componente importado (ej: Github)
+const iconMap: { [key: string]: LucideIcon } = {
+  github: Github,
+  linkedin: Linkedin,
+  twitter: Twitter,
+  youtube: Youtube,
+  instagram: Instagram,
+  mail: Mail,
+  messagesquare: MessageSquare,
+  link: Link,
+}
+
+// Actualizamos los props para aceptar un array de FooterData o null
+export function Footer({ footerData }: { footerData: FooterData[] | null }) {
   const { t } = useLanguage()
   const currentYear = new Date().getFullYear()
-
-  const socialLinks = [
-    {
-      name: "GitHub",
-      icon: Github,
-      href: "https://github.com/gerardofranco",
-    },
-    {
-      name: "LinkedIn",
-      icon: Linkedin,
-      href: "https://linkedin.com/in/gerardofranco",
-    },
-    {
-      name: "Twitter",
-      icon: Twitter,
-      href: "https://twitter.com/gerardofranco",
-    },
-  ]
 
   return (
     <footer className="bg-card border-t border-border">
@@ -68,22 +72,35 @@ export function Footer() {
             <h4 className="text-sm font-semibold text-card-foreground mb-4">
               {t("footer_follow_me")}
             </h4>
-            <div className="flex gap-4">
-              {socialLinks.map((link) => {
-                const Icon = link.icon
-                return (
-                  <a
-                    key={link.name}
-                    href={link.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="p-2 rounded-lg bg-muted hover:bg-primary hover:text-primary-foreground transition-colors duration-200"
-                    aria-label={link.name}
-                  >
-                    <Icon className="w-5 h-5" />
-                  </a>
-                )
-              })}
+            <div className="grid grid-cols-4 gap-4 justify-items-center">
+              {/* 1. Verificamos que footerData exista y sea un array con items.
+                2. Buscamos el componente de ícono en nuestro iconMap.
+                3. Ponemos .toLowerCase() por seguridad, para que "GitHub" o "github" funcionen.
+              */}
+              {footerData &&
+                footerData.length > 0 &&
+                footerData.map((link) => {
+                  const Icon = iconMap[link.icon.toLowerCase()]
+
+                  // Si no encontramos el ícono en el mapa, no renderizamos nada
+                  if (!Icon) {
+                    console.warn(`Icono no encontrado: ${link.icon}`)
+                    return null
+                  }
+
+                  return (
+                    <a
+                      key={link.name}
+                      href={link.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-2 rounded-lg hover:bg-muted transition-colors duration-200"
+                      aria-label={link.name}
+                    >
+                      <Icon className="w-5 h-5" />
+                    </a>
+                  )
+                })}
             </div>
           </div>
         </div>
@@ -97,7 +114,9 @@ export function Footer() {
             {currentYear}
           </p>
           <p className="text-sm text-muted-foreground flex items-center gap-1">
-            {t("made_with")} <Heart className="w-4 h-4 text-red-500 fill-red-500" /> {t("by_author")}
+            {t("made_with")}{" "}
+            <Heart className="w-4 h-4 text-red-500 fill-red-500" />{" "}
+            {t("by_author")}
           </p>
           <p className="text-xs text-muted-foreground text-center md:text-right">
             {t("footer_disclaimer")}

@@ -42,12 +42,19 @@ interface TechnologyData {
   category: "dominant" | "knowledge"
 }
 
+interface FooterData {
+  id: string
+  name: string
+  icon: string // Este será el 'icon_key', ej: "github"
+  href: string
+}
+
 // --- Función para Cargar TODO el contenido de la página ---
 async function getPageContent(supabase: any, lang: Language) {
   const langKey = lang
 
   // Usamos Promise.all para cargar todo en paralelo
-  const [heroRes, projectsRes, experienceRes, technologiesRes] =
+  const [heroRes, projectsRes, experienceRes, technologiesRes, footerRes] =
     await Promise.all([
       // 1. Fetch Hero
       supabase
@@ -74,6 +81,11 @@ async function getPageContent(supabase: any, lang: Language) {
         .from("technologies")
         .select(`id, name, logo_url, category`)
         .order("order", { ascending: true }),
+      // 5. Fetch Social Links (Footer)
+      //    Quitamos .single() para obtener un array
+      supabase
+        .from("social_links")
+        .select(`id, name, display_text_${langKey}, url, icon_key`)
     ])
 
   // Manejo de datos y errores (simple)
@@ -84,7 +96,7 @@ async function getPageContent(supabase: any, lang: Language) {
         subtitle: heroRes.data[`subtitle_${langKey}`],
         cv_url: heroRes.data.cv_url,
       }
-    : (null as any) // Deberías manejar el caso nulo
+    : (null as any)
 
   const projectsData: ProjectData[] = projectsRes.data
     ? projectsRes.data.map((p: any) => ({
@@ -112,11 +124,23 @@ async function getPageContent(supabase: any, lang: Language) {
 
   const technologiesData: TechnologyData[] = technologiesRes.data || []
 
+  // Convertimos la respuesta de footerRes.data (que ahora es un array)
+  // en el formato que espera nuestro componente
+  const footerData: FooterData[] = footerRes.data
+    ? footerRes.data.map((link: any) => ({
+        id: link.id,
+        name: link[`display_text_${langKey}`] || link.name,
+        icon: link.icon_key, // Pasamos el string "github", "linkedin", etc.
+        href: link.url,
+      }))
+    : [] // Devolvemos un array vacío si no hay datos
+
   if (
     heroRes.error ||
     projectsRes.error ||
     experienceRes.error ||
-    technologiesRes.error
+    technologiesRes.error ||
+    footerRes.error
   ) {
     console.error("Error fetching page content. Logging non-null errors:")
     if (heroRes.error) console.error("Hero Error:", heroRes.error)
@@ -125,9 +149,10 @@ async function getPageContent(supabase: any, lang: Language) {
       console.error("Experience Error:", experienceRes.error)
     if (technologiesRes.error)
       console.error("Technologies Error:", technologiesRes.error)
+    if (footerRes.error) console.error("Footer Error:", footerRes.error)
   }
 
-  return { heroData, projectsData, experienceData, technologiesData }
+  return { heroData, projectsData, experienceData, technologiesData, footerData }
 }
 
 export default async function Home() {
@@ -138,13 +163,13 @@ export default async function Home() {
   const lang = (cookieStore.get("lang")?.value || "es") as Language
 
   // 2. Cargar todo el contenido de la página en el servidor
-  const { heroData, projectsData, experienceData, technologiesData } =
+  const { heroData, projectsData, experienceData, technologiesData, footerData } =
     await getPageContent(supabase, lang)
 
   return (
     <main className="min-h-screen bg-background text-foreground relative z-0">
       <MatrixRain />
-      
+
       <Navbar />
       <div className="pt-16">
         <Hero heroData={heroData} />
@@ -153,7 +178,8 @@ export default async function Home() {
         <Experience experienceData={experienceData} />
         <Contact />
       </div>
-      <Footer />
+      {/* Ahora footerData es un array, lo cual es correcto para .map() */}
+      <Footer footerData={footerData} />
     </main>
   )
 }

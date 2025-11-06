@@ -22,10 +22,37 @@ import { Edit, PlusCircle } from "lucide-react";
 import { SocialLink } from "@/app/(admin)/admin/components/admin-types";
 import { toast } from "sonner";
 import { DeleteConfirmationDialog } from "@/app/(admin)/admin/components/delete-confirmation-dialog";
-
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
+  Github,
+  Linkedin,
+  Twitter,
+  Youtube,
+  Instagram,
+  Mail,
+  MessageSquare,
+  Link,
+  type LucideIcon,
+} from "lucide-react"
 const supabase = createClient();
 
 export const SocialLinksAdmin = () => {
+  const iconOptions: { value: string; label: string; Icon: LucideIcon }[] = [
+    { value: "github", label: "GitHub", Icon: Github },
+    { value: "linkedin", label: "LinkedIn", Icon: Linkedin },
+    { value: "twitter", label: "Twitter", Icon: Twitter },
+    { value: "youtube", label: "YouTube", Icon: Youtube },
+    { value: "instagram", label: "Instagram", Icon: Instagram },
+    { value: "mail", label: "Correo (Mail)", Icon: Mail },
+    { value: "messagesquare", label: "Mensaje (Square)", Icon: MessageSquare },
+    { value: "link", label: "Otro (Enlace genérico)", Icon: Link },
+  ]
   const [links, setLinks] = useState<SocialLink[]>([]);
   const [editingItem, setEditingItem] = useState<Partial<SocialLink> | null>(
     null
@@ -77,7 +104,6 @@ export const SocialLinksAdmin = () => {
     e.preventDefault();
     if (!editingItem) return;
 
-    // --- INICIO DE LA CORRECCIÓN DE PROMESA ---
     const saveOperation = async () => {
       const { data, error } = editingItem.id
         ? await supabase
@@ -97,7 +123,6 @@ export const SocialLinksAdmin = () => {
     };
 
     toast.promise(saveOperation(), {
-      // --- FIN DE LA CORRECCIÓN DE PROMESA ---
       loading: "Guardando enlace...",
       success: () => {
         setIsModalOpen(false);
@@ -183,14 +208,31 @@ export const SocialLinksAdmin = () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="icon_key">Icono (Key)</Label>
-                <Input
-                  id="icon_key"
+                <Label htmlFor="icon_key">Icono</Label>
+                <Select
                   name="icon_key"
-                  value={editingItem?.icon_key}
-                  onChange={handleChange}
-                  placeholder="ej. Mail, MessageSquare"
-                />
+                  value={editingItem?.icon_key || ""}
+                  onValueChange={(value) => {
+                    setEditingItem((prev) => ({
+                      ...prev,
+                      icon_key: value,
+                    }))
+                  }}
+                >
+                  <SelectTrigger id="icon_key">
+                    <SelectValue placeholder="Selecciona un ícono" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {iconOptions.map(({ value, label, Icon }) => (
+                      <SelectItem key={value} value={value}>
+                        <div className="flex items-center gap-2">
+                          <Icon className="w-4 h-4" />
+                          <span>{label}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             <div className="space-y-2">
