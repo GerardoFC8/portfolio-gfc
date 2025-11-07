@@ -50,7 +50,7 @@ export function Hero({ heroData }: { heroData: HeroData | null }) {
       <div className="max-w-4xl mx-auto w-full">
         <div className="space-y-8">
           <div className="mb-8">
-            <img src="/generate_full_code.gif" alt="Foto de perfil de Gerardo Franco" className="w-56 h-56 rounded-full mx-auto ring-4 ring-white dark:ring-gray-800 shadow-lg"/>
+            <img src="/generate_full_code.gif" alt="Foto de perfil de Gerardo Franco" className="w-32 h-32 lg:w-56 lg:h-56 rounded-full mx-auto ring-4 ring-white dark:ring-gray-800 shadow-lg"/>
           </div>
           {/* Greeting */}
           <div className="space-y-4">
