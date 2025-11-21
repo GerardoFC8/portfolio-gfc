@@ -25,10 +25,53 @@ export default function ProjectCard({ project, onGalleryClick }: ProjectCardProp
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false)
   const [isTechExpanded, setIsTechExpanded] = useState(false)
 
+  // --- Función para formatear la descripción preservando saltos de línea ---
+  const formatDescription = (text: string, limitLines?: number) => {
+    // Dividir por saltos de línea
+    const lines = text.split('\n')
+    const linesToShow = limitLines ? lines.slice(0, limitLines) : lines
+    
+    return linesToShow.map((line, index) => {
+      const trimmedLine = line.trim()
+      
+      // Si la línea está vacía, retornar un salto de línea
+      if (!trimmedLine) {
+        return <br key={index} />
+      }
+      
+      // Si la línea empieza con "> ", es un elemento de lista
+      if (trimmedLine.startsWith('> ')) {
+        return (
+          <div key={index} className="ml-4 mb-1">
+            • {trimmedLine.substring(2)}
+          </div>
+        )
+      }
+      
+      // Si la línea es un número seguido de punto (ej: "1. ", "2. "), es un título de sección
+      const numberedMatch = trimmedLine.match(/^(\d+)\.\s+(.+)$/)
+      if (numberedMatch) {
+        return (
+          <div key={index} className="font-semibold mt-2 mb-1">
+            {trimmedLine}
+          </div>
+        )
+      }
+      
+      // Línea normal
+      return (
+        <div key={index} className="mb-1">
+          {trimmedLine}
+        </div>
+      )
+    })
+  }
+
   // --- Lógica para la descripción ---
-  // Definimos un límite de caracteres para mostrar el botón "Ver más"
-  const MAX_DESC_CHARS = 120
-  const isLongDescription = project.description.length > MAX_DESC_CHARS
+  // Contamos todas las líneas (incluyendo vacías) para determinar si mostrar "Ver más"
+  const allLines = project.description.split('\n')
+  const MAX_LINES = 8 // Mostrar máximo 8 líneas cuando está colapsado
+  const isLongDescription = allLines.length > MAX_LINES
 
   // --- Lógica para las tecnologías ---
   const displayedTech = isTechExpanded ? project.tech : project.tech.slice(0, 3)
@@ -50,14 +93,16 @@ export default function ProjectCard({ project, onGalleryClick }: ProjectCardProp
         <h3 className="text-xl font-bold text-card-foreground">{project.title}</h3>
 
         <div className="text-sm text-muted-foreground">
-          <p className={!isDescriptionExpanded ? "line-clamp-3" : ""}>
-            {project.description}
-          </p>
+          <div className="leading-relaxed">
+            {isDescriptionExpanded
+              ? formatDescription(project.description)
+              : formatDescription(project.description, MAX_LINES)}
+          </div>
           {/* Botón para expandir/contraer descripción */}
           {isLongDescription && (
             <button
               onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
-              className="text-sm font-medium text-primary hover:underline mt-1"
+              className="text-sm font-medium text-primary hover:underline mt-2"
             >
               {isDescriptionExpanded
                 ? t("project_see_less")
