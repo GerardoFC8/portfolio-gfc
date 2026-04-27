@@ -11,6 +11,7 @@ import { HeroAdmin } from "@/app/(admin)/admin/components/hero-admin";
 import { ProjectsAdmin } from "@/app/(admin)/admin/components/projects-admin";
 import { ExperienceAdmin } from "@/app/(admin)/admin/components/experience-admin";
 import { TechnologiesAdmin } from "@/app/(admin)/admin/components/technologies-admin";
+import { AISkillsAdmin } from "@/app/(admin)/admin/components/ai-skills-admin";
 import { SocialLinksAdmin } from "@/app/(admin)/admin/components/social-links-admin";
 
 const sectionTitles: Record<Section, string> = {
@@ -19,6 +20,7 @@ const sectionTitles: Record<Section, string> = {
   projects: "Proyectos",
   experience: "Experiencia",
   technologies: "Tecnologías",
+  ai_skills: "Habilidades IA",
   social_links: "Redes Sociales",
 };
 
@@ -63,6 +65,8 @@ export default function AdminPage() {
         return <ExperienceAdmin />;
       case "technologies":
         return <TechnologiesAdmin />;
+      case "ai_skills":
+        return <AISkillsAdmin />;
       case "social_links":
         return <SocialLinksAdmin />;
       default:
@@ -100,6 +104,7 @@ export default function AdminPage() {
         </div>
         <NavButton section="projects" activeSection={activeSection} onSelect={handleNavSelect} />
         <NavButton section="experience" activeSection={activeSection} onSelect={handleNavSelect} />
+        <NavButton section="ai_skills" activeSection={activeSection} onSelect={handleNavSelect} />
         <NavButton section="technologies" activeSection={activeSection} onSelect={handleNavSelect} />
         <NavButton section="hero" activeSection={activeSection} onSelect={handleNavSelect} />
         <NavButton section="general_text" activeSection={activeSection} onSelect={handleNavSelect} />

@@ -2,6 +2,7 @@ import { Navbar } from "@/components/navbar"
 import { Hero } from "@/components/sections/hero"
 import { Projects } from "@/components/sections/projects"
 import { Technologies } from "@/components/sections/technologies"
+import { AISkills } from "@/components/sections/ai-skills"
 import { Experience } from "@/components/sections/experience"
 import { Contact } from "@/components/sections/contact"
 import { Footer } from "@/components/footer"
@@ -43,6 +44,12 @@ interface TechnologyData {
   category: "dominant" | "knowledge"
 }
 
+interface AISkillData {
+  id: string
+  name: string
+  logo_url: string
+}
+
 interface FooterData {
   id: string
   name: string
@@ -68,6 +75,11 @@ type ExperienceRow = {
   technologies: string[]
 } & Record<`position_${Language}` | `period_${Language}`, string> &
   Record<`description_items_${Language}`, string[]>
+type AISkillRow = {
+  id: string
+  name: string
+  logo_url: string
+}
 type SocialLinkRow = {
   id: string
   name: string
@@ -78,38 +90,49 @@ type SocialLinkRow = {
 async function getPageContent(supabase: SupabaseClient, lang: Language) {
   const langKey = lang
 
-  const [heroRes, projectsRes, experienceRes, technologiesRes, footerRes] =
-    await Promise.all([
-      supabase
-        .from("hero")
-        .select(`greeting_${langKey}, title, subtitle_${langKey}, cv_url`)
-        .limit(1)
-        .single()
-        .returns<HeroRow>(),
-      supabase
-        .from("projects")
-        .select(
-          `id, title_${langKey}, description_${langKey}, image_url, gallery_urls, tech, live_url, github_url`
-        )
-        .order("order", { ascending: true })
-        .returns<ProjectRow[]>(),
-      supabase
-        .from("experience")
-        .select(
-          `id, position_${langKey}, company, period_${langKey}, description_items_${langKey}, technologies`
-        )
-        .order("order", { ascending: true })
-        .returns<ExperienceRow[]>(),
-      supabase
-        .from("technologies")
-        .select(`id, name, logo_url, category`)
-        .order("order", { ascending: true })
-        .returns<TechnologyData[]>(),
-      supabase
-        .from("social_links")
-        .select(`id, name, display_text_${langKey}, url, icon_key`)
-        .returns<SocialLinkRow[]>(),
-    ])
+  const [
+    heroRes,
+    projectsRes,
+    experienceRes,
+    technologiesRes,
+    aiSkillsRes,
+    footerRes,
+  ] = await Promise.all([
+    supabase
+      .from("hero")
+      .select(`greeting_${langKey}, title, subtitle_${langKey}, cv_url`)
+      .limit(1)
+      .single()
+      .returns<HeroRow>(),
+    supabase
+      .from("projects")
+      .select(
+        `id, title_${langKey}, description_${langKey}, image_url, gallery_urls, tech, live_url, github_url`
+      )
+      .order("order", { ascending: true })
+      .returns<ProjectRow[]>(),
+    supabase
+      .from("experience")
+      .select(
+        `id, position_${langKey}, company, period_${langKey}, description_items_${langKey}, technologies`
+      )
+      .order("order", { ascending: true })
+      .returns<ExperienceRow[]>(),
+    supabase
+      .from("technologies")
+      .select(`id, name, logo_url, category`)
+      .order("order", { ascending: true })
+      .returns<TechnologyData[]>(),
+    supabase
+      .from("ai_skills")
+      .select(`id, name, logo_url`)
+      .order("order", { ascending: true })
+      .returns<AISkillRow[]>(),
+    supabase
+      .from("social_links")
+      .select(`id, name, display_text_${langKey}, url, icon_key`)
+      .returns<SocialLinkRow[]>(),
+  ])
 
   const heroData: HeroData | null = heroRes.data
     ? {
@@ -142,6 +165,8 @@ async function getPageContent(supabase: SupabaseClient, lang: Language) {
 
   const technologiesData: TechnologyData[] = technologiesRes.data ?? []
 
+  const aiSkillsData: AISkillData[] = aiSkillsRes.data ?? []
+
   const footerData: FooterData[] = (footerRes.data ?? []).map((link) => ({
     id: link.id,
     name: link[`display_text_${langKey}`] || link.name,
@@ -154,6 +179,7 @@ async function getPageContent(supabase: SupabaseClient, lang: Language) {
     projectsRes.error ||
     experienceRes.error ||
     technologiesRes.error ||
+    aiSkillsRes.error ||
     footerRes.error
   ) {
     console.error("Error fetching page content. Logging non-null errors:")
@@ -163,10 +189,19 @@ async function getPageContent(supabase: SupabaseClient, lang: Language) {
       console.error("Experience Error:", experienceRes.error)
     if (technologiesRes.error)
       console.error("Technologies Error:", technologiesRes.error)
+    if (aiSkillsRes.error)
+      console.error("AI Skills Error:", aiSkillsRes.error)
     if (footerRes.error) console.error("Footer Error:", footerRes.error)
   }
 
-  return { heroData, projectsData, experienceData, technologiesData, footerData }
+  return {
+    heroData,
+    projectsData,
+    experienceData,
+    technologiesData,
+    aiSkillsData,
+    footerData,
+  }
 }
 
 export default async function Home() {
@@ -177,8 +212,14 @@ export default async function Home() {
   const lang = (cookieStore.get("lang")?.value || "es") as Language
 
   // 2. Cargar todo el contenido de la página en el servidor
-  const { heroData, projectsData, experienceData, technologiesData, footerData } =
-    await getPageContent(supabase, lang)
+  const {
+    heroData,
+    projectsData,
+    experienceData,
+    technologiesData,
+    aiSkillsData,
+    footerData,
+  } = await getPageContent(supabase, lang)
 
   return (
     <main className="min-h-screen bg-background text-foreground relative z-0">
@@ -188,11 +229,11 @@ export default async function Home() {
       <div className="pt-16">
         <Hero heroData={heroData} />
         <Projects projectsData={projectsData} />
+        <AISkills aiSkillsData={aiSkillsData} />
         <Technologies technologiesData={technologiesData} />
         <Experience experienceData={experienceData} />
         <Contact />
       </div>
-      {/* Ahora footerData es un array, lo cual es correcto para .map() */}
       <Footer footerData={footerData} />
     </main>
   )

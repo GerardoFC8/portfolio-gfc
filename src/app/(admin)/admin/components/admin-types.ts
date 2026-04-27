@@ -54,6 +54,13 @@ export type Technology = {
   category: "dominant" | "knowledge";
 };
 
+export type AISkill = {
+  id: string;
+  order: number;
+  name: string;
+  logo_url: string;
+};
+
 export type SocialLink = {
   id: string;
   name: string;
@@ -70,4 +77,5 @@ export type Section =
   | "projects"
   | "experience"
   | "technologies"
+  | "ai_skills"
   | "social_links";
