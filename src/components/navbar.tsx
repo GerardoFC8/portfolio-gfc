@@ -12,6 +12,7 @@ export function Navbar() {
 
   const navItems = [
     { key: "nav_projects", href: "#projects" },
+    { key: "nav_ai_skills", href: "#ai-skills" },
     { key: "nav_tech", href: "#technologies" },
     { key: "nav_exp", href: "#experience" },
     { key: "nav_contact", href: "#contact" },
