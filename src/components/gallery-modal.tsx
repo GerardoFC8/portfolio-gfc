@@ -40,6 +40,8 @@ export default function GalleryModal({ isOpen, onClose, project }: GalleryModalP
 
         {/* Image Container */}
         <div className="flex-1 overflow-hidden bg-background">
+          {/* Gallery lightbox: dynamic sizes unknown at build time, inline disable is appropriate. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={project.gallery[currentIndex] || "/placeholder.svg"}
             alt={`${project.title} - Image ${currentIndex + 1}`}
@@ -84,6 +86,8 @@ export default function GalleryModal({ isOpen, onClose, project }: GalleryModalP
               }`}
               aria-label={`Go to image ${index + 1}`}
             >
+              {/* Gallery thumbnail strip: dynamic sizes, inline disable appropriate. */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={image || "/placeholder.svg"}
                 alt={`Thumbnail ${index + 1}`}

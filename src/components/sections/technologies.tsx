@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import { useLanguage } from "@/context/language-context"
 // import { Card } from "@/components/ui/card" // (No se usa Card aquí)
 import { useState, useMemo } from "react"
@@ -18,9 +19,11 @@ interface TechnologyData {
 // Componente para un ícono de tecnología individual
 const TechItem = ({ name, logoUrl }: { name: string; logoUrl: string }) => (
   <div className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg transition-all duration-300">
-    <img
+    <Image
       src={logoUrl}
       alt={name}
+      width={48}
+      height={48}
       className="h-10 w-10 sm:h-12 sm:w-12 object-contain"
       onError={(e) => {
         e.currentTarget.src = "https://placehold.co/48x48/e0e0e0/a0a0a0?text=?"
@@ -40,10 +43,10 @@ export function Technologies({
 }) {
   const { t } = useLanguage() // Para títulos
   const [viewMode, setViewMode] = useState<"grid" | "cloud">("grid")
-  const technologies = technologiesData || []
 
   // Separa las tecnologías por categoría usando useMemo
   const { dominantTech, knowledgeTech, allLogoUrls } = useMemo(() => {
+    const technologies = technologiesData || []
     const dominant = technologies.filter(
       (tech) => tech.category === "dominant"
     )
@@ -57,7 +60,7 @@ export function Technologies({
       knowledgeTech: knowledge,
       allLogoUrls: allLogos,
     }
-  }, [technologies])
+  }, [technologiesData])
 
   if (!technologiesData) {
     return (

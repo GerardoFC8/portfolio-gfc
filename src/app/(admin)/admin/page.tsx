@@ -22,10 +22,34 @@ const sectionTitles: Record<Section, string> = {
   social_links: "Redes Sociales",
 };
 
+interface NavButtonProps {
+  section: Section;
+  activeSection: Section;
+  onSelect: (section: Section) => void;
+}
+
+// Hoisted outside AdminPage so React sees a stable component identity across renders.
+function NavButton({ section, activeSection, onSelect }: NavButtonProps) {
+  return (
+    <Button
+      variant={activeSection === section ? "default" : "ghost"}
+      onClick={() => onSelect(section)}
+      className="w-full justify-start"
+    >
+      {sectionTitles[section]}
+    </Button>
+  );
+}
+
 // Componente Principal del Panel de Admin (Ahora mucho más limpio)
 export default function AdminPage() {
   const [activeSection, setActiveSection] = useState<Section>("projects");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  const handleNavSelect = (section: Section) => {
+    setActiveSection(section);
+    setIsSidebarOpen(false);
+  };
 
   const renderSection = () => {
     switch (activeSection) {
@@ -45,19 +69,6 @@ export default function AdminPage() {
         return null;
     }
   };
-
-  const NavButton = ({ section }: { section: Section }) => (
-    <Button
-      variant={activeSection === section ? "default" : "ghost"}
-      onClick={() => {
-        setActiveSection(section);
-        setIsSidebarOpen(false);
-      }}
-      className="w-full justify-start"
-    >
-      {sectionTitles[section]}
-    </Button>
-  );
 
   return (
     <div className="flex min-h-screen">
@@ -87,12 +98,12 @@ export default function AdminPage() {
             <X size={20} />
           </Button>
         </div>
-        <NavButton section="projects" />
-        <NavButton section="experience" />
-        <NavButton section="technologies" />
-        <NavButton section="hero" />
-        <NavButton section="general_text" />
-        <NavButton section="social_links" />
+        <NavButton section="projects" activeSection={activeSection} onSelect={handleNavSelect} />
+        <NavButton section="experience" activeSection={activeSection} onSelect={handleNavSelect} />
+        <NavButton section="technologies" activeSection={activeSection} onSelect={handleNavSelect} />
+        <NavButton section="hero" activeSection={activeSection} onSelect={handleNavSelect} />
+        <NavButton section="general_text" activeSection={activeSection} onSelect={handleNavSelect} />
+        <NavButton section="social_links" activeSection={activeSection} onSelect={handleNavSelect} />
       </nav>
 
       {/* Contenido Principal */}

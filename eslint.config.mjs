@@ -13,6 +13,17 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
   ]),
+  {
+    files: ["src/app/(admin)/admin/components/**/*.{ts,tsx}"],
+    rules: {
+      // Admin uses the "async fetchData inside useCallback called from useEffect" pattern.
+      // The rule fires as a false positive here: setState only runs after an await,
+      // never synchronously inside the effect body, and deps are [].
+      // These are client-only CRUD components that don't benefit from RSC migration.
+      // Revisit when admin is migrated to Server Actions.
+      "react-hooks/set-state-in-effect": "off",
+    },
+  },
 ]);
 
 export default eslintConfig;

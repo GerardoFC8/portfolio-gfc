@@ -1,49 +1,11 @@
 "use client"
 
-import type React from "react"
-
-import { useState } from "react"
 import { useLanguage } from "@/context/language-context"
 import { Card } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Mail, MessageSquare, Send, Linkedin } from "lucide-react"
+import { Mail, MessageSquare, Send } from "lucide-react"
 
 export function Contact() {
   const { t } = useLanguage()
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    message: "",
-  })
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [submitStatus, setSubmitStatus] = useState<"idle" | "success" | "error">("idle")
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
-  }
-
-  // const handleSubmit = async (e: React.FormEvent) => {
-  //   e.preventDefault()
-  //   setIsSubmitting(true)
-
-  //   try {
-  //     // Simulate form submission
-  //     await new Promise((resolve) => setTimeout(resolve, 1000))
-  //     setSubmitStatus("success")
-  //     setFormData({ name: "", email: "", message: "" })
-  //     setTimeout(() => setSubmitStatus("idle"), 3000)
-  //   } catch {
-  //     setSubmitStatus("error")
-  //     setTimeout(() => setSubmitStatus("idle"), 3000)
-  //   } finally {
-  //     setIsSubmitting(false)
-  //   }
-  // }
-
-  // const sendEmail = () => {
-  //   window.location.href = `mailto:hello@gerardofranco.dev?subject=Proyecto%20para%20${formData.name}&body=${encodeURIComponent(formData.message)}`
-  // }
 
   return (
     <section id="contact" className="py-20 px-4 sm:px-6 lg:px-8 bg-background/60">
@@ -123,89 +85,6 @@ export function Contact() {
           </Card>
         </div>
 
-        {/* Contact Form */}
-        {/* <Card className="p-8 bg-card border-border">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label htmlFor="name" className="block text-sm font-medium text-card-foreground mb-2">
-                  Nombre
-                </label>
-                <input
-                  type="text"
-                  id="name"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-2 bg-background border border-border rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
-                  placeholder="Tu nombre"
-                  required
-                />
-              </div>
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-card-foreground mb-2">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-2 bg-background border border-border rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
-                  placeholder="tu@email.com"
-                  required
-                />
-              </div>
-            </div>
-
-            <div>
-              <label htmlFor="message" className="block text-sm font-medium text-card-foreground mb-2">
-                Mensaje
-              </label>
-              <textarea
-                id="message"
-                name="message"
-                value={formData.message}
-                onChange={handleInputChange}
-                rows={5}
-                className="w-full px-4 py-2 bg-background border border-border rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all resize-none"
-                placeholder="Cuéntame sobre tu proyecto..."
-                required
-              ></textarea>
-            </div>
-
-            {submitStatus === "success" && (
-              <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-lg text-green-600 text-sm font-medium">
-                ¡Mensaje enviado correctamente! Te responderé pronto.
-              </div>
-            )}
-            {submitStatus === "error" && (
-              <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-red-600 text-sm font-medium">
-                Error al enviar el mensaje. Por favor intenta de nuevo.
-              </div>
-            )}
-
-            <Button
-              type="submit"
-              disabled={isSubmitting}
-              size="lg"
-              className="w-full gap-2 bg-primary hover:bg-primary/90 text-primary-foreground"
-            >
-              {isSubmitting ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin"></div>
-                  Enviando...
-                </>
-              ) : (
-                <>
-                  <Send className="w-4 h-4" />
-                  Enviar Mensaje
-                </>
-              )}
-            </Button>
-          </form>
-        </Card> */}
       </div>
     </section>
   )

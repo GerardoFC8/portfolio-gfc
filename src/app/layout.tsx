@@ -7,8 +7,12 @@ import { createClient } from "@/lib/supabase/server"
 import { cookies } from "next/headers"
 import { Analytics } from "@vercel/analytics/next"
 import { SpeedInsights } from "@vercel/speed-insights/next"
-const _geist = Geist({ subsets: ["latin"] })
-const _geistMono = Geist_Mono({ subsets: ["latin"] })
+
+const geistSans = Geist({ subsets: ["latin"], variable: "--font-geist-sans" })
+const geistMono = Geist_Mono({
+  subsets: ["latin"],
+  variable: "--font-geist-mono",
+})
 
 export const metadata: Metadata = {
   title: "Portafolio | Gerardo Franco | Desarrollador Full-Stack",
@@ -17,24 +21,25 @@ export const metadata: Metadata = {
 
 type Language = "es" | "en"
 
-async function getGeneralText(langKey: Language, cookieStore: any) {
+type GeneralTextRow = { key: string } & Record<`text_${Language}`, string>
+
+async function getGeneralText(langKey: Language): Promise<Record<string, string>> {
   const supabase = await createClient()
 
   const { data, error } = await supabase
     .from("general_text")
     .select(`key, text_${langKey}`)
+    .returns<GeneralTextRow[]>()
 
   if (error) {
     console.error("Error fetching general_text:", error)
     return {}
   }
 
-  const translations = (data || []).reduce((acc: any, item: any) => {
+  return (data ?? []).reduce<Record<string, string>>((acc, item) => {
     acc[item.key] = item[`text_${langKey}`]
     return acc
   }, {})
-
-  return translations
 }
 
 export default async function RootLayout({
@@ -45,10 +50,14 @@ export default async function RootLayout({
   const cookieStore = await cookies()
   const langKey = (cookieStore.get("lang")?.value || "es") as Language
 
-  const generalTranslations = await getGeneralText(langKey, cookieStore)
+  const generalTranslations = await getGeneralText(langKey)
 
   return (
-    <ClientLayout initialLang={langKey} generalText={generalTranslations}>
+    <ClientLayout
+      initialLang={langKey}
+      generalText={generalTranslations}
+      fontVariables={`${geistSans.variable} ${geistMono.variable}`}
+    >
       {children}
       <Analytics/>
       <SpeedInsights />

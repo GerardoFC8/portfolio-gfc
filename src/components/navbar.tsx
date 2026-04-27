@@ -1,7 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { Menu, X, Moon, Sun } from "lucide-react"
+import Link from "next/link"
+import { Menu, X } from "lucide-react"
 import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler"
 import { useLanguage } from "@/context/language-context"
 
@@ -30,9 +31,11 @@ export function Navbar() {
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <div className="shrink-0">
-            <a href="/" className="text-xl font-bold text-primary">
+            <Link href="/" className="text-xl font-bold text-primary">
+              {/* Navbar logo: tiny icon, not LCP, no optimization benefit. */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/logo-gfc.ico" alt="Icono" className="w-12 rounded-lg" />
-            </a>
+            </Link>
           </div>
 
           {/* Desktop Navigation */}

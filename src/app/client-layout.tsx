@@ -13,14 +13,16 @@ export default function ClientLayout({
   children,
   generalText,
   initialLang,
+  fontVariables,
 }: Readonly<{
   children: React.ReactNode
   generalText: GeneralTextData
   initialLang: Language
+  fontVariables: string
 }>) {
   return (
-    <html lang={initialLang} suppressHydrationWarning>
-      <body className={`font-sans antialiased`}>
+    <html lang={initialLang} className={fontVariables} suppressHydrationWarning>
+      <body className="font-sans antialiased">
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <LanguageProvider
             generalText={generalText}

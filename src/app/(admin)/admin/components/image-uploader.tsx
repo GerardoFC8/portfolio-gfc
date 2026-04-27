@@ -95,6 +95,8 @@ export const ImageUploader = ({
         <div className="mt-2">
           <p className="text-sm text-muted-foreground">Archivo actual:</p>
           {bucketName !== "cvs" ? (
+            // Admin-only preview thumbnail; no LCP benefit, avoids configuring next/image for trivial UI.
+            // eslint-disable-next-line @next/next/no-img-element
             <img
               src={currentUrl}
               alt="Vista previa"

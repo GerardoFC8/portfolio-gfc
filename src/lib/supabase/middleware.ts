@@ -1,12 +1,10 @@
-import { NextResponse, type NextRequest } from "next/server";
-import { createServerClient } from "@supabase/ssr";
+import { NextResponse, type NextRequest } from "next/server"
+import { createServerClient } from "@supabase/ssr"
 
-async function getSession(request: NextRequest) {
+export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({
-    request: {
-      headers: request.headers,
-    },
-  });
+    request: { headers: request.headers },
+  })
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -14,41 +12,37 @@ async function getSession(request: NextRequest) {
     {
       cookies: {
         getAll() {
-          return request.cookies.getAll();
+          return request.cookies.getAll()
         },
         setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) =>
+            request.cookies.set(name, value)
+          )
+          response = NextResponse.next({
+            request: { headers: request.headers },
+          })
           cookiesToSet.forEach(({ name, value, options }) =>
             response.cookies.set(name, value, options)
-          );
+          )
         },
       },
     }
-  );
+  )
 
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
+    data: { user },
+  } = await supabase.auth.getUser()
 
-  return { session, response };
-}
+  const { pathname } = request.nextUrl
+  const userIsLoggedIn = !!user
 
-export async function middleware(request: NextRequest) {
-  const { session, response } = await getSession(request);
-  const { pathname } = request.nextUrl;
-
-  const userIsLoggedIn = !!session;
-
-  // 1. Si el usuario YA está logueado y visita /login
   if (userIsLoggedIn && pathname.startsWith("/login")) {
-    // Redirígelo al panel de admin
-    return NextResponse.redirect(new URL("/admin", request.url));
+    return NextResponse.redirect(new URL("/admin", request.url))
   }
 
-  // 2. Si el usuario NO está logueado e intenta acceder a /admin
   if (!userIsLoggedIn && pathname.startsWith("/admin")) {
-    // Redirígelo a la página de login
-    return NextResponse.redirect(new URL("/login", request.url));
+    return NextResponse.redirect(new URL("/login", request.url))
   }
 
-  return response;
+  return response
 }

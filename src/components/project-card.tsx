@@ -81,6 +81,8 @@ export default function ProjectCard({ project, onGalleryClick }: ProjectCardProp
     <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-300 bg-card border-border flex flex-col h-full dark:hover:shadow-blue-950">
       {/* Image Container */}
       <div className="relative overflow-hidden h-48 bg-muted">
+        {/* Project card image: dynamic Supabase URL, dimensions vary per project. */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={project.image || "/placeholder.svg"}
           alt={project.title}

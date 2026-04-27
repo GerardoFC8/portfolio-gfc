@@ -197,6 +197,8 @@ export const TechnologiesAdmin = () => {
                     </Button>
                   </td>
                   <td className="p-2">
+                    {/* Admin-only preview thumbnail; no LCP benefit, avoids configuring next/image for trivial UI. */}
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={item.logo_url}
                       alt={item.name}

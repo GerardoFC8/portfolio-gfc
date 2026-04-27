@@ -1,15 +1,9 @@
 "use client"
 
 import type React from "react"
-import {
-  createContext,
-  useContext,
-  useState,
-  useCallback,
-  useMemo,
-} from "react"
+import { createContext, useContext, useState } from "react"
 import { useRouter } from "next/navigation"
-import { setCookie, getCookie } from "cookies-next"
+import { setCookie } from "cookies-next"
 
 type Language = "es" | "en"
 
@@ -27,8 +21,8 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 
 export function LanguageProvider({
   children,
-  generalText, // Recibe los textos desde el Server Component
-  initialLang, // Recibe el idioma inicial desde el Server Component
+  generalText,
+  initialLang,
 }: {
   children: React.ReactNode
   generalText: GeneralTextData
@@ -39,33 +33,14 @@ export function LanguageProvider({
 
   const setLang = (newLang: Language) => {
     setLangState(newLang)
-    try {
-      setCookie("lang", newLang, { maxAge: 60 * 60 * 24 * 30 }) // 30 días
-      router.refresh()
-    } catch (e) {
-      console.error("Failed to set language cookie or refresh", e)
-    }
+    setCookie("lang", newLang, { maxAge: 60 * 60 * 24 * 30 })
+    router.refresh()
   }
 
-  // La función 't' (translate) ahora usa los textos recibidos por props
-  const t = useCallback(
-    (key: string): string => {
-      return generalText[key] || key
-    },
-    [generalText] // Se recalcula solo si los textos cambian
-  )
-
-  const value = useMemo(
-    () => ({
-      lang,
-      setLang,
-      t,
-    }),
-    [lang, t] // setLang es estable
-  )
+  const t = (key: string): string => generalText[key] ?? key
 
   return (
-    <LanguageContext.Provider value={value}>
+    <LanguageContext.Provider value={{ lang, setLang, t }}>
       {children}
     </LanguageContext.Provider>
   )

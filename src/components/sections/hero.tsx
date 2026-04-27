@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import { useLanguage } from "@/context/language-context"
 import { Button } from "@/components/ui/button"
 import { ArrowRight, Download } from "lucide-react"
@@ -50,7 +51,16 @@ export function Hero({ heroData }: { heroData: HeroData | null }) {
       <div className="max-w-4xl mx-auto w-full">
         <div className="space-y-8">
           <div className="mb-8">
-            <img src="/generate_full_code.gif" alt="Foto de perfil de Gerardo Franco" className="w-32 h-32 lg:w-56 lg:h-56 rounded-full mx-auto ring-4 ring-white dark:ring-gray-800 shadow-lg"/>
+            {/* unoptimized: preserves GIF animation */}
+            <Image
+              src="/generate_full_code.gif"
+              alt="Foto de perfil de Gerardo Franco"
+              width={224}
+              height={224}
+              priority
+              unoptimized
+              className="w-32 h-32 lg:w-56 lg:h-56 rounded-full mx-auto ring-4 ring-white dark:ring-gray-800 shadow-lg"
+            />
           </div>
           {/* Greeting */}
           <div className="space-y-4">

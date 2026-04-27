@@ -7,7 +7,8 @@ import { Contact } from "@/components/sections/contact"
 import { Footer } from "@/components/footer"
 import { createClient } from "@/lib/supabase/server"
 import { cookies } from "next/headers"
-import MatrixRain from "@/components/matrix-rain" // Importamos el nuevo componente
+import MatrixRain from "@/components/matrix-rain"
+import type { SupabaseClient } from "@supabase/supabase-js"
 
 type Language = "es" | "en"
 
@@ -45,95 +46,108 @@ interface TechnologyData {
 interface FooterData {
   id: string
   name: string
-  icon: string // Este será el 'icon_key', ej: "github"
+  icon: string
   href: string
 }
 
-// --- Función para Cargar TODO el contenido de la página ---
-async function getPageContent(supabase: any, lang: Language) {
+type HeroRow = Record<`greeting_${Language}` | `subtitle_${Language}`, string> & {
+  title: string
+  cv_url: string
+}
+type ProjectRow = {
+  id: string
+  image_url: string
+  gallery_urls: string[]
+  tech: string[]
+  live_url?: string
+  github_url?: string
+} & Record<`title_${Language}` | `description_${Language}`, string>
+type ExperienceRow = {
+  id: string
+  company: string
+  technologies: string[]
+} & Record<`position_${Language}` | `period_${Language}`, string> &
+  Record<`description_items_${Language}`, string[]>
+type SocialLinkRow = {
+  id: string
+  name: string
+  url: string
+  icon_key: string
+} & Record<`display_text_${Language}`, string>
+
+async function getPageContent(supabase: SupabaseClient, lang: Language) {
   const langKey = lang
 
-  // Usamos Promise.all para cargar todo en paralelo
   const [heroRes, projectsRes, experienceRes, technologiesRes, footerRes] =
     await Promise.all([
-      // 1. Fetch Hero
       supabase
         .from("hero")
         .select(`greeting_${langKey}, title, subtitle_${langKey}, cv_url`)
         .limit(1)
-        .single(),
-      // 2. Fetch Projects
+        .single()
+        .returns<HeroRow>(),
       supabase
         .from("projects")
         .select(
           `id, title_${langKey}, description_${langKey}, image_url, gallery_urls, tech, live_url, github_url`
         )
-        .order("order", { ascending: true }),
-      // 3. Fetch Experience
+        .order("order", { ascending: true })
+        .returns<ProjectRow[]>(),
       supabase
         .from("experience")
         .select(
           `id, position_${langKey}, company, period_${langKey}, description_items_${langKey}, technologies`
         )
-        .order("order", { ascending: true }),
-      // 4. Fetch Technologies
+        .order("order", { ascending: true })
+        .returns<ExperienceRow[]>(),
       supabase
         .from("technologies")
         .select(`id, name, logo_url, category`)
-        .order("order", { ascending: true }),
-      // 5. Fetch Social Links (Footer)
-      //    Quitamos .single() para obtener un array
+        .order("order", { ascending: true })
+        .returns<TechnologyData[]>(),
       supabase
         .from("social_links")
         .select(`id, name, display_text_${langKey}, url, icon_key`)
+        .returns<SocialLinkRow[]>(),
     ])
 
-  // Manejo de datos y errores (simple)
-  const heroData: HeroData = heroRes.data
+  const heroData: HeroData | null = heroRes.data
     ? {
         greeting: heroRes.data[`greeting_${langKey}`],
         title: heroRes.data.title,
         subtitle: heroRes.data[`subtitle_${langKey}`],
         cv_url: heroRes.data.cv_url,
       }
-    : (null as any)
+    : null
 
-  const projectsData: ProjectData[] = projectsRes.data
-    ? projectsRes.data.map((p: any) => ({
-        id: p.id,
-        title: p[`title_${langKey}`],
-        description: p[`description_${langKey}`],
-        image_url: p.image_url,
-        gallery_urls: p.gallery_urls,
-        tech: p.tech,
-        live_url: p.live_url,
-        github_url: p.github_url,
-      }))
-    : []
+  const projectsData: ProjectData[] = (projectsRes.data ?? []).map((p) => ({
+    id: p.id,
+    title: p[`title_${langKey}`],
+    description: p[`description_${langKey}`],
+    image_url: p.image_url,
+    gallery_urls: p.gallery_urls,
+    tech: p.tech,
+    live_url: p.live_url,
+    github_url: p.github_url,
+  }))
 
-  const experienceData: ExperienceData[] = experienceRes.data
-    ? experienceRes.data.map((e: any) => ({
-        id: e.id,
-        position: e[`position_${langKey}`],
-        company: e.company,
-        period: e[`period_${langKey}`],
-        description_items: e[`description_items_${langKey}`],
-        technologies: e.technologies,
-      }))
-    : []
+  const experienceData: ExperienceData[] = (experienceRes.data ?? []).map((e) => ({
+    id: e.id,
+    position: e[`position_${langKey}`],
+    company: e.company,
+    period: e[`period_${langKey}`],
+    description_items: e[`description_items_${langKey}`],
+    technologies: e.technologies,
+  }))
 
-  const technologiesData: TechnologyData[] = technologiesRes.data || []
+  const technologiesData: TechnologyData[] = technologiesRes.data ?? []
 
-  // Convertimos la respuesta de footerRes.data (que ahora es un array)
-  // en el formato que espera nuestro componente
-  const footerData: FooterData[] = footerRes.data
-    ? footerRes.data.map((link: any) => ({
-        id: link.id,
-        name: link[`display_text_${langKey}`] || link.name,
-        icon: link.icon_key, // Pasamos el string "github", "linkedin", etc.
-        href: link.url,
-      }))
-    : [] // Devolvemos un array vacío si no hay datos
+  const footerData: FooterData[] = (footerRes.data ?? []).map((link) => ({
+    id: link.id,
+    name: link[`display_text_${langKey}`] || link.name,
+    icon: link.icon_key,
+    href: link.url,
+  }))
 
   if (
     heroRes.error ||

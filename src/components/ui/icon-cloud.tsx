@@ -24,11 +24,10 @@ function easeOutCubic(t: number): number {
 export function IconCloud({ icons, images }: IconCloudProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [iconPositions, setIconPositions] = useState<Icon[]>([])
-  const [rotation, setRotation] = useState({ x: 0, y: 0 })
   const [isDragging, setIsDragging] = useState(false)
   const [lastMousePos, setLastMousePos] = useState({ x: 0, y: 0 })
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 })
-  const [targetRotation, setTargetRotation] = useState<{
+  const targetRotationRef = useRef<{
     x: number
     y: number
     startX: number
@@ -38,7 +37,7 @@ export function IconCloud({ icons, images }: IconCloudProps) {
     duration: number
   } | null>(null)
   const animationFrameRef = useRef<number>(0)
-  const rotationRef = useRef(rotation)
+  const rotationRef = useRef({ x: 0, y: 0 })
   const iconCanvasesRef = useRef<HTMLCanvasElement[]>([])
   const imagesLoadedRef = useRef<boolean[]>([])
 
@@ -121,6 +120,8 @@ export function IconCloud({ icons, images }: IconCloudProps) {
         id: i,
       })
     }
+    // Initial sphere layout computed from props — fires once per icons/images change, not inside render loop.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIconPositions(newIcons)
   }, [icons, images])
 
@@ -168,7 +169,7 @@ export function IconCloud({ icons, images }: IconCloudProps) {
 
         const duration = Math.min(2000, Math.max(800, distance * 1000))
 
-        setTargetRotation({
+        targetRotationRef.current = {
           x: targetX,
           y: targetY,
           startX: currentX,
@@ -176,7 +177,7 @@ export function IconCloud({ icons, images }: IconCloudProps) {
           distance,
           startTime: performance.now(),
           duration,
-        })
+        }
         return
       }
     })
@@ -227,22 +228,19 @@ export function IconCloud({ icons, images }: IconCloudProps) {
       const distance = Math.sqrt(dx * dx + dy * dy)
       const speed = 0.003 + (distance / maxDistance) * 0.01
 
-      if (targetRotation) {
-        const elapsed = performance.now() - targetRotation.startTime
-        const progress = Math.min(1, elapsed / targetRotation.duration)
+      const tr = targetRotationRef.current
+      if (tr) {
+        const elapsed = performance.now() - tr.startTime
+        const progress = Math.min(1, elapsed / tr.duration)
         const easedProgress = easeOutCubic(progress)
 
         rotationRef.current = {
-          x:
-            targetRotation.startX +
-            (targetRotation.x - targetRotation.startX) * easedProgress,
-          y:
-            targetRotation.startY +
-            (targetRotation.y - targetRotation.startY) * easedProgress,
+          x: tr.startX + (tr.x - tr.startX) * easedProgress,
+          y: tr.startY + (tr.y - tr.startY) * easedProgress,
         }
 
         if (progress >= 1) {
-          setTargetRotation(null)
+          targetRotationRef.current = null
         }
       } else if (!isDragging) {
         rotationRef.current = {
@@ -302,7 +300,7 @@ export function IconCloud({ icons, images }: IconCloudProps) {
         cancelAnimationFrame(animationFrameRef.current)
       }
     }
-  }, [icons, images, iconPositions, isDragging, mousePos, targetRotation])
+  }, [icons, images, iconPositions, isDragging, mousePos])
 
   return (
     <canvas
