@@ -35,7 +35,7 @@ export function Navbar() {
             <Link href="/" className="text-xl font-bold text-primary">
               {/* Navbar logo: tiny icon, not LCP, no optimization benefit. */}
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/logo-gfc.ico" alt="Icono" className="w-12 rounded-lg" />
+              <img src="/avatar-poster.webp" alt="Gerardo Franco" width={48} height={48} className="w-12 h-12 rounded-lg object-cover" />
             </Link>
           </div>
 

@@ -51,15 +51,26 @@ export function Hero({ heroData }: { heroData: HeroData | null }) {
       <div className="max-w-4xl mx-auto w-full">
         <div className="space-y-8">
           <div className="mb-8">
-            {/* unoptimized: preserves GIF animation */}
+            {/* A looping MP4 is ~46x lighter than the original 6.3 MB GIF.
+                The poster paints at once and stays put under reduced motion. */}
+            <video
+              src="/avatar.mp4"
+              poster="/avatar-poster.webp"
+              autoPlay
+              muted
+              loop
+              playsInline
+              preload="metadata"
+              aria-label="Avatar pixel art de Gerardo Franco"
+              className="w-32 h-32 lg:w-56 lg:h-56 rounded-full mx-auto object-cover ring-4 ring-white dark:ring-gray-800 shadow-lg motion-reduce:hidden"
+            />
             <Image
-              src="/generate_full_code.gif"
-              alt="Foto de perfil de Gerardo Franco"
+              src="/avatar-poster.webp"
+              alt="Avatar pixel art de Gerardo Franco"
               width={224}
               height={224}
               priority
-              unoptimized
-              className="w-32 h-32 lg:w-56 lg:h-56 rounded-full mx-auto ring-4 ring-white dark:ring-gray-800 shadow-lg"
+              className="hidden motion-reduce:block w-32 h-32 lg:w-56 lg:h-56 rounded-full mx-auto object-cover ring-4 ring-white dark:ring-gray-800 shadow-lg"
             />
           </div>
           {/* Greeting */}
