@@ -9,7 +9,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { ExternalLink, Github, ImageIcon, FileText } from "lucide-react"
+import { Download, ExternalLink, Github, ImageIcon, FileText } from "lucide-react"
+
+// A link to a releases page or an installer is a download, not a live demo.
+const DOWNLOAD_URL = /\/releases(\/|$)|\.(exe|msi|dmg|zip|apk)$/i
 
 interface ProjectCardProps {
   project: {
@@ -64,6 +67,7 @@ export default function ProjectCard({
 
   const displayedTech = isTechExpanded ? project.tech : project.tech.slice(0, 3)
   const hasMoreTech = project.tech.length > 3
+  const isDownload = !!project.liveUrl && DOWNLOAD_URL.test(project.liveUrl)
 
   return (
     <>
@@ -132,8 +136,8 @@ export default function ProjectCard({
                   rel="noopener noreferrer"
                   className="flex-1 flex items-center justify-center gap-2 px-3 py-2 border border-border hover:bg-muted rounded-lg transition-colors duration-200 text-sm font-medium"
                 >
-                  <ExternalLink className="w-4 h-4" />
-                  {t("project_online")}
+                  {isDownload ? <Download className="w-4 h-4" /> : <ExternalLink className="w-4 h-4" />}
+                  {isDownload ? t("project_download") || "Descargar" : t("project_online")}
                 </a>
               )}
               {project.githubUrl && (
