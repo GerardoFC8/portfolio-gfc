@@ -229,9 +229,9 @@ export default async function Home() {
       <div className="pt-16">
         <Hero heroData={heroData} />
         <Projects projectsData={projectsData} />
+        <Experience experienceData={experienceData} />
         <AISkills aiSkillsData={aiSkillsData} />
         <Technologies technologiesData={technologiesData} />
-        <Experience experienceData={experienceData} />
         <Contact />
       </div>
       <Footer footerData={footerData} />

@@ -51,8 +51,9 @@ export function Footer({ footerData }: { footerData: FooterData[] | null }) {
             <ul className="space-y-2">
               {[
                 { name: t("nav_projects"), href: "#projects" },
-                { name: t("nav_tech"), href: "#technologies" },
                 { name: t("nav_exp"), href: "#experience" },
+                { name: t("nav_ai_skills"), href: "#ai-skills" },
+                { name: t("nav_tech"), href: "#technologies" },
                 { name: t("nav_contact"), href: "#contact" },
               ].map((link) => (
                 <li key={link.href}>
