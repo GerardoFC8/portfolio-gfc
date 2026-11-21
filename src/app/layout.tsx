@@ -14,12 +14,50 @@ const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
 })
 
-export const metadata: Metadata = {
-  title: "Portafolio | Gerardo Franco | Desarrollador Full-Stack",
-  description: "Desarrollador Full-Stack que construye soluciones a medida",
+type Language = "es" | "en"
+
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://portfolio.gfcode.dev"
+
+const SEO: Record<Language, { title: string; description: string; locale: string }> = {
+  es: {
+    title: "Gerardo Franco | Desarrollador Full-Stack e IA",
+    description:
+      "Desarrollador full-stack: productos web, apps de escritorio y soluciones con IA. Laravel, Next.js, Rust y agentes de IA.",
+    locale: "es_PE",
+  },
+  en: {
+    title: "Gerardo Franco | Full-Stack & AI Developer",
+    description:
+      "Full-stack developer building web products, desktop apps and AI solutions. Laravel, Next.js, Rust and AI agents.",
+    locale: "en_US",
+  },
 }
 
-type Language = "es" | "en"
+// The language lives in a cookie, so the metadata follows it like the page does.
+// The share image comes from src/app/opengraph-image.png.
+export async function generateMetadata(): Promise<Metadata> {
+  const lang = ((await cookies()).get("lang")?.value || "es") as Language
+  const seo = SEO[lang] ?? SEO.es
+  return {
+    metadataBase: new URL(SITE_URL),
+    title: seo.title,
+    description: seo.description,
+    alternates: { canonical: "/" },
+    openGraph: {
+      type: "website",
+      url: "/",
+      siteName: "Gerardo Franco",
+      title: seo.title,
+      description: seo.description,
+      locale: seo.locale,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: seo.title,
+      description: seo.description,
+    },
+  }
+}
 
 type GeneralTextRow = { key: string } & Record<`text_${Language}`, string>
 
