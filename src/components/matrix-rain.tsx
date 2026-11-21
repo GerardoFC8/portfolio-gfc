@@ -83,7 +83,8 @@ const MatrixRain = () => {
     <canvas
       ref={canvasRef}
       aria-hidden
-      className="fixed top-0 left-0 w-full h-full -z-10 bg-background"
+      // Kept faint so it reads as texture, not as content competing with the text.
+      className="fixed top-0 left-0 w-full h-full -z-10 bg-background opacity-45 dark:opacity-70"
     />
   )
 }
