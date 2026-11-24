@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Firma Cliente | Acta de despacho (demo)</title>
+    <link rel="preconnect" href="https://fonts.bunny.net">
+    <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com/3.4.16?plugins=forms,typography"></script>
+    <script src="theme.js"></script>
+    <link rel="stylesheet" href="styles.css">
+    <script defer src="data.js"></script>
+    <script defer src="app.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
+    <style>
+        #signature-pad { touch-action: none; cursor: crosshair; }
+    </style>
+</head>
+<body class="has-demo-banner font-sans antialiased bg-gray-100">
+<div id="demo-banner" class="demo-banner" role="note">Demo con datos ficticios · No es el sistema real</div>
+<!-- Página pública que abre el cliente desde el enlace: sin menú del sistema. -->
+<div class="min-h-screen px-3 py-6 sm:py-10" x-data="firmaActa" x-cloak>
+    <div class="mx-auto w-full max-w-2xl rounded-md border border-gray-200 bg-white text-center shadow-sm">
+        <div class="rounded-t-md border-b border-gray-200 bg-gray-50 px-4 py-3 text-gray-700">
+            Firma Cliente · Acta de <span x-text="tipo === 'D' ? 'Despacho' : 'Recepción'"></span>
+        </div>
+
+        <!-- ======== ESTADO: FIRMADO ======== -->
+        <template x-if="firmado">
+            <div class="px-4 py-8 sm:px-8">
+                <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
+                    <svg class="h-9 w-9 text-green-600" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
+                </div>
+                <h1 class="mt-4 text-xl font-semibold text-gray-800">Acta(s) firmada(s) correctamente</h1>
+                <p class="mt-1 text-sm text-gray-500">Gracias. La firma quedó registrada en <span x-text="actas.length"></span> acta(s).</p>
+                <div class="mt-6 rounded-lg border border-gray-200 bg-gray-50 p-4 text-left text-sm">
+                    <dl class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                        <div><dt class="text-gray-500">Firmado por</dt><dd class="font-medium text-gray-800" x-text="firmado.nombre"></dd></div>
+                        <div><dt class="text-gray-500">DNI</dt><dd class="font-medium text-gray-800" x-text="firmado.dni"></dd></div>
+                        <div><dt class="text-gray-500">Fecha y hora</dt><dd class="font-medium text-gray-800" x-text="firmado.fecha"></dd></div>
+                        <div><dt class="text-gray-500">Copia del documento</dt><dd class="font-medium text-gray-800" x-text="firmado.email || 'No solicitada'"></dd></div>
+                    </dl>
+                    <p class="mt-3 text-gray-500">Actas:</p>
+                    <ul class="list-disc pl-5"><template x-for="a in actas" :key="'ok' + a.id"><li x-text="a.nu_acta + ' / ' + a.co_equipo"></li></template></ul>
+                    <p class="mt-3 text-gray-500">Firma registrada:</p>
+                    <img :src="firmado.imagen" alt="Firma registrada" class="mt-1 h-28 w-auto rounded border border-dashed border-gray-300 bg-white">
+                </div>
+                <p class="mt-4 text-xs text-gray-400">Demo: no se envió nada; la firma solo existe en esta pestaña.</p>
+                <button type="button" @click="reiniciar()" class="mt-4 inline-flex min-h-[44px] items-center rounded-md border border-gray-300 px-4 text-sm text-gray-700 hover:bg-gray-50">Volver a firmar (reiniciar demo)</button>
+            </div>
+        </template>
+
+        <!-- ======== FORMULARIO ======== -->
+        <div x-show="!firmado" class="px-3 pb-2 pt-5 sm:px-6">
+            <!-- Actas incluidas en el enlace (select2 deshabilitado en el sistema real) -->
+            <div class="mx-auto w-full sm:w-3/4">
+                <div class="flex min-h-[44px] flex-wrap items-center gap-1 rounded border border-gray-300 bg-gray-100 px-2 py-1 text-left" aria-label="Actas a firmar">
+                    <template x-for="a in actas" :key="a.id"><span class="rounded border border-gray-300 bg-white px-2 py-0.5 text-sm text-gray-700" x-text="a.nu_acta + ' / ' + a.co_equipo"></span></template>
+                </div>
+            </div>
+
+            <!-- Resumen del acta -->
+            <div class="mx-auto mt-4 w-full rounded-lg border border-blue-200 bg-blue-50/60 p-3 text-left text-sm sm:w-3/4">
+                <dl class="grid grid-cols-1 gap-x-4 gap-y-1 sm:grid-cols-2">
+                    <div><dt class="text-xs text-gray-500">Cliente</dt><dd class="font-medium text-gray-800" x-text="actas[0].cliente"></dd></div>
+                    <div><dt class="text-xs text-gray-500">RUC</dt><dd class="font-medium text-gray-800" x-text="actas[0].ruc"></dd></div>
+                    <div class="sm:col-span-2"><dt class="text-xs text-gray-500">Obra</dt><dd class="font-medium text-gray-800" x-text="actas[0].co_ccosto + ' - ' + actas[0].obra"></dd></div>
+                    <div><dt class="text-xs text-gray-500" x-text="tipo === 'D' ? 'Fecha de despacho' : 'Fecha de recepción'"></dt><dd class="font-medium text-gray-800" x-text="App.fechaDMY(actas[0].fecha)"></dd></div>
+                    <div><dt class="text-xs text-gray-500">Equipos</dt><dd class="font-medium text-gray-800" x-text="actas.length"></dd></div>
+                </dl>
+            </div>
+
+            <form class="mt-4 space-y-3" @submit.prevent="firmar()" novalidate>
+                <div class="mx-auto w-full sm:w-3/4">
+                    <input type="text" inputmode="numeric" maxlength="8" x-model="dni" @input="dni = dni.replace(/\D/g, ''); errores.dni = ''" placeholder="DNI DEL RESPONSABLE DEL CLIENTE" aria-label="DNI del responsable del cliente"
+                        class="block w-full rounded border-black px-3 py-2 text-sm" :class="errores.dni ? 'border-red-500 ring-1 ring-red-500' : ''">
+                    <p class="mt-1 text-left text-xs text-red-600" x-show="errores.dni" x-text="errores.dni"></p>
+                </div>
+                <div class="mx-auto w-full sm:w-3/4">
+                    <input type="text" x-model="nombre" @input="errores.nombre = ''" placeholder="NOMBRE DEL RESPONSABLE DEL CLIENTE" aria-label="Nombre del responsable del cliente"
+                        class="block w-full rounded border-black px-3 py-2 text-sm" :class="errores.nombre ? 'border-red-500 ring-1 ring-red-500' : ''">
+                    <p class="mt-1 text-left text-xs text-red-600" x-show="errores.nombre" x-text="errores.nombre"></p>
+                </div>
+                <div class="mx-auto w-full sm:w-3/4">
+                    <input type="email" x-model="email" @input="errores.email = ''" placeholder="CORREO PARA RECIBIR EL DOCUMENTO FIRMADO (OPCIONAL)" aria-label="Correo para recibir el documento firmado (opcional)"
+                        class="block w-full rounded border-black px-3 py-2 text-sm" :class="errores.email ? 'border-red-500 ring-1 ring-red-500' : ''">
+                    <p class="mt-1 text-left text-xs text-red-600" x-show="errores.email" x-text="errores.email"></p>
+                </div>
+
+                <div class="px-0.5 pt-1">
+                    <p class="mb-1 text-xs text-gray-500">Firme dentro del recuadro con el dedo o el mouse</p>
+                    <div class="mx-auto w-full max-w-md" x-ref="padWrap">
+                        <canvas id="signature-pad" x-ref="pad" class="block w-full rounded-sm bg-white" style="height: 200px; border: 3px solid #6156d8;" aria-label="Recuadro de firma"></canvas>
+                    </div>
+                    <p class="mt-1 text-xs text-red-600" x-show="errores.firma" x-text="errores.firma"></p>
+                </div>
+
+                <div class="rounded-b-md border-t border-gray-200 bg-gray-50 px-3 py-4 text-gray-500 -mx-3 sm:-mx-6">
+                    <button type="button" @click="limpiar()" class="inline-flex min-h-[44px] items-center rounded bg-red-600 px-4 text-white hover:bg-red-700">Limpiar</button>
+                    <div class="mx-auto mt-3 flex max-w-md items-start justify-center gap-2 text-left">
+                        <input type="checkbox" id="accept-terms" x-model="acepta" @change="errores.acepta = ''" class="mt-0.5 h-5 w-5 shrink-0 rounded border-gray-400">
+                        <label for="accept-terms" class="text-sm text-gray-700">Acepto que mi firma electrónica sea utilizada para fines relacionados con este documento.</label>
+                    </div>
+                    <p class="mt-1 text-xs text-red-600" x-show="errores.acepta" x-text="errores.acepta"></p>
+                    <button type="submit" :disabled="enviando" class="mt-4 inline-flex min-h-[44px] items-center rounded bg-green-600 px-5 font-medium text-white hover:bg-green-700 disabled:opacity-60" x-text="enviando ? 'Enviando...' : 'Firmar Acta(s)'"></button>
+                </div>
+            </form>
+
+            <div class="flex flex-wrap justify-center gap-1 py-3">
+                <template x-for="a in actas" :key="'ver' + a.id">
+                    <button type="button" @click="verActa = a" class="m-1 inline-flex min-h-[44px] items-center rounded border border-red-600 px-3 text-sm text-red-600 hover:bg-red-600 hover:text-white" x-text="'Ver Acta: ' + a.nu_acta + ' / ' + a.co_equipo"></button>
+                </template>
+            </div>
+            <p class="pb-3 text-xs text-gray-400">
+                Demo: <a :href="tipo === 'D' ? 'acta-firma.html?tipo=R' : 'acta-firma.html'" class="tap inline-flex items-center underline" x-text="tipo === 'D' ? 'ver como Acta de Recepción' : 'ver como Acta de Despacho'"></a>
+                · <a href="index.html" class="tap inline-flex items-center underline">volver al sistema</a>
+            </p>
+        </div>
+    </div>
+
+    <!-- ======== MODAL: DETALLE DEL ACTA ======== -->
+    <div x-show="verActa" x-cloak @keydown.escape.window="verActa = null" class="fixed inset-0 z-[60] overflow-y-auto px-3 py-6">
+        <div class="fixed inset-0 bg-gray-500/75" @click="verActa = null"></div>
+        <div class="relative mx-auto mt-8 w-full max-w-2xl rounded-lg bg-white shadow-xl" x-show="verActa" x-transition>
+            <template x-if="verActa">
+                <div>
+                    <div class="flex items-start justify-between border-b border-gray-200 p-4">
+                        <div>
+                            <h2 class="text-lg font-semibold text-gray-800">Acta de <span x-text="tipo === 'D' ? 'Despacho' : 'Recepción'"></span> <span class="text-red-500" x-text="verActa.nu_acta"></span></h2>
+                            <p class="text-xs text-gray-500" x-text="verActa.co_equipo + ' · ' + verActa.de_equipo"></p>
+                        </div>
+                        <button type="button" @click="verActa = null" class="inline-flex h-11 w-11 items-center justify-center rounded text-2xl text-gray-500 hover:bg-gray-100" aria-label="Cerrar">&times;</button>
+                    </div>
+                    <div class="space-y-4 p-4 text-sm">
+                        <dl class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                            <div><dt class="text-xs text-gray-500">Cliente</dt><dd class="font-medium" x-text="verActa.cliente"></dd></div>
+                            <div><dt class="text-xs text-gray-500">Obra</dt><dd class="font-medium" x-text="verActa.obra"></dd></div>
+                            <div><dt class="text-xs text-gray-500">Nro. serie</dt><dd class="font-medium font-mono" x-text="verActa.serie"></dd></div>
+                            <div><dt class="text-xs text-gray-500">Horómetro</dt><dd class="font-medium" x-text="App.fmt0(verActa.horometro) + ' h'"></dd></div>
+                            <div><dt class="text-xs text-gray-500">Fecha</dt><dd class="font-medium" x-text="App.fechaDMY(verActa.fecha)"></dd></div>
+                            <div><dt class="text-xs text-gray-500">Responsable interno</dt><dd class="font-medium" x-text="verActa.responsable_interno"></dd></div>
+                        </dl>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full border-collapse border border-gray-300 text-sm">
+                                <thead class="bg-gray-200"><tr><th class="border border-gray-300 p-1 text-left">Ítem de verificación</th><th class="border border-gray-300 p-1 text-center">Estado</th><th class="border border-gray-300 p-1 text-left">Observación</th></tr></thead>
+                                <tbody>
+                                    <template x-for="(c, i) in verActa.checklist" :key="'ck' + i">
+                                        <tr><td class="border border-gray-300 p-1" x-text="c.item"></td>
+                                            <td class="border border-gray-300 p-1 text-center"><span class="inline-flex rounded-full px-2 text-xs font-semibold leading-5" :class="c.estado === 'OK' ? 'bg-green-200 text-green-800' : 'bg-orange-200 text-orange-800'" x-text="c.estado"></span></td>
+                                            <td class="border border-gray-300 p-1 text-gray-600" x-text="c.obs || '-'"></td></tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </template>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('alpine:init', function () {
+    Alpine.data('firmaActa', function () {
+        // Estado del lienzo fuera del proxy reactivo
+        var ctx = null, dibujando = false, vacio = true, ultimo = null, canvas = null;
+        return {
+            tipo: new URLSearchParams(location.search).get('tipo') === 'R' ? 'R' : 'D',
+            actas: [],
+            dni: '', nombre: '', email: '', acepta: false,
+            errores: {},
+            enviando: false,
+            firmado: null,
+            verActa: null,
+
+            init: function () {
+                var self = this;
+                var prefijo = this.tipo === 'D' ? 'AD01-' : 'AR01-';
+                this.actas = DEMO.actas.map(function (a) { var c = JSON.parse(JSON.stringify(a)); c.nu_acta = c.nu_acta.replace('AD01-', prefijo); return c; });
+                if (this.tipo === 'R') document.title = 'Firma Cliente | Acta de recepción (demo)';
+                this.$nextTick(function () { self.prepararLienzo(); });
+                var ancho = 0;
+                window.addEventListener('resize', function () {
+                    if (!canvas || canvas.clientWidth === ancho) return;
+                    ancho = canvas.clientWidth;
+                    var img = vacio ? null : canvas.toDataURL();
+                    self.ajustarTamano();
+                    if (img) { var im = new Image(); im.onload = function () { ctx.drawImage(im, 0, 0, canvas.clientWidth, canvas.clientHeight); }; im.src = img; }
+                });
+            },
+            ajustarTamano: function () {
+                // Resolución real según el ancho visible y la densidad de píxeles (evita el desborde del lienzo fijo de 350px)
+                var dpr = window.devicePixelRatio || 1;
+                canvas.width = Math.round(canvas.clientWidth * dpr);
+                canvas.height = Math.round(canvas.clientHeight * dpr);
+                ctx = canvas.getContext('2d');
+                ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+                ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.lineWidth = 2.2;
+                ctx.strokeStyle = 'rgb(0, 0, 255)';
+            },
+            prepararLienzo: function () {
+                var self = this;
+                canvas = this.$refs.pad;
+                this.ajustarTamano();
+                function pos(ev) { var r = canvas.getBoundingClientRect(); return { x: ev.clientX - r.left, y: ev.clientY - r.top }; }
+                canvas.addEventListener('pointerdown', function (ev) {
+                    ev.preventDefault();
+                    canvas.setPointerCapture(ev.pointerId);
+                    dibujando = true; ultimo = pos(ev);
+                    ctx.beginPath(); ctx.arc(ultimo.x, ultimo.y, 1.1, 0, Math.PI * 2); ctx.fillStyle = 'rgb(0, 0, 255)'; ctx.fill();
+                    vacio = false; self.errores.firma = '';
+                });
+                canvas.addEventListener('pointermove', function (ev) {
+                    if (!dibujando) return;
+                    ev.preventDefault();
+                    var p = pos(ev);
+                    var medio = { x: (ultimo.x + p.x) / 2, y: (ultimo.y + p.y) / 2 };
+                    ctx.beginPath(); ctx.moveTo(ultimo.x, ultimo.y); ctx.quadraticCurveTo(ultimo.x, ultimo.y, medio.x, medio.y); ctx.lineTo(p.x, p.y); ctx.stroke();
+                    ultimo = p;
+                });
+                function fin() { dibujando = false; ultimo = null; }
+                canvas.addEventListener('pointerup', fin);
+                canvas.addEventListener('pointercancel', fin);
+                canvas.addEventListener('pointerleave', fin);
+            },
+            limpiar: function () {
+                if (!ctx) return;
+                ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.restore();
+                vacio = true;
+            },
+            firmar: function () {
+                var e = {};
+                if (!/^\d{8}$/.test(this.dni)) e.dni = 'Ingrese un DNI de 8 dígitos.';
+                if (this.nombre.trim().length < 3) e.nombre = 'Ingrese el nombre del responsable.';
+                if (this.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.email)) e.email = 'El correo no tiene un formato válido.';
+                if (vacio) e.firma = 'Por favor, firme el documento antes de enviarlo.';
+                if (!this.acepta) e.acepta = 'Por favor, acepte los términos para continuar.';
+                this.errores = e;
+                if (Object.keys(e).length) return;
+                var self = this;
+                var imagen = canvas.toDataURL('image/png');
+                this.enviando = true;
+                setTimeout(function () {
+                    var ahora = new Date();
+                    self.firmado = {
+                        nombre: self.nombre.trim().toUpperCase(), dni: self.dni, email: self.email.trim(), imagen: imagen,
+                        fecha: String(ahora.getDate()).padStart(2, '0') + '/' + String(ahora.getMonth() + 1).padStart(2, '0') + '/' + ahora.getFullYear() + ' ' + String(ahora.getHours()).padStart(2, '0') + ':' + String(ahora.getMinutes()).padStart(2, '0'),
+                    };
+                    self.enviando = false;
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }, 700);
+            },
+            reiniciar: function () {
+                var self = this;
+                this.firmado = null; this.dni = ''; this.nombre = ''; this.email = ''; this.acepta = false; this.errores = {};
+                this.$nextTick(function () { self.ajustarTamano(); vacio = true; });
+            },
+        };
+    });
+});
+</script>
+</body>
+</html>
