@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Valorizaciones | Rental ERP (demo)</title>
+    <link rel="preconnect" href="https://fonts.bunny.net">
+    <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com/3.4.16?plugins=forms,typography"></script>
+    <script src="theme.js"></script>
+    <link rel="stylesheet" href="styles.css">
+    <script defer src="data.js"></script>
+    <script defer src="app.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
+</head>
+<body class="has-demo-banner font-sans antialiased">
+<div id="demo-banner" class="demo-banner" role="note">Demo con datos ficticios · No es el sistema real</div>
+<div class="min-h-screen bg-gray-300">
+    <div id="nav-slot"></div>
+
+    <header class="bg-white shadow">
+        <div class="max-w-7xl mx-auto p-3 sm:px-6 lg:px-8">
+            <h2 class="font-semibold text-xl text-gray-800 leading-tight">Valorizaciones</h2>
+        </div>
+    </header>
+
+    <main>
+        <div class="max-w-full mx-auto sm:px-6 lg:px-2 mt-2">
+            <div class="border-2 border-blue-500 rounded-lg bg-white overflow-hidden shadow-xl sm:rounded-lg p-2 m-1" x-data="valorizaciones" x-cloak>
+
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-4 pt-1 mb-1">
+                    <div class="col-span-12 md:col-span-2 flex">
+                        <button type="button" @click="App.toast('Registro no incluido', 'La demo muestra el listado y el detalle de cada valorización.', 'info')" class="w-full bg-green-600 text-white px-4 py-2 rounded-md shadow-sm hover:bg-green-700 text-center flex items-center justify-center gap-2">
+                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10.5v6m3-3H9m4.06-7.19l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z"/></svg>
+                            Agregar Valorización
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Filtros -->
+                <div class="mb-2 p-2 border border-gray-300 rounded-lg shadow-sm bg-gray-50">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+                        <div><label for="paginate" class="block text-sm font-medium text-gray-700 mb-1">Mostrar</label>
+                            <select id="paginate" x-model.number="paginate" class="form-select w-full p-1 border rounded-md"><option value="15">15</option><option value="50">50</option><option value="100">100</option></select></div>
+                        <div class="lg:col-span-2"><label for="search" class="block text-sm font-medium text-gray-700 mb-1">Buscar (CC, Obra, Nro Val, Cliente, etc.)</label>
+                            <input id="search" type="text" x-model.debounce.250ms="buscar" class="form-input w-full p-1 border rounded-md" placeholder="Escriba para buscar..."></div>
+                        <div><label class="block text-sm font-medium text-gray-700 mb-1">&nbsp;</label>
+                            <button type="button" @click="limpiar()" class="w-full justify-center rounded-md shadow-sm p-2 text-red-600 hover:bg-red-600 border border-red-600 hover:text-white transition flex items-center gap-2" title="Limpiar Todos los Filtros">
+                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg> Limpiar Filtros
+                            </button></div>
+                        <div><label for="anio" class="block text-sm font-medium text-gray-700 mb-1">Año</label>
+                            <input id="anio" type="number" x-model="anio" class="form-input w-full p-1 border rounded-md" placeholder="Ej: 2026"></div>
+                        <div><label for="mes" class="block text-sm font-medium text-gray-700 mb-1">Mes</label>
+                            <select id="mes" x-model="mes" class="form-select w-full p-1 border rounded-md"><option value="">-- Todos --</option><template x-for="(m, i) in App.MESES" :key="m"><option :value="i + 1" x-text="m"></option></template></select></div>
+                        <div><label for="fi" class="block text-sm font-medium text-gray-700 mb-1">Fecha Inicio (Valorización)</label>
+                            <input id="fi" type="date" x-model="fechaInicio" class="form-input w-full p-1 border rounded-md"></div>
+                        <div><label for="ff" class="block text-sm font-medium text-gray-700 mb-1">Fecha Fin (Valorización)</label>
+                            <input id="ff" type="date" x-model="fechaFin" class="form-input w-full p-1 border rounded-md"></div>
+                        <div><label for="estado" class="block text-sm font-medium text-gray-700 mb-1">Estado (General)</label>
+                            <select id="estado" x-model="estado" class="form-select w-full p-1 border rounded-md"><option value="">Todos</option><template x-for="(n, k) in estados" :key="k"><option :value="k" x-text="n"></option></template></select></div>
+                        <div><label for="moneda" class="block text-sm font-medium text-gray-700 mb-1">Moneda</label>
+                            <select id="moneda" x-model="moneda" class="form-select w-full p-1 border rounded-md"><option value="">-- Todas --</option><option value="S">Soles (S/)</option><option value="D">Dólares ($)</option></select></div>
+                    </div>
+                </div>
+
+                <!-- Resumen rápido -->
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-2 mb-2">
+                    <template x-for="r in resumen" :key="r.k">
+                        <div class="rounded-lg border-l-4 bg-white shadow p-3" :class="r.borde">
+                            <p class="text-xs font-medium text-gray-500 uppercase tracking-wider" x-text="r.label"></p>
+                            <p class="text-xl font-bold text-gray-900" x-text="r.n"></p>
+                        </div>
+                    </template>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="tbl-erp min-w-full border-collapse border border-gray-300 table-auto text-sm font-medium">
+                        <thead class="bg-gray-200">
+                            <tr>
+                                <template x-for="h in ['Acciones','C. C.','Obra','Año','Mes','Nro Valo','Correlativo','RUC / DNI','Cliente','Fecha inicial','Fecha final','Moneda','Linea','Estado','Días pend.','Docs','Enviado SIG','Facturado','Días fact.']">
+                                    <th class="p-1 border border-gray-300 text-left" x-text="h"></th>
+                                </template>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
+                            <template x-for="v in pagina" :key="v.idval">
+                                <tr :class="v.estado === 'P' ? 'bg-yellow-100 hover:bg-yellow-200' : (v.estado === 'T' ? 'bg-green-400 hover:bg-green-600' : (v.estado === 'E' ? 'bg-gray-100 text-gray-400' : 'hover:bg-gray-100'))">
+                                    <td class="p-0 border border-gray-300 whitespace-nowrap">
+                                        <div class="flex items-center space-x-1 px-1">
+                                            <button type="button" :class="App.btn.blue" title="Ver" @click="sel = v"><i class="fas fa-eye"></i></button>
+                                            <button type="button" :class="App.btn.yellow" class="opacity-50 cursor-not-allowed" title="Edición no incluida en la demo" @click="App.toast('Edición no incluida', 'En la demo las valorizaciones son de solo lectura.', 'info')"><i class="fas fa-pencil"></i></button>
+                                            <template x-if="v.estado === 'E'">
+                                                <button type="button" @click="v.estado = 'P'" class="inline-flex items-center justify-center px-2 py-1 bg-blue-500 text-white text-xs font-medium rounded hover:bg-blue-600" title="Revertir anulación"><i class="fas fa-rotate-left"></i></button>
+                                            </template>
+                                            <template x-if="v.estado !== 'E'">
+                                                <button type="button" @click="anular(v)" :disabled="v.estado === 'T'" class="inline-flex items-center justify-center px-2 py-1 bg-red-500 text-white text-xs font-medium rounded hover:bg-red-600 disabled:bg-gray-500 disabled:cursor-not-allowed" title="Anular"><i class="fas fa-xmark"></i></button>
+                                            </template>
+                                        </div>
+                                    </td>
+                                    <td class="p-1 truncate border border-gray-300" x-text="v.co_ccosto"></td>
+                                    <td class="p-1 truncate border border-gray-300 max-w-[350px]" :title="v.no_obra" x-text="v.no_obra"></td>
+                                    <td class="p-1 border border-gray-300 text-center" x-text="v.anio"></td>
+                                    <td class="p-1 border border-gray-300" x-text="v.mes + ' ' + App.MESES[v.mes - 1]"></td>
+                                    <td class="p-1 border border-gray-300" x-text="v.numval"></td>
+                                    <td class="p-1 border border-gray-300 text-center" x-text="v.correlativo"></td>
+                                    <td class="p-1 border border-gray-300" x-text="v.co_cliente"></td>
+                                    <td class="p-1 truncate border border-gray-300 max-w-[350px]" :title="v.no_cliente" x-text="v.no_cliente"></td>
+                                    <td class="p-1 border border-gray-300 text-center" x-text="App.fechaDMY(v.fechaini)"></td>
+                                    <td class="p-1 border border-gray-300 text-center" x-text="App.fechaDMY(v.fechafin)"></td>
+                                    <td class="p-1 border border-gray-300 text-center" x-text="v.co_moneda === 'S' ? 'S/' : '$'"></td>
+                                    <td class="p-1 border border-gray-300" x-text="v.linea"></td>
+                                    <td class="p-1 border border-gray-300" x-text="estados[v.estado]"></td>
+                                    <td class="p-1 border border-gray-300 text-center"><span x-show="v.estado === 'P'" class="inline-flex rounded-full px-2 text-xs font-semibold leading-5" :class="v.dias_pend > 10 ? 'bg-red-200 text-red-800' : 'bg-yellow-200 text-yellow-800'" x-text="v.dias_pend"></span></td>
+                                    <td class="p-1 border border-gray-300 text-center" x-text="v.docs"></td>
+                                    <td class="p-1 border border-gray-300 text-center"><i class="fas" :class="v.enviado_sig ? 'fa-circle-check text-green-800' : 'fa-circle-minus text-gray-400'"></i></td>
+                                    <td class="p-1 border border-gray-300 text-center"><i class="fas" :class="v.facturado ? 'fa-circle-check text-green-800' : 'fa-circle-minus text-gray-400'"></i></td>
+                                    <td class="p-1 border border-gray-300 text-center" x-text="v.dias_fact === null ? '-' : v.dias_fact"></td>
+                                </tr>
+                            </template>
+                            <tr x-show="!filtradas.length"><td colspan="19" class="text-center p-4">No se encontraron resultados.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <nav class="mt-2 flex items-center justify-between" role="navigation" aria-label="Paginación">
+                    <div class="flex justify-between flex-1 sm:hidden">
+                        <button type="button" @click="page > 1 && page--" :disabled="page <= 1" class="relative inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md disabled:text-gray-400">« Anterior</button>
+                        <span class="self-center text-sm text-gray-600" x-text="page + ' / ' + ultimaPagina"></span>
+                        <button type="button" @click="page < ultimaPagina && page++" :disabled="page >= ultimaPagina" class="relative inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md disabled:text-gray-400">Siguiente »</button>
+                    </div>
+                    <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                        <p class="text-sm text-gray-700 leading-5">Mostrando <span class="font-medium" x-text="desde"></span> a <span class="font-medium" x-text="hasta"></span> de <span class="font-medium" x-text="filtradas.length"></span> resultados</p>
+                        <span class="relative z-0 inline-flex shadow-sm rounded-md">
+                            <button type="button" @click="page > 1 && page--" :disabled="page <= 1" class="relative inline-flex items-center px-2 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-l-md leading-5 disabled:opacity-50" aria-label="Anterior"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd"/></svg></button>
+                            <template x-for="(p, i) in App.pageList(page, ultimaPagina)" :key="i">
+                                <button type="button" @click="p !== '...' && (page = p)" :disabled="p === '...'" :class="p === page ? 'bg-gray-200 text-gray-800 font-semibold cursor-default' : 'bg-white text-gray-700 hover:text-gray-500'" class="relative inline-flex items-center px-4 py-2 -ml-px text-sm font-medium border border-gray-300 leading-5" x-text="p"></button>
+                            </template>
+                            <button type="button" @click="page < ultimaPagina && page++" :disabled="page >= ultimaPagina" class="relative inline-flex items-center px-2 py-2 -ml-px text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-r-md leading-5 disabled:opacity-50" aria-label="Siguiente"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg></button>
+                        </span>
+                    </div>
+                </nav>
+
+                <!-- ============ MODAL: DETALLE ============ -->
+                <div x-show="sel" x-cloak @keydown.escape.window="sel = null" class="fixed inset-0 overflow-y-auto px-2 py-6 sm:px-4 z-[60]">
+                    <div class="fixed inset-0" @click="sel = null"><div class="absolute inset-0 bg-gray-500 opacity-75"></div></div>
+                    <div class="relative mt-8 mb-6 bg-white rounded-lg overflow-hidden shadow-xl w-full max-w-6xl mx-auto border-2 border-blue-500" x-show="sel" x-transition>
+                        <template x-if="sel">
+                            <div>
+                                <div class="flex items-start justify-between border-b border-gray-200 p-4">
+                                    <div>
+                                        <h2 class="text-lg font-semibold text-gray-800">Valorización <span class="text-red-500" x-text="sel.numval"></span> · <span x-text="App.MESES[sel.mes - 1] + ' ' + sel.anio"></span></h2>
+                                        <p class="text-xs text-gray-500" x-text="sel.co_ccosto + ' - ' + sel.no_obra"></p>
+                                    </div>
+                                    <button type="button" @click="sel = null" class="inline-flex h-10 w-10 items-center justify-center rounded text-2xl text-gray-500 hover:bg-gray-100" aria-label="Cerrar">&times;</button>
+                                </div>
+                                <div class="p-4 space-y-4">
+                                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                        <div class="fl md:col-span-2 mt-2"><label>Cliente</label><input type="text" readonly :value="sel.co_cliente + ' - ' + sel.no_cliente"></div>
+                                        <div class="fl mt-2"><label>Periodo</label><input type="text" readonly :value="App.fechaDMY(sel.fechaini) + ' al ' + App.fechaDMY(sel.fechafin)"></div>
+                                        <div class="fl mt-2"><label>Estado</label><input type="text" readonly :value="estados[sel.estado]"></div>
+                                    </div>
+                                    <div class="overflow-x-auto">
+                                        <table class="tbl-erp min-w-full border-collapse border border-gray-300 text-sm">
+                                            <thead class="bg-gray-200 text-gray-700 uppercase text-xs"><tr>
+                                                <th class="p-1 border border-gray-300 text-left">Equipo</th><th class="p-1 border border-gray-300 text-left">Descripción</th>
+                                                <th class="p-1 border border-gray-300 text-right">Horo. inicial</th><th class="p-1 border border-gray-300 text-right">Horo. final</th>
+                                                <th class="p-1 border border-gray-300 text-right">Hrs. trabajadas</th><th class="p-1 border border-gray-300 text-right">Hrs. mínimas</th>
+                                                <th class="p-1 border border-gray-300 text-right">Hrs. a valorizar</th><th class="p-1 border border-gray-300 text-right">Tarifa hora</th><th class="p-1 border border-gray-300 text-right">Subtotal</th>
+                                            </tr></thead>
+                                            <tbody>
+                                                <template x-for="d in sel.detalle" :key="d.co_activo">
+                                                    <tr class="hover:bg-gray-100">
+                                                        <td class="p-1 border border-gray-300 font-medium"><a class="text-blue-700 hover:underline" :href="'equipos.html?activo=' + encodeURIComponent(d.co_activo)" x-text="d.co_activo"></a></td>
+                                                        <td class="p-1 border border-gray-300 truncate max-w-[280px]" :title="d.de_activo" x-text="d.de_activo"></td>
+                                                        <td class="p-1 border border-gray-300 text-right" x-text="App.fmt0(d.horo_ini)"></td>
+                                                        <td class="p-1 border border-gray-300 text-right" x-text="App.fmt0(d.horo_fin)"></td>
+                                                        <td class="p-1 border border-gray-300 text-right" :class="d.horas_trab < d.horas_min ? 'text-amber-700 font-semibold' : ''" x-text="d.horas_trab"></td>
+                                                        <td class="p-1 border border-gray-300 text-right" x-text="d.horas_min"></td>
+                                                        <td class="p-1 border border-gray-300 text-right font-semibold" x-text="d.horas_val"></td>
+                                                        <td class="p-1 border border-gray-300 text-right" x-text="App.fmt(d.tarifa)"></td>
+                                                        <td class="p-1 border border-gray-300 text-right font-semibold" x-text="App.fmt(d.subtotal)"></td>
+                                                    </tr>
+                                                </template>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <p class="text-xs text-gray-500">Si las horas trabajadas no llegan al mínimo pactado, se valoriza el mínimo (resaltado en ámbar).</p>
+                                    <div class="flex justify-end">
+                                        <div class="w-full sm:w-80 space-y-4">
+                                            <div class="fl"><label>Valor Venta</label><input type="text" readonly class="text-right" :value="App.simbolo(sel.co_moneda) + ' ' + App.fmt(sel.valor_venta)"></div>
+                                            <div class="fl"><label>IGV (18%)</label><input type="text" readonly class="text-right" :value="App.simbolo(sel.co_moneda) + ' ' + App.fmt(sel.igv)"></div>
+                                            <div class="fl"><label>Total</label><input type="text" readonly class="text-right font-bold" :value="App.simbolo(sel.co_moneda) + ' ' + App.fmt(sel.total)"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+document.addEventListener('alpine:init', function () {
+    Alpine.data('valorizaciones', function () {
+        return {
+            lista: JSON.parse(JSON.stringify(DEMO.valorizaciones)).reverse(),
+            estados: { P: 'Pendiente', R: 'Proceso', T: 'Consolidado', E: 'Anulado' },
+            buscar: '', anio: '', mes: '', fechaInicio: '', fechaFin: '', estado: '', moneda: '',
+            paginate: 15, page: 1, sel: null,
+            init: function () { var self = this; this.$watch('clave', function () { self.page = 1; }); },
+            get clave() { return [this.buscar, this.anio, this.mes, this.fechaInicio, this.fechaFin, this.estado, this.moneda, this.paginate].join('|'); },
+            get filtradas() {
+                var s = this, q = this.buscar.toLowerCase();
+                return this.lista.filter(function (v) {
+                    if (s.anio && String(v.anio) !== String(s.anio)) return false;
+                    if (s.mes && Number(s.mes) !== v.mes) return false;
+                    if (s.fechaInicio && v.fechafin < s.fechaInicio) return false;
+                    if (s.fechaFin && v.fechaini > s.fechaFin) return false;
+                    if (s.estado && v.estado !== s.estado) return false;
+                    if (s.moneda && v.co_moneda !== s.moneda) return false;
+                    return !q || (v.co_ccosto + ' ' + v.no_obra + ' ' + v.numval + ' ' + v.co_cliente + ' ' + v.no_cliente + ' ' + v.linea).toLowerCase().indexOf(q) !== -1;
+                });
+            },
+            get resumen() {
+                var f = this.filtradas;
+                function n(e) { return f.filter(function (v) { return v.estado === e; }).length; }
+                return [
+                    { k: 'P', label: 'Pendientes', n: n('P'), borde: 'border-yellow-400' },
+                    { k: 'R', label: 'En proceso', n: n('R'), borde: 'border-blue-500' },
+                    { k: 'T', label: 'Consolidadas', n: n('T'), borde: 'border-green-500' },
+                    { k: 'E', label: 'Anuladas', n: n('E'), borde: 'border-gray-400' },
+                ];
+            },
+            get ultimaPagina() { return Math.max(1, Math.ceil(this.filtradas.length / this.paginate)); },
+            get pagina() { var p = Math.min(this.page, this.ultimaPagina); return this.filtradas.slice((p - 1) * this.paginate, p * this.paginate); },
+            get desde() { return this.filtradas.length ? (Math.min(this.page, this.ultimaPagina) - 1) * this.paginate + 1 : 0; },
+            get hasta() { return Math.min(this.filtradas.length, Math.min(this.page, this.ultimaPagina) * this.paginate); },
+            limpiar: function () { this.buscar = ''; this.anio = ''; this.mes = ''; this.fechaInicio = ''; this.fechaFin = ''; this.estado = ''; this.moneda = ''; },
+            anular: function (v) {
+                if (!window.confirm('¿Anular la valorización ' + v.numval + '?')) return;
+                v.estado = 'E';
+                App.toast('Valorización anulada', v.numval + ' quedó anulada (solo en esta demo).', 'success');
+            },
+        };
+    });
+});
+</script>
+</body>
+</html>

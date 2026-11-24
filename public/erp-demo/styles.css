@@ -1,0 +1,47 @@
+/* Estilos compartidos de la demo (lo demás es Tailwind por CDN). */
+[x-cloak] { display: none !important; }
+
+body.has-demo-banner { padding-top: 1.75rem; } /* alto del aviso fijo (h-7) */
+
+/* Aviso de demo en CSS plano para que también se vea en páginas sin Tailwind (vista PDF) */
+.demo-banner {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 80; height: 1.75rem;
+  display: flex; align-items: center; justify-content: center;
+  background: #fbbf24; color: #451a03; font: 600 13px/1 Figtree, system-ui, sans-serif; letter-spacing: .02em;
+  box-shadow: 0 1px 3px rgba(0,0,0,.15);
+}
+
+/* Tablas del sistema: celdas compactas con borde gris */
+.tbl-erp td, .tbl-erp th { white-space: nowrap; }
+
+/* Input con etiqueta flotante (igual al del sistema real) */
+.fl { position: relative; }
+.fl > label {
+  position: absolute; left: .75rem; top: -.55rem; z-index: 1;
+  padding: 0 .25rem; font-size: .75rem; line-height: 1rem; color: #6b7280;
+  background: #fff; border-radius: .25rem; pointer-events: none;
+}
+.fl > input, .fl > select, .fl > textarea {
+  display: block; width: 100%; border-radius: .375rem; border: 1px solid #6b7280;
+  font-size: .875rem; padding: .5rem .75rem;
+}
+.fl > input:focus, .fl > select:focus, .fl > textarea:focus { border-color: #4f46e5; box-shadow: none; outline: 2px solid transparent; border-width: 2px; }
+.fl > input:read-only, .fl > input:disabled, .fl > select:disabled, .fl > textarea:disabled, .fl > textarea:read-only {
+  background: #f3f4f6; border-color: #d1d5db; color: #374151; cursor: not-allowed;
+}
+
+/* Móvil: objetivos táctiles de al menos 44px */
+@media (max-width: 767px) {
+  button, a.tap, select, .tap,
+  input[type="text"], input[type="date"], input[type="number"], input[type="email"], input[type="search"] {
+    min-height: 44px;
+  }
+  .tbl-erp td button, .tbl-erp td a.tap { min-width: 44px; }
+}
+
+/* Impresión: el aviso queda estático arriba y se ocultan los controles */
+@media print {
+  body.has-demo-banner { padding-top: 0; }
+  .demo-banner { position: static !important; box-shadow: none !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .no-print { display: none !important; }
+}

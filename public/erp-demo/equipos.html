@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Activos | Rental ERP (demo)</title>
+    <link rel="preconnect" href="https://fonts.bunny.net">
+    <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com/3.4.16?plugins=forms,typography"></script>
+    <script src="theme.js"></script>
+    <link rel="stylesheet" href="styles.css">
+    <script defer src="data.js"></script>
+    <script defer src="app.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
+</head>
+<body class="has-demo-banner font-sans antialiased">
+<div id="demo-banner" class="demo-banner" role="note">Demo con datos ficticios · No es el sistema real</div>
+<div class="min-h-screen bg-gray-300">
+    <div id="nav-slot"></div>
+
+    <header class="bg-white shadow">
+        <div class="max-w-7xl mx-auto p-3 sm:px-6 lg:px-8">
+            <h2 class="font-semibold text-xl text-gray-800 leading-tight">Lista de Activos</h2>
+        </div>
+    </header>
+
+    <main>
+        <div class="max-w-full mx-auto sm:px-6 lg:px-2 mt-2">
+            <div class="border-2 border-blue-500 rounded-lg bg-white overflow-hidden shadow-xl sm:rounded-lg p-2 m-1" x-data="equipos" x-cloak>
+
+                <!-- Filtros principales -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-2">
+                    <div>
+                        <label for="filtroEstado" class="block text-sm font-medium text-gray-700 mb-1">Filtro Estado Activos</label>
+                        <select id="filtroEstado" x-model="filtroEstado" class="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm">
+                            <option value="">Todos</option><option value="activos">Equipos Activos</option>
+                            <option value="PB">Para Baja</option><option value="PV">Para Venta</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="filtroSituacion" class="block text-sm font-medium text-gray-700 mb-1">Filtro Situación Activos</label>
+                        <select id="filtroSituacion" x-model="filtroSituacion" class="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm">
+                            <option value="">Todos</option><option value="planta">Equipos en planta</option>
+                            <template x-for="s in DEMO.situacionesEquipo" :key="s.id"><option :value="s.id" x-text="s.name"></option></template>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="filtroLinea" class="block text-sm font-medium text-gray-700 mb-1">Filtro Línea</label>
+                        <select id="filtroLinea" x-model="filtroLinea" class="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm">
+                            <option value="">Todas</option>
+                            <template x-for="l in DEMO.lineas" :key="l"><option :value="l" x-text="l"></option></template>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 md:grid-cols-12 gap-2 md:gap-4 pt-2 mb-2 border-t-4 border-blue-500">
+                    <div class="col-span-1 md:col-span-1">
+                        <select class="form-select w-full p-1 border rounded-md" x-model.number="paginate" aria-label="Filas por página">
+                            <option value="15">15</option><option value="50">50</option><option value="100">100</option>
+                        </select>
+                    </div>
+                    <div class="col-span-1 md:col-span-1">
+                        <button type="button" class="w-full bg-blue-600 text-white px-2 py-1 rounded-md shadow-sm hover:bg-blue-700" @click="App.toast('Exportación no disponible', 'En el sistema real descarga un Excel con todas las columnas.', 'info')">Exportar</button>
+                    </div>
+                    <div class="hidden md:block md:col-span-6"></div>
+                    <div class="col-span-2 md:col-span-4 flex justify-center md:justify-end space-x-4">
+                        <button type="button" class="rounded-md shadow-sm p-2 text-blue-600 hover:bg-blue-600 hover:text-white transition flex items-center gap-2" @click="modal.general = true" title="Filtros Generales">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z"/></svg>
+                            Filtros <span x-show="filtrosActivos" class="inline-flex items-center justify-center rounded-full bg-blue-600 px-2 py-0.5 text-xs font-bold text-white" x-text="filtrosActivos"></span>
+                        </button>
+                        <button type="button" class="rounded-md shadow-sm p-2 text-red-600 hover:bg-red-600 hover:text-white transition flex items-center gap-2" @click="limpiar()" title="Limpiar Filtros">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="size-6"><path d="M15 15L21 21M21 15L15 21M10 21V14.6627C10 14.4182 10 14.2959 9.97237 14.1808C9.94787 14.0787 9.90747 13.9812 9.85264 13.8917C9.7908 13.7908 9.70432 13.7043 9.53137 13.5314L3.46863 7.46863C3.29568 7.29568 3.2092 7.2092 3.14736 7.10828C3.09253 7.01881 3.05213 6.92127 3.02763 6.81923C3 6.70414 3 6.58185 3 6.33726V4.6C3 4.03995 3 3.75992 3.10899 3.54601C3.20487 3.35785 3.35785 3.20487 3.54601 3.10899C3.75992 3 4.03995 3 4.6 3H19.4C19.9601 3 20.2401 3 20.454 3.10899C20.6422 3.20487 20.7951 3.35785 20.891 3.54601C21 3.75992 21 4.03995 21 4.6V6.33726C21 6.58185 21 6.70414 20.9724 6.81923C20.9479 6.92127 20.9075 7.01881 20.8526 7.10828C20.7908 7.2092 20.7043 7.29568 20.5314 7.46863L17 11" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            Quitar Filtros
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Chips de filtros activos -->
+                <div class="flex flex-wrap items-center gap-2 mb-2 text-xs" x-show="chips.length">
+                    <span class="text-gray-500">Filtros:</span>
+                    <template x-for="ch in chips" :key="ch.key">
+                        <span class="inline-flex items-center gap-1 rounded-full bg-blue-100 text-blue-800 pl-2.5 pr-1 py-0.5">
+                            <span x-text="ch.label"></span>
+                            <button type="button" class="h-5 w-5 rounded-full hover:bg-blue-200 leading-none" @click="quitarChip(ch.key)" :aria-label="'Quitar ' + ch.label">&times;</button>
+                        </span>
+                    </template>
+                </div>
+
+                <!-- Tabla -->
+                <div class="overflow-x-auto">
+                    <table class="tbl-erp min-w-full border-collapse border border-gray-300 table-auto text-sm">
+                        <thead class="bg-gray-100">
+                            <tr>
+                                <th class="p-1 border border-gray-300 sticky left-0 z-20 bg-gray-100 text-left" style="min-width:110px">Acciones</th>
+                                <th class="p-1 border border-gray-300 sticky left-[110px] z-20 bg-gray-100">
+                                    <div class="flex justify-between items-center gap-1"><span>Cod. Activo</span>
+                                        <span class="flex items-center">
+                                            <button type="button" class="p-0" title="Ordenar" @click="ordenar('co_activo')"><svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" :d="iconoOrden('co_activo')"/></svg></button>
+                                            <button type="button" class="p-0 hover:text-blue-500" title="Filtrar" @click="modal.activo = true"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z"/></svg></button>
+                                        </span></div>
+                                </th>
+                                <th class="p-1 border border-gray-300 text-left">Nombre equipo</th>
+                                <th class="p-1 border border-gray-300"><div class="flex justify-between items-center gap-1"><span>Fecha activación</span><button type="button" class="p-0" title="Ordenar" @click="ordenar('fe_activacion')"><svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" :d="iconoOrden('fe_activacion')"/></svg></button></div></th>
+                                <th class="p-1 border border-gray-300 text-left">Orden / RQI</th>
+                                <th class="p-1 border border-gray-300"><div class="flex justify-between items-center gap-1"><span>Situación</span><button type="button" class="p-0" title="Ordenar" @click="ordenar('situacion')"><svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" :d="iconoOrden('situacion')"/></svg></button></div></th>
+                                <th class="p-1 border border-gray-300 text-left">Fecha ult. Situación</th>
+                                <th class="p-1 border border-gray-300"><div class="flex justify-between items-center gap-1"><span>Estado tecnico</span><button type="button" class="p-0" title="Ordenar" @click="ordenar('estado_real')"><svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" :d="iconoOrden('estado_real')"/></svg></button></div></th>
+                                <th class="p-1 border border-gray-300 text-left">Ubicación</th>
+                                <th class="p-1 border border-gray-300 text-left">Cod. equipo cliente</th>
+                                <th class="p-1 border border-gray-300"><div class="flex justify-between items-center gap-1"><span>ID obra</span><button type="button" class="p-0 hover:text-blue-500" title="Filtrar" @click="modal.obra = true"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z"/></svg></button></div></th>
+                                <th class="p-1 border border-gray-300 text-left">Obra</th>
+                                <th class="p-1 border border-gray-300 text-left">Cliente actual</th>
+                                <th class="p-1 border border-gray-300 text-left">Fecha ultimo horómetro</th>
+                                <th class="p-1 border border-gray-300 text-left">Ultimo horómetro</th>
+                                <th class="p-1 border border-gray-300 text-left">Marca</th>
+                                <th class="p-1 border border-gray-300 text-left">Modelo</th>
+                                <th class="p-1 border border-gray-300 text-left">Nro. serie</th>
+                                <th class="p-1 border border-gray-300 text-left">Valor sin IGV</th>
+                                <th class="p-1 border border-gray-300 text-left">Año fabricación</th>
+                                <th class="p-1 border border-gray-300 text-left">Seguro</th>
+                                <th class="p-1 border border-gray-300 text-left">Referencia</th>
+                                <th class="p-1 border border-gray-300 text-left">Grupo</th>
+                                <th class="p-1 border border-gray-300 text-left">Linea</th>
+                                <th class="p-1 border border-gray-300 text-left">Sub linea</th>
+                                <th class="p-1 border border-gray-300 text-left">Moneda</th>
+                                <th class="p-1 border border-gray-300 text-left">Sucursal actual</th>
+                                <th class="p-1 border border-gray-300 text-left">Potencia / capacidad</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template x-for="e in pagina" :key="e.co_activo">
+                                <tr class="hover:bg-gray-200">
+                                    <td class="p-0 border border-gray-300 sticky left-0 z-10 bg-white" style="min-width:110px">
+                                        <div class="flex items-center space-x-2 px-1">
+                                            <button type="button" :class="App.btn.red" class="opacity-50 cursor-not-allowed" title="Ficha PDF: no incluida en la demo" @click="App.toast('Ficha PDF no incluida', 'La demo muestra el detalle del equipo en el panel lateral.', 'info')"><i class="fas fa-file-pdf"></i></button>
+                                            <button type="button" :class="App.btn.blue" title="Ver detalle" @click="abrir(e)"><i class="fas fa-eye"></i></button>
+                                            <button type="button" :class="App.btn.yellow" class="opacity-50 cursor-not-allowed" title="Edición no incluida en la demo" @click="App.toast('Edición no incluida', 'En la demo los activos son de solo lectura.', 'info')"><i class="fas fa-edit"></i></button>
+                                        </div>
+                                    </td>
+                                    <td class="p-1 border sticky left-[110px] z-10 bg-white font-medium"><button type="button" class="text-blue-700 hover:underline" @click="abrir(e)" x-text="e.co_activo"></button></td>
+                                    <td class="p-1 border truncate max-w-[300px]" :title="e.de_activo" x-text="e.de_activo"></td>
+                                    <td class="p-1 border" x-text="e.fe_activacion"></td>
+                                    <td class="p-1 border" x-text="e.orden"></td>
+                                    <td class="p-1 border" x-text="e.situacion"></td>
+                                    <td class="p-1 border" x-text="e.fe_ult_situacion"></td>
+                                    <td class="p-1 border"><span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full" :class="estado(e).cls" x-text="estado(e).name"></span></td>
+                                    <td class="p-1 border truncate max-w-[250px]" x-text="e.ubicacion"></td>
+                                    <td class="p-1 border" x-text="e.co_equipo_cliente"></td>
+                                    <td class="p-1 border" x-text="e.co_ccosto"></td>
+                                    <td class="p-1 border truncate max-w-[200px]" :title="e.no_obra" x-text="e.no_obra"></td>
+                                    <td class="p-1 border truncate max-w-[200px]" :title="e.cliente" x-text="e.cliente"></td>
+                                    <td class="p-1 border" x-text="e.fe_horometro"></td>
+                                    <td class="p-1 border text-right" x-text="App.fmt0(e.horometro)"></td>
+                                    <td class="p-1 border" x-text="e.marca"></td>
+                                    <td class="p-1 border" x-text="e.modelo"></td>
+                                    <td class="p-1 border font-mono text-xs" x-text="e.serie"></td>
+                                    <td class="p-1 border text-right" x-text="App.fmt(e.valor)"></td>
+                                    <td class="p-1 border text-center" x-text="e.anio_fab"></td>
+                                    <td class="p-1 border" x-text="e.seguro"></td>
+                                    <td class="p-1 border" x-text="e.referencia"></td>
+                                    <td class="p-1 border" x-text="e.grupo"></td>
+                                    <td class="p-1 border" x-text="e.linea"></td>
+                                    <td class="p-1 border" x-text="e.sublinea"></td>
+                                    <td class="p-1 border" x-text="e.moneda"></td>
+                                    <td class="p-1 border" x-text="e.sucursal === '01' ? 'Lima' : 'Arequipa'"></td>
+                                    <td class="p-1 border" x-text="e.potencia"></td>
+                                </tr>
+                            </template>
+                            <tr x-show="!filtrados.length"><td colspan="28" class="text-center p-4">No se encontraron resultados.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Paginación -->
+                <nav class="mt-2 flex items-center justify-between" role="navigation" aria-label="Paginación">
+                    <div class="flex justify-between flex-1 sm:hidden">
+                        <button type="button" @click="page > 1 && page--" :disabled="page <= 1" class="relative inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md disabled:text-gray-400">« Anterior</button>
+                        <span class="self-center text-sm text-gray-600" x-text="page + ' / ' + ultimaPagina"></span>
+                        <button type="button" @click="page < ultimaPagina && page++" :disabled="page >= ultimaPagina" class="relative inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md disabled:text-gray-400">Siguiente »</button>
+                    </div>
+                    <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                        <p class="text-sm text-gray-700 leading-5">Mostrando <span class="font-medium" x-text="desde"></span> a <span class="font-medium" x-text="hasta"></span> de <span class="font-medium" x-text="filtrados.length"></span> resultados</p>
+                        <span class="relative z-0 inline-flex shadow-sm rounded-md">
+                            <button type="button" @click="page > 1 && page--" :disabled="page <= 1" class="relative inline-flex items-center px-2 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-l-md leading-5 disabled:opacity-50" aria-label="Anterior"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd"/></svg></button>
+                            <template x-for="(p, i) in App.pageList(page, ultimaPagina)" :key="i">
+                                <button type="button" @click="p !== '...' && (page = p)" :disabled="p === '...'" :class="p === page ? 'bg-gray-200 text-gray-800 font-semibold cursor-default' : 'bg-white text-gray-700 hover:text-gray-500'" class="relative inline-flex items-center px-4 py-2 -ml-px text-sm font-medium border border-gray-300 leading-5" x-text="p"></button>
+                            </template>
+                            <button type="button" @click="page < ultimaPagina && page++" :disabled="page >= ultimaPagina" class="relative inline-flex items-center px-2 py-2 -ml-px text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-r-md leading-5 disabled:opacity-50" aria-label="Siguiente"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg></button>
+                        </span>
+                    </div>
+                </nav>
+
+                <!-- ============ MODAL: FILTROS GENERALES ============ -->
+                <div x-show="modal.general" x-cloak @keydown.escape.window="modal.general = false" class="fixed inset-0 overflow-y-auto px-4 py-6 sm:px-0 z-[60]">
+                    <div class="fixed inset-0" @click="modal.general = false"><div class="absolute inset-0 bg-gray-500 opacity-75"></div></div>
+                    <div class="relative mt-10 mb-6 bg-white rounded-lg overflow-hidden shadow-xl sm:w-full max-w-4xl sm:mx-auto" x-show="modal.general" x-transition>
+                        <div class="space-y-4 p-4">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <fieldset class="p-3 border border-blue-400 rounded-lg shadow-sm">
+                                    <legend class="text-lg font-semibold text-gray-700 px-2">Filtros para Equipo</legend>
+                                    <div class="space-y-4">
+                                        <div><label class="block text-sm font-medium text-gray-700" for="f-serie">Serie Equipo</label><input id="f-serie" type="text" x-model.debounce.250ms="f.serie" class="block w-full mt-1 border-gray-300 rounded-md shadow-sm" placeholder="Buscar por serie"></div>
+                                        <div><label class="block text-sm font-medium text-gray-700" for="f-marca">Marca Equipo</label>
+                                            <select id="f-marca" x-model="f.marca" @change="f.modelo = ''" class="block w-full mt-1 border-gray-300 rounded-md shadow-sm"><option value="">Todas</option><template x-for="m in marcas" :key="m"><option :value="m" x-text="m"></option></template></select></div>
+                                        <div><label class="block text-sm font-medium text-gray-700" for="f-modelo">Modelo Equipo</label>
+                                            <select id="f-modelo" x-model="f.modelo" class="block w-full mt-1 border-gray-300 rounded-md shadow-sm"><option value="">Todos</option><template x-for="m in modelos" :key="m"><option :value="m" x-text="m"></option></template></select></div>
+                                    </div>
+                                </fieldset>
+                                <fieldset class="p-3 border border-blue-400 rounded-lg shadow-sm">
+                                    <legend class="text-lg font-semibold text-gray-700 px-2">Otros Filtros</legend>
+                                    <div class="space-y-4">
+                                        <div><label class="block text-sm font-medium text-gray-700" for="f-sub">Sublineas</label>
+                                            <select id="f-sub" x-model="f.sublinea" class="block w-full mt-1 border-gray-300 rounded-md shadow-sm"><option value="">Todas</option><template x-for="s in sublineas" :key="s"><option :value="s" x-text="s"></option></template></select></div>
+                                        <div><label class="block text-sm font-medium text-gray-700" for="f-suc">Sucursales</label>
+                                            <select id="f-suc" x-model="f.sucursal" class="block w-full mt-1 border-gray-300 rounded-md shadow-sm"><option value="">Todas</option><template x-for="s in DEMO.sucursales" :key="s.id"><option :value="s.id" x-text="s.name"></option></template></select></div>
+                                        <div><label class="block text-sm font-medium text-gray-700" for="f-ubi">Ubicación</label>
+                                            <select id="f-ubi" x-model="f.ubicacion" class="block w-full mt-1 border-gray-300 rounded-md shadow-sm"><option value="">Todas</option><template x-for="u in ubicaciones" :key="u"><option :value="u" x-text="u"></option></template></select></div>
+                                    </div>
+                                </fieldset>
+                            </div>
+                            <button type="button" @click="modal.general = false" class="bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700">Aplicar Filtros</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ============ MODAL: FILTRO DE ACTIVO ============ -->
+                <div x-show="modal.activo" x-cloak @keydown.escape.window="modal.activo = false" class="fixed inset-0 overflow-y-auto px-4 py-6 sm:px-0 z-[60]">
+                    <div class="fixed inset-0" @click="modal.activo = false"><div class="absolute inset-0 bg-gray-500 opacity-75"></div></div>
+                    <div class="relative mt-10 mb-6 bg-white rounded-lg overflow-hidden shadow-xl sm:w-full sm:max-w-2xl sm:mx-auto" x-show="modal.activo" x-transition>
+                        <div class="space-y-4 p-4">
+                            <h3 class="text-lg font-medium text-gray-900">Filtros de Activo</h3>
+                            <div><label class="block text-sm font-medium text-gray-700" for="f-cod">Código Activo</label><input id="f-cod" type="text" x-model.debounce.250ms="f.codigo" class="block w-full mt-1 border-gray-300 rounded-md shadow-sm" placeholder="Códigos completos separados por comas. Ej: MT-0105,CP-0104"></div>
+                            <div><label class="block text-sm font-medium text-gray-700" for="f-ref">Referencia</label><input id="f-ref" type="text" x-model.debounce.250ms="f.referencia" class="block w-full mt-1 border-gray-300 rounded-md shadow-sm" placeholder="Código parcial. Ej: EXC"></div>
+                            <div><label class="block text-sm font-medium text-gray-700" for="f-desc">Descripción</label><input id="f-desc" type="text" x-model.debounce.250ms="f.descripcion" class="block w-full mt-1 border-gray-300 rounded-md shadow-sm" placeholder="Ej: Grupo electrógeno"></div>
+                            <div class="mt-4 flex justify-end"><button type="button" @click="modal.activo = false" class="bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700">Aplicar Filtros</button></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ============ MODAL: OBRAS Y CLIENTES ============ -->
+                <div x-show="modal.obra" x-cloak @keydown.escape.window="modal.obra = false" class="fixed inset-0 overflow-y-auto px-4 py-6 sm:px-0 z-[60]">
+                    <div class="fixed inset-0" @click="modal.obra = false"><div class="absolute inset-0 bg-gray-500 opacity-75"></div></div>
+                    <div class="relative mt-10 mb-6 bg-white rounded-lg overflow-hidden shadow-xl sm:w-full max-w-4xl sm:mx-auto" x-show="modal.obra" x-transition>
+                        <div class="p-6 space-y-6">
+                            <h2 class="text-xl font-semibold text-gray-800">Filtrar por Obras y Clientes</h2>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div><label class="block text-sm font-medium text-gray-700" for="f-obra">Seleccionar Obra</label>
+                                    <select id="f-obra" x-model="f.obra" class="block w-full mt-1 border-gray-300 rounded-md shadow-sm"><option value="">Todas</option><template x-for="o in obrasConEquipos" :key="o.co_ccosto"><option :value="o.co_ccosto" x-text="o.co_ccosto + ' - ' + o.no_obra"></option></template></select></div>
+                                <div><label class="block text-sm font-medium text-gray-700" for="f-cli">Seleccionar Cliente</label>
+                                    <select id="f-cli" x-model="f.cliente" class="block w-full mt-1 border-gray-300 rounded-md shadow-sm"><option value="">Todos</option><template x-for="c in clientesConEquipos" :key="c"><option :value="c" x-text="c"></option></template></select></div>
+                            </div>
+                            <div class="flex justify-end"><button type="button" @click="modal.obra = false" class="bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700">Aplicar Filtros</button></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ============ DRAWER: DETALLE DEL EQUIPO ============ -->
+                <div x-show="sel" x-cloak class="fixed inset-0 z-[60] bg-black/40" @click="sel = null" x-transition.opacity></div>
+                <aside x-show="sel" x-cloak @keydown.escape.window="sel = null"
+                    x-transition:enter="transform transition ease-out duration-200" x-transition:enter-start="translate-x-full" x-transition:enter-end="translate-x-0"
+                    x-transition:leave="transform transition ease-in duration-150" x-transition:leave-start="translate-x-0" x-transition:leave-end="translate-x-full"
+                    class="fixed right-0 top-0 z-[70] h-screen w-full overflow-y-auto bg-white shadow-2xl md:w-3/4 lg:w-1/2 pt-7">
+                    <template x-if="sel">
+                        <div>
+                            <header class="sticky top-0 z-10 border-b border-gray-200 bg-white p-4">
+                                <div class="flex items-start justify-between gap-3">
+                                    <div class="min-w-0">
+                                        <h2 class="text-lg font-bold text-gray-800 truncate"><span x-text="sel.co_activo"></span> · <span x-text="sel.marca + ' ' + sel.modelo"></span></h2>
+                                        <p class="text-xs text-gray-500 truncate" x-text="sel.de_activo"></p>
+                                        <div class="mt-2 flex flex-wrap gap-2 text-xs">
+                                            <span class="rounded-full bg-blue-100 text-blue-800 px-2 py-0.5 font-semibold" x-text="sel.situacion"></span>
+                                            <span class="rounded-full px-2 py-0.5 font-semibold" :class="estado(sel).cls" x-text="estado(sel).name"></span>
+                                            <span class="rounded-full bg-gray-100 text-gray-700 px-2 py-0.5" x-text="sel.linea"></span>
+                                        </div>
+                                    </div>
+                                    <button type="button" @click="sel = null" class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100" aria-label="Cerrar"><svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
+                                </div>
+                                <div class="flex flex-wrap border-b border-gray-200 mt-3 -mb-4">
+                                    <template x-for="t in [['datos','Datos del equipo'],['horometro','Horómetro'],['historial','Historial'],['mtto','Mantenimientos']]" :key="t[0]">
+                                        <button type="button" @click="tab = t[0]" :class="tab === t[0] ? 'border-b-2 border-blue-500 text-blue-500 font-semibold' : 'text-gray-500 hover:text-gray-700'" class="px-3 py-2 text-sm flex-grow sm:flex-grow-0" x-text="t[1]"></button>
+                                    </template>
+                                </div>
+                            </header>
+
+                            <div class="p-4 space-y-4">
+                                <!-- Datos -->
+                                <div x-show="tab === 'datos'" class="space-y-4">
+                                    <fieldset class="w-full p-3 border border-blue-400 rounded-lg shadow-sm">
+                                        <legend class="m-2 font-semibold text-blue-600">General</legend>
+                                        <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm">
+                                            <template x-for="d in datosGenerales" :key="d[0]"><div class="flex justify-between gap-3 border-b border-gray-100 py-1"><dt class="text-gray-500" x-text="d[0]"></dt><dd class="font-medium text-gray-800 text-right" x-text="d[1]"></dd></div></template>
+                                        </dl>
+                                    </fieldset>
+                                    <fieldset class="w-full p-3 border border-blue-400 rounded-lg shadow-sm">
+                                        <legend class="m-2 font-semibold text-blue-600">Ubicación</legend>
+                                        <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm">
+                                            <template x-for="d in datosUbicacion" :key="d[0]"><div class="flex justify-between gap-3 border-b border-gray-100 py-1"><dt class="text-gray-500" x-text="d[0]"></dt><dd class="font-medium text-gray-800 text-right" x-text="d[1] || '-'"></dd></div></template>
+                                        </dl>
+                                    </fieldset>
+                                </div>
+
+                                <!-- Horómetro -->
+                                <div x-show="tab === 'horometro'" class="space-y-4">
+                                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                        <div class="rounded-lg bg-blue-50 p-3"><p class="text-xs font-medium uppercase text-blue-600">Horómetro actual</p><p class="text-lg font-bold text-gray-900" x-text="App.fmt0(sel.horometro) + ' h'"></p></div>
+                                        <div class="rounded-lg bg-emerald-50 p-3"><p class="text-xs font-medium uppercase text-emerald-600">Última lectura</p><p class="text-lg font-bold text-gray-900" x-text="App.fechaDMY(sel.fe_horometro)"></p></div>
+                                        <div class="rounded-lg bg-amber-50 p-3 col-span-2 sm:col-span-1"><p class="text-xs font-medium uppercase text-amber-600">Próximo PM</p><p class="text-lg font-bold text-gray-900" x-text="App.fmt0(proximoPm.horas) + ' h'"></p><p class="text-xs" :class="proximoPm.faltan < 50 ? 'text-red-600 font-semibold' : 'text-gray-500'" x-text="'Faltan ' + proximoPm.faltan + ' h'"></p></div>
+                                    </div>
+                                    <section>
+                                        <h3 class="mb-2 text-sm font-semibold text-gray-700">Lecturas registradas</h3>
+                                        <div class="flex items-end gap-1 h-36 border-b border-gray-200">
+                                            <template x-for="(l, i) in lecturas" :key="'l' + i">
+                                                <div class="flex-1 rounded-t bg-indigo-500 hover:bg-indigo-600" :style="'height:' + Math.max(4, (l.horometro - minLectura) / Math.max(1, sel.horometro - minLectura) * 100) + '%'" :title="App.fechaDMY(l.fecha) + ': ' + App.fmt0(l.horometro) + ' h'"></div>
+                                            </template>
+                                        </div>
+                                        <div class="flex gap-1 text-[10px] text-gray-500 mt-1">
+                                            <template x-for="(l, i) in lecturas" :key="'lt' + i"><span class="flex-1 text-center truncate" x-text="l.fecha.substring(5)"></span></template>
+                                        </div>
+                                    </section>
+                                    <table class="w-full text-sm border-collapse border border-gray-300">
+                                        <thead class="bg-gray-200"><tr><th class="px-2 py-1 text-left">Fecha</th><th class="px-2 py-1 text-left">Documento</th><th class="px-2 py-1 text-right">Horómetro</th><th class="px-2 py-1 text-right">Uso</th></tr></thead>
+                                        <tbody>
+                                            <template x-for="(l, i) in lecturas.slice().reverse()" :key="'lr' + i">
+                                                <tr class="hover:bg-gray-100"><td class="px-2 py-1 border border-gray-300" x-text="App.fechaDMY(l.fecha)"></td><td class="px-2 py-1 border border-gray-300" x-text="l.nro"></td><td class="px-2 py-1 border border-gray-300 text-right" x-text="App.fmt0(l.horometro)"></td><td class="px-2 py-1 border border-gray-300 text-right" x-text="l.uso === null ? '-' : '+' + App.fmt0(l.uso) + ' h'"></td></tr>
+                                            </template>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <!-- Historial -->
+                                <div x-show="tab === 'historial'" class="space-y-3">
+                                    <div class="flex flex-wrap items-center justify-between gap-2">
+                                        <h2 class="text-base font-semibold">LISTADO DE DOCUMENTOS</h2>
+                                        <select x-model="filtroDoc" class="form-select border-gray-300 rounded-md text-sm" aria-label="Filtrar por tipo de documento">
+                                            <option value="">Todos los documentos</option>
+                                            <template x-for="(n, k) in tiposDoc" :key="k"><option :value="k" x-text="n"></option></template>
+                                        </select>
+                                    </div>
+                                    <div class="overflow-x-auto">
+                                        <table class="tbl-erp min-w-full text-sm font-medium border-collapse border border-gray-300">
+                                            <thead class="bg-gray-200"><tr>
+                                                <th class="px-2 py-1 text-left">Documento</th><th class="px-2 py-1 text-left">Nro.</th><th class="px-2 py-1 text-left">Fecha</th>
+                                                <th class="px-2 py-1 text-left">Observaciones</th><th class="px-2 py-1 text-left">Cliente</th><th class="px-2 py-1 text-left">Obra</th>
+                                                <th class="px-2 py-1 text-right">Horómetro</th><th class="px-2 py-1 text-left">Estado técnico</th><th class="px-2 py-1 text-left">Sucursal</th>
+                                            </tr></thead>
+                                            <tbody>
+                                                <template x-for="(m, i) in movimientos" :key="'m' + i">
+                                                    <tr class="hover:bg-gray-100">
+                                                        <td class="px-2 py-1 border border-gray-300" x-text="tiposDoc[m.tipo]"></td>
+                                                        <td class="px-2 py-1 border border-gray-300" x-text="m.nro"></td>
+                                                        <td class="px-2 py-1 border border-gray-300" x-text="m.fecha.replace(/-/g, '/')"></td>
+                                                        <td class="px-2 py-1 border border-gray-300 truncate" style="max-width:220px" :title="m.obs" x-text="m.obs"></td>
+                                                        <td class="px-2 py-1 border border-gray-300 truncate" style="max-width:220px" :title="m.cliente" x-text="m.cliente"></td>
+                                                        <td class="px-2 py-1 border border-gray-300 truncate" style="max-width:220px" :title="m.obra" x-text="m.obra"></td>
+                                                        <td class="px-2 py-1 border border-gray-300 text-right" x-text="App.fmt0(m.horometro)"></td>
+                                                        <td class="px-2 py-1 border border-gray-300"><span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full" :class="estadoCod(m.estado).cls" x-text="estadoCod(m.estado).name"></span></td>
+                                                        <td class="px-2 py-1 border border-gray-300" x-text="m.sucursal === '01' ? 'Lima' : 'Arequipa'"></td>
+                                                    </tr>
+                                                </template>
+                                                <tr x-show="!movimientos.length"><td colspan="9" class="p-3 text-center text-gray-500">Sin documentos de ese tipo.</td></tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <!-- Mantenimientos -->
+                                <div x-show="tab === 'mtto'" class="space-y-3">
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <div class="rounded-lg bg-blue-50 p-3"><p class="text-xs font-medium uppercase text-blue-600">Preventivos</p><p class="text-lg font-bold text-gray-900" x-text="sel.mantenimientos.filter(m => m.tipo === 'Preventivo').length"></p></div>
+                                        <div class="rounded-lg bg-rose-50 p-3"><p class="text-xs font-medium uppercase text-rose-600">Correctivos</p><p class="text-lg font-bold text-gray-900" x-text="sel.mantenimientos.filter(m => m.tipo === 'Correctivo').length"></p></div>
+                                    </div>
+                                    <div class="overflow-x-auto">
+                                        <table class="tbl-erp min-w-full text-sm border-collapse border border-gray-300">
+                                            <thead class="bg-gray-200"><tr>
+                                                <th class="px-2 py-1 text-left">Fecha</th><th class="px-2 py-1 text-left">Tipo</th><th class="px-2 py-1 text-left">PM</th>
+                                                <th class="px-2 py-1 text-right">Horómetro</th><th class="px-2 py-1 text-left">Detalle</th><th class="px-2 py-1 text-left">Técnico</th><th class="px-2 py-1 text-right">Costo (S/)</th>
+                                            </tr></thead>
+                                            <tbody>
+                                                <template x-for="(m, i) in sel.mantenimientos" :key="'mt' + i">
+                                                    <tr :class="m.tipo === 'Correctivo' ? 'bg-red-50' : ''" class="hover:bg-gray-100">
+                                                        <td class="px-2 py-1 border border-gray-300" x-text="App.fechaDMY(m.fecha)"></td>
+                                                        <td class="px-2 py-1 border border-gray-300"><span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full" :class="m.tipo === 'Correctivo' ? 'bg-red-200 text-red-800' : 'bg-blue-100 text-blue-800'" x-text="m.tipo"></span></td>
+                                                        <td class="px-2 py-1 border border-gray-300" x-text="m.pm"></td>
+                                                        <td class="px-2 py-1 border border-gray-300 text-right" x-text="App.fmt0(m.horometro)"></td>
+                                                        <td class="px-2 py-1 border border-gray-300" x-text="m.detalle"></td>
+                                                        <td class="px-2 py-1 border border-gray-300" x-text="m.tecnico"></td>
+                                                        <td class="px-2 py-1 border border-gray-300 text-right" x-text="App.fmt(m.costo)"></td>
+                                                    </tr>
+                                                </template>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                </aside>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+document.addEventListener('alpine:init', function () {
+    function unicos(arr) { return arr.filter(function (v, i, a) { return v && a.indexOf(v) === i; }).sort(); }
+    Alpine.data('equipos', function () {
+        var vacio = { codigo: '', referencia: '', descripcion: '', serie: '', marca: '', modelo: '', sublinea: '', sucursal: '', ubicacion: '', obra: '', cliente: '' };
+        return {
+            filtroEstado: 'activos',
+            filtroSituacion: '',
+            filtroLinea: '',
+            f: Object.assign({}, vacio),
+            paginate: 15,
+            page: 1,
+            orden: { col: null, dir: null },
+            modal: { general: false, activo: false, obra: false },
+            sel: null,
+            tab: 'datos',
+            filtroDoc: '',
+            tiposDoc: { AHO: 'Actualización de horometros', GMP: 'Guía de Mantenimiento Preventivo', ITC: 'Informes Técnicos de Campo', ADR: 'Acta de despacho y recepción', OTR: 'Orden de trabajo' },
+
+            init: function () {
+                var self = this;
+                this.$watch('claveFiltros', function () { self.page = 1; });
+                var q = new URLSearchParams(location.search).get('activo');
+                if (q) { var e = DEMO.equipos.filter(function (x) { return x.co_activo === q; })[0]; if (e) this.abrir(e); }
+            },
+            get claveFiltros() { return JSON.stringify([this.filtroEstado, this.filtroSituacion, this.filtroLinea, this.f, this.paginate, this.orden]); },
+            get marcas() { return unicos(DEMO.equipos.map(function (e) { return e.marca; })); },
+            get modelos() { var m = this.f.marca; return unicos(DEMO.equipos.filter(function (e) { return !m || e.marca === m; }).map(function (e) { return e.modelo; })); },
+            get sublineas() { var l = this.filtroLinea; return unicos(DEMO.equipos.filter(function (e) { return !l || e.linea === l; }).map(function (e) { return e.sublinea; })); },
+            get ubicaciones() { return unicos(DEMO.equipos.map(function (e) { return e.ubicacion; })); },
+            get obrasConEquipos() { var ccs = DEMO.equipos.map(function (e) { return e.co_ccosto; }); return DEMO.obras.filter(function (o) { return ccs.indexOf(o.co_ccosto) !== -1; }); },
+            get clientesConEquipos() { return unicos(DEMO.equipos.map(function (e) { return e.cliente; })); },
+            estado: function (e) { return this.estadoCod(e.estado_real); },
+            estadoCod: function (c) { return DEMO.estadosTecnicos.filter(function (x) { return x.id === c; })[0] || { name: '', cls: '' }; },
+
+            get filtrados() {
+                var s = this, f = this.f;
+                function has(v, q) { return !q || String(v || '').toLowerCase().indexOf(q.toLowerCase()) !== -1; }
+                var codigos = f.codigo ? f.codigo.split(',').map(function (x) { return x.trim().toUpperCase(); }).filter(Boolean) : [];
+                var out = DEMO.equipos.filter(function (e) {
+                    if (s.filtroEstado === 'activos' && (e.ti_situacion === 'PV' || e.ti_situacion === 'PB')) return false;
+                    if (s.filtroEstado === 'PV' || s.filtroEstado === 'PB') { if (e.ti_situacion !== s.filtroEstado) return false; }
+                    if (s.filtroSituacion === 'planta') { if (['OP', 'OT', 'ER'].indexOf(e.ti_situacion) === -1) return false; }
+                    else if (s.filtroSituacion && e.ti_situacion !== s.filtroSituacion) return false;
+                    if (s.filtroLinea && e.linea !== s.filtroLinea) return false;
+                    if (codigos.length && codigos.indexOf(e.co_activo) === -1) return false;
+                    if (f.marca && e.marca !== f.marca) return false;
+                    if (f.modelo && e.modelo !== f.modelo) return false;
+                    if (f.sublinea && e.sublinea !== f.sublinea) return false;
+                    if (f.sucursal && e.sucursal !== f.sucursal) return false;
+                    if (f.ubicacion && e.ubicacion !== f.ubicacion) return false;
+                    if (f.obra && e.co_ccosto !== f.obra) return false;
+                    if (f.cliente && e.cliente !== f.cliente) return false;
+                    return has(e.referencia, f.referencia) && has(e.de_activo, f.descripcion) && has(e.serie, f.serie);
+                });
+                if (this.orden.col) {
+                    var col = this.orden.col, dir = this.orden.dir === 'asc' ? 1 : -1;
+                    out = out.slice().sort(function (a, b) { return a[col] < b[col] ? -dir : a[col] > b[col] ? dir : 0; });
+                }
+                return out;
+            },
+            get ultimaPagina() { return Math.max(1, Math.ceil(this.filtrados.length / this.paginate)); },
+            get pagina() { var p = Math.min(this.page, this.ultimaPagina); return this.filtrados.slice((p - 1) * this.paginate, p * this.paginate); },
+            get desde() { return this.filtrados.length ? (Math.min(this.page, this.ultimaPagina) - 1) * this.paginate + 1 : 0; },
+            get hasta() { return Math.min(this.filtrados.length, Math.min(this.page, this.ultimaPagina) * this.paginate); },
+
+            // Orden de 3 estados como el sistema real: sin orden, asc, desc
+            ordenar: function (col) {
+                if (this.orden.col !== col) this.orden = { col: col, dir: 'asc' };
+                else if (this.orden.dir === 'asc') this.orden = { col: col, dir: 'desc' };
+                else this.orden = { col: null, dir: null };
+            },
+            iconoOrden: function (col) {
+                if (this.orden.col !== col) return 'M8.25 15 12 18.75 15.75 15m-7.5-6L12 5.25 15.75 9';
+                return this.orden.dir === 'asc' ? 'm4.5 15.75 7.5-7.5 7.5 7.5' : 'm19.5 8.25-7.5 7.5-7.5-7.5';
+            },
+
+            get filtrosActivos() { var f = this.f; return Object.keys(f).filter(function (k) { return f[k]; }).length; },
+            get chips() {
+                var f = this.f, out = [];
+                var etiquetas = { codigo: 'Código', referencia: 'Referencia', descripcion: 'Descripción', serie: 'Serie', marca: 'Marca', modelo: 'Modelo', sublinea: 'Sublínea', sucursal: 'Sucursal', ubicacion: 'Ubicación', obra: 'Obra', cliente: 'Cliente' };
+                Object.keys(f).forEach(function (k) {
+                    if (!f[k]) return;
+                    var v = k === 'sucursal' ? (f[k] === '01' ? 'Lima' : 'Arequipa') : f[k];
+                    out.push({ key: k, label: etiquetas[k] + ': ' + v });
+                });
+                return out;
+            },
+            quitarChip: function (k) { this.f[k] = ''; if (k === 'marca') this.f.modelo = ''; },
+            limpiar: function () { this.f = Object.assign({}, vacio); this.filtroEstado = ''; this.filtroSituacion = ''; this.filtroLinea = ''; this.orden = { col: null, dir: null }; },
+
+            // ---------- Drawer ----------
+            abrir: function (e) { this.sel = e; this.tab = 'datos'; this.filtroDoc = ''; },
+            get datosGenerales() {
+                var e = this.sel;
+                return [['Código', e.co_activo], ['Referencia', e.referencia], ['Marca', e.marca], ['Modelo', e.modelo], ['Nro. serie', e.serie],
+                    ['Año fabricación', e.anio_fab], ['Fecha activación', App.fechaDMY(e.fe_activacion)], ['Orden / RQI', e.orden],
+                    ['Potencia / capacidad', e.potencia], ['Grupo', e.grupo], ['Línea', e.linea], ['Sub línea', e.sublinea],
+                    ['Valor sin IGV', 'US$ ' + App.fmt(e.valor)], ['Seguro', e.seguro]];
+            },
+            get datosUbicacion() {
+                var e = this.sel;
+                return [['Situación', e.situacion], ['Fecha ult. situación', App.fechaDMY(e.fe_ult_situacion)], ['Ubicación', e.ubicacion],
+                    ['Sucursal', e.sucursal === '01' ? 'Lima' : 'Arequipa'], ['ID obra', e.co_ccosto], ['Obra', e.no_obra], ['Cliente actual', e.cliente], ['Cod. equipo cliente', e.co_equipo_cliente]];
+            },
+            get lecturas() {
+                var arr = this.sel.movimientos.slice().reverse().map(function (m) { return { fecha: m.fecha, nro: m.nro, horometro: m.horometro }; });
+                return arr.map(function (l, i) { l.uso = i === 0 ? null : l.horometro - arr[i - 1].horometro; return l; });
+            },
+            get minLectura() { var ls = this.lecturas; return ls.length ? Math.max(0, ls[0].horometro - 50) : 0; },
+            get proximoPm() { var h = this.sel.horometro, prox = (Math.floor(h / 250) + 1) * 250; return { horas: prox, faltan: prox - h }; },
+            get movimientos() { var t = this.filtroDoc; return this.sel.movimientos.filter(function (m) { return !t || m.tipo === t; }); },
+        };
+    });
+});
+</script>
+</body>
+</html>

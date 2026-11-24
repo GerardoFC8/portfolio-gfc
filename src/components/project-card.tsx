@@ -10,7 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Download, ExternalLink, Github, ImageIcon, FileText } from "lucide-react"
+import { Download, ExternalLink, Github, ImageIcon, FileText, MonitorPlay } from "lucide-react"
 
 // A link to a releases page or an installer is a download, not a live demo.
 const DOWNLOAD_URL = /\/releases(\/|$)|\.(exe|msi|dmg|zip|apk)$/i
@@ -80,6 +80,8 @@ export default function ProjectCard({
   const hasMoreTech = project.tech.length > 3
   const hiddenTech = project.tech.slice(3).join(", ")
   const isDownload = !!project.liveUrl && DOWNLOAD_URL.test(project.liveUrl)
+  // A link inside this site (e.g. /erp-demo) is a demo with sample data, not the live product.
+  const isDemo = !!project.liveUrl && project.liveUrl.startsWith("/")
   const summary = firstParagraph(project.description)
   const hasGallery = project.gallery.length > 0
 
@@ -157,8 +159,18 @@ export default function ProjectCard({
                 rel="noopener noreferrer"
                 className={`${btn} ${solid}`}
               >
-                {isDownload ? <Download className="w-4 h-4" /> : <ExternalLink className="w-4 h-4" />}
-                {isDownload ? t("project_download") || "Descargar" : t("project_online")}
+                {isDownload ? (
+                  <Download className="w-4 h-4" />
+                ) : isDemo ? (
+                  <MonitorPlay className="w-4 h-4" />
+                ) : (
+                  <ExternalLink className="w-4 h-4" />
+                )}
+                {isDownload
+                  ? t("project_download") || "Descargar"
+                  : isDemo
+                    ? t("project_demo")
+                    : t("project_online")}
               </a>
             )}
             {hasGallery && (

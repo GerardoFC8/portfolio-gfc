@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Dashboard | Rental ERP (demo)</title>
+    <link rel="preconnect" href="https://fonts.bunny.net">
+    <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com/3.4.16?plugins=forms,typography"></script>
+    <script src="theme.js"></script>
+    <link rel="stylesheet" href="styles.css">
+    <script defer src="data.js"></script>
+    <script defer src="app.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
+</head>
+<body class="has-demo-banner font-sans antialiased">
+<div id="demo-banner" class="demo-banner" role="note">Demo con datos ficticios · No es el sistema real</div>
+<div class="min-h-screen bg-gray-300">
+    <div id="nav-slot"></div>
+
+    <header class="bg-white shadow">
+        <div class="max-w-7xl mx-auto p-3 sm:px-6 lg:px-8">
+            <h2 class="font-semibold text-xl text-gray-800 leading-tight">Dashboard General</h2>
+        </div>
+    </header>
+
+    <main>
+        <div class="max-w-full mx-auto sm:px-6 lg:px-2 mt-2">
+            <div class="border-2 border-blue-500 rounded-lg bg-white overflow-hidden shadow-xl sm:rounded-lg p-2 m-1" x-data="dashboard" x-cloak>
+                <div class="bg-white shadow-xl sm:rounded-lg p-2">
+
+                    <!-- Pestañas principales del dashboard -->
+                    <div class="border-b border-gray-200 mb-6 overflow-x-auto">
+                        <nav class="flex space-x-6 min-w-max" aria-label="Tabs" role="tablist">
+                            <template x-for="t in tabsPrincipales" :key="t.key">
+                                <button type="button" role="tab"
+                                    :aria-selected="t.key === 'facturacion'"
+                                    :title="t.key === 'facturacion' ? '' : 'No incluido en la demo'"
+                                    :class="t.key === 'facturacion' ? 'text-blue-600 border-blue-500' : 'text-gray-400 border-transparent cursor-not-allowed'"
+                                    class="py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200"
+                                    @click="t.key !== 'facturacion' && App.toast('Pestaña no incluida', 'La demo solo muestra la pestaña de Facturación.', 'info')">
+                                    <i :class="t.icon" class="mr-2"></i><span x-text="t.label"></span>
+                                </button>
+                            </template>
+                        </nav>
+                    </div>
+
+                    <!-- Cabecera sticky: filtros + sub-pestañas -->
+                    <div class="sticky top-[5.75rem] z-20 -mx-2 mb-6 border-b border-gray-200 bg-white/95 px-3 pt-2 backdrop-blur">
+                        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 pb-3">
+                            <h2 class="text-lg font-semibold text-gray-800">Facturación Corporativa</h2>
+                            <div class="flex flex-wrap items-center gap-3">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-sm text-gray-600">División:</span>
+                                    <select x-model="division" class="appearance-none bg-white border border-gray-300 text-gray-900 text-sm rounded-lg pl-3 pr-8 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer">
+                                        <option value="todas">Todas</option>
+                                        <option value="rental">Rental</option>
+                                        <option value="comercial">Comercial</option>
+                                    </select>
+                                </div>
+                                <div class="inline-flex rounded-md border border-gray-300 overflow-hidden" title="Moneda activa para todos los gráficos">
+                                    <button type="button" @click="moneda = 'PEN'" :class="moneda === 'PEN' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'" class="px-3 py-1.5 text-sm font-medium transition-colors focus:outline-none">S/ PEN</button>
+                                    <button type="button" @click="moneda = 'USD'" :class="moneda === 'USD' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'" class="px-3 py-1.5 text-sm font-medium transition-colors focus:outline-none border-l border-gray-300">$ USD</button>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-sm text-gray-600">Año:</span>
+                                    <select x-model.number="anio" class="appearance-none bg-white border border-gray-300 text-gray-900 text-sm rounded-lg pl-3 pr-8 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer">
+                                        <template x-for="a in anios" :key="a"><option :value="a" x-text="a" :selected="a === anio"></option></template>
+                                    </select>
+                                </div>
+                                <button type="button" @click="App.toast('Exportación no disponible', 'En el sistema real genera un Excel con el detalle.', 'info')"
+                                    class="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-700 transition-colors">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                                    Exportar
+                                </button>
+                            </div>
+                        </div>
+                        <nav class="flex gap-1 -mb-px overflow-x-auto">
+                            <template x-for="s in subTabs" :key="s.key">
+                                <button type="button" @click="cambiarSub(s)"
+                                    :title="s.demo ? '' : 'No incluido en la demo'"
+                                    :class="!s.demo ? 'border-transparent text-gray-300 cursor-not-allowed' : (sub === s.key ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700')"
+                                    class="flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="s.icon"/></svg>
+                                    <span x-text="s.label"></span>
+                                </button>
+                            </template>
+                        </nav>
+                    </div>
+
+                    <!-- ===================== RESUMEN ===================== -->
+                    <div x-show="sub === 'resumen'">
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                            <div class="bg-white rounded-lg shadow p-4 border-l-4 border-blue-500">
+                                <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Total <span x-text="anio"></span></p>
+                                <p class="text-2xl font-bold text-gray-900 mt-1" x-text="monto(kpis.total)"></p>
+                                <p class="text-xs mt-1 font-medium" x-show="kpis.varTotal !== null" :class="kpis.varTotal >= 0 ? 'text-green-600' : 'text-red-600'"
+                                   x-text="(kpis.varTotal >= 0 ? '↑ ' : '↓ ') + Math.abs(kpis.varTotal) + '% vs ' + (anio - 1) + (anio === 2026 ? ' (mismo periodo)' : '')"></p>
+                                <p class="text-xs mt-1 text-gray-400" x-show="kpis.varTotal === null">Primer año con datos</p>
+                            </div>
+                            <div class="bg-white rounded-lg shadow p-4 border-l-4 border-indigo-500">
+                                <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Comercial <span x-text="anio"></span></p>
+                                <p class="text-2xl font-bold text-gray-900 mt-1" x-text="monto(kpis.comercial)"></p>
+                                <p class="text-xs text-gray-500 mt-1"><span x-text="kpis.pctComercial"></span>% del total</p>
+                            </div>
+                            <div class="bg-white rounded-lg shadow p-4 border-l-4 border-emerald-500">
+                                <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Rental <span x-text="anio"></span></p>
+                                <p class="text-2xl font-bold text-gray-900 mt-1" x-text="monto(kpis.rental)"></p>
+                                <p class="text-xs text-gray-500 mt-1"><span x-text="kpis.pctRental"></span>% del total</p>
+                            </div>
+                            <div class="bg-white rounded-lg shadow p-4 border-l-4 border-amber-500">
+                                <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Rentabilidad <span x-text="anio"></span></p>
+                                <p class="text-2xl font-bold text-gray-900 mt-1" x-text="kpis.margen"></p>
+                                <p class="text-xs text-gray-500 mt-1">Utilidad Neta / Ventas</p>
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-lg shadow p-4 mb-6">
+                            <h3 class="text-sm font-semibold text-gray-700 mb-3">
+                                Detalle Mensual <span x-text="anio"></span> (<span x-text="moneda === 'USD' ? 'Dólares' : 'Soles'"></span>)
+                                <span class="text-xs font-normal text-gray-400" x-show="anio === 2026">· noviembre parcial</span>
+                            </h3>
+                            <div class="relative" style="height: 340px;"><canvas id="chartFacturacionMensual" aria-label="Facturación mensual por división" role="img"></canvas></div>
+                        </div>
+
+                        <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                            <div class="bg-white rounded-lg shadow p-4">
+                                <h3 class="text-sm font-semibold text-gray-700 mb-3">Top 10 Clientes <span class="text-xs font-normal text-gray-400" x-text="'(' + etiquetaDivision + ')'"></span></h3>
+                                <div class="overflow-x-auto">
+                                    <table class="w-full text-xs">
+                                        <thead><tr class="bg-blue-700 text-white">
+                                            <th class="px-2 py-1.5 text-center font-medium w-8">#</th>
+                                            <th class="px-2 py-1.5 text-left font-medium">RUC</th>
+                                            <th class="px-2 py-1.5 text-left font-medium">Cliente</th>
+                                            <th class="px-2 py-1.5 text-right font-medium">Monto</th>
+                                            <th class="px-2 py-1.5 text-right font-medium">%</th>
+                                        </tr></thead>
+                                        <tbody>
+                                            <template x-for="(c, i) in clientes.slice(0, 10)" :key="c.ruc">
+                                                <tr :class="i % 2 === 0 ? 'bg-white' : 'bg-blue-50'" class="border-b border-gray-100 hover:bg-blue-100 transition-colors cursor-pointer" @click="abrirCliente(c)" title="Click para ver detalle">
+                                                    <td class="px-2 py-1.5 text-center font-bold text-gray-500" x-text="i + 1"></td>
+                                                    <td class="px-2 py-1.5 text-gray-600 font-mono" x-text="c.ruc"></td>
+                                                    <td class="px-2 py-1.5 text-gray-700 max-w-xs truncate" x-text="c.nombre"></td>
+                                                    <td class="px-2 py-1.5 text-right font-medium text-gray-700" x-text="monto(c.total)"></td>
+                                                    <td class="px-2 py-1.5 text-right text-blue-600" x-text="c.pct + '%'"></td>
+                                                </tr>
+                                            </template>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="bg-white rounded-lg shadow p-4">
+                                <h3 class="text-sm font-semibold text-gray-700 mb-3">Facturación por Línea de negocio <span class="text-xs font-normal text-gray-400" x-text="'(' + etiquetaDivision + ')'"></span></h3>
+                                <div class="space-y-3">
+                                    <template x-for="l in lineas" :key="l.linea">
+                                        <div>
+                                            <div class="flex items-center justify-between text-xs mb-1 gap-2">
+                                                <span class="font-medium text-gray-700 truncate"><span x-text="l.linea"></span> <span class="ml-1 rounded px-1.5 py-0.5 text-[10px] font-semibold" :class="l.division === 'rental' ? 'bg-emerald-100 text-emerald-800' : 'bg-indigo-100 text-indigo-800'" x-text="l.division === 'rental' ? 'Rental' : 'Comercial'"></span></span>
+                                                <span class="text-gray-600 whitespace-nowrap"><span x-text="monto(l.total)"></span> · <span class="text-blue-600" x-text="l.pct + '%'"></span></span>
+                                            </div>
+                                            <div class="h-2.5 w-full rounded-full bg-gray-100"><div class="h-2.5 rounded-full" :class="l.division === 'rental' ? 'bg-emerald-500' : 'bg-indigo-500'" :style="'width:' + l.barra + '%'"></div></div>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ===================== MENSUAL ===================== -->
+                    <div x-show="sub === 'mensual'" x-cloak>
+                        <div class="bg-white rounded-lg shadow p-4 mb-6">
+                            <h3 class="text-sm font-semibold text-gray-700 mb-3">Tendencia <span x-text="anio"></span> vs <span x-text="anio - 1"></span> (<span x-text="etiquetaDivision"></span>)</h3>
+                            <div class="relative" style="height: 300px;"><canvas id="chartDivisionTendencia" aria-label="Tendencia mensual comparada con el año anterior" role="img"></canvas></div>
+                        </div>
+                        <div class="bg-white rounded-lg shadow p-4">
+                            <h3 class="text-sm font-semibold text-gray-700 mb-3">Matriz mensual <span x-text="anio"></span></h3>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-xs">
+                                    <thead><tr class="bg-gray-700 text-white">
+                                        <th class="px-2 py-1.5 text-left font-medium">Mes</th>
+                                        <th class="px-2 py-1.5 text-right font-medium">Comercial</th>
+                                        <th class="px-2 py-1.5 text-right font-medium">Rental</th>
+                                        <th class="px-2 py-1.5 text-right font-medium">Total</th>
+                                        <th class="px-2 py-1.5 text-right font-medium" x-text="'Total ' + (anio - 1)"></th>
+                                        <th class="px-2 py-1.5 text-right font-medium">Var. %</th>
+                                    </tr></thead>
+                                    <tbody>
+                                        <template x-for="(m, i) in matriz" :key="i">
+                                            <tr :class="i % 2 === 0 ? 'bg-white' : 'bg-blue-50'" class="border-b border-gray-100">
+                                                <td class="px-2 py-1.5 font-medium text-gray-700" x-text="m.mes"></td>
+                                                <td class="px-2 py-1.5 text-right" x-text="m.comercial === null ? '-' : monto(m.comercial)"></td>
+                                                <td class="px-2 py-1.5 text-right" x-text="m.rental === null ? '-' : monto(m.rental)"></td>
+                                                <td class="px-2 py-1.5 text-right font-semibold" x-text="m.total === null ? '-' : monto(m.total)"></td>
+                                                <td class="px-2 py-1.5 text-right text-gray-500" x-text="m.anterior === null ? '-' : monto(m.anterior)"></td>
+                                                <td class="px-2 py-1.5 text-right font-medium" :class="m.var === null ? 'text-gray-400' : (m.var >= 0 ? 'text-green-600' : 'text-red-600')" x-text="m.var === null ? '-' : (m.var >= 0 ? '+' : '') + m.var + '%'"></td>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ===================== CLIENTES ===================== -->
+                    <div x-show="sub === 'clientes'" x-cloak>
+                        <div class="mb-4 rounded-lg bg-blue-50 p-3 text-xs text-blue-700 flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.75-11.25a.75.75 0 00-1.5 0v4.5a.75.75 0 001.5 0v-4.5zM10 15a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"/></svg>
+                            Click en una fila de la tabla para ver el detalle del cliente (evolución mensual y líneas).
+                        </div>
+                        <h2 class="text-lg font-semibold text-gray-800 mb-4">Concentración de Clientes · <span x-text="anio"></span> <span class="text-sm font-normal text-gray-500" x-text="'(' + (moneda === 'USD' ? 'Dólares' : 'Soles') + ')'"></span></h2>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                            <div class="bg-white rounded-lg shadow p-4 border-l-4 border-red-500"><p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Top 5 Clientes</p><p class="text-2xl font-bold text-gray-900 mt-1" x-text="concentracion.top5 + '%'"></p><p class="text-xs text-gray-500 mt-1">de la facturación total</p></div>
+                            <div class="bg-white rounded-lg shadow p-4 border-l-4 border-orange-500"><p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Top 10 Clientes</p><p class="text-2xl font-bold text-gray-900 mt-1" x-text="concentracion.top10 + '%'"></p><p class="text-xs text-gray-500 mt-1">de la facturación total</p></div>
+                            <div class="bg-white rounded-lg shadow p-4 border-l-4 border-yellow-500"><p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Top 15 Clientes</p><p class="text-2xl font-bold text-gray-900 mt-1" x-text="concentracion.top15 + '%'"></p><p class="text-xs text-gray-500 mt-1">de la facturación total</p></div>
+                            <div class="bg-white rounded-lg shadow p-4 border-l-4 border-gray-500"><p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Total Clientes</p><p class="text-2xl font-bold text-gray-900 mt-1" x-text="clientes.length"></p><p class="text-xs text-gray-500 mt-1">con facturación activa</p></div>
+                        </div>
+                        <div class="grid gap-4" :class="division === 'todas' ? 'grid-cols-1 xl:grid-cols-2' : 'grid-cols-1'">
+                            <template x-for="cfg in tablasClientes" :key="cfg.key">
+                                <div class="bg-white rounded-lg shadow p-4">
+                                    <h3 class="text-sm font-semibold text-gray-700 mb-3">Detalle por Cliente · <span x-text="cfg.label"></span> <span class="text-xs font-normal text-gray-400" x-text="'(' + cfg.rows.length + ' clientes)'"></span></h3>
+                                    <div class="overflow-x-auto max-h-[28rem] overflow-y-auto">
+                                        <table class="w-full text-xs">
+                                            <thead class="sticky top-0"><tr :class="cfg.color" class="text-white">
+                                                <th class="px-2 py-1.5 text-center font-medium w-8">#</th>
+                                                <th class="px-2 py-1.5 text-left font-medium">RUC</th>
+                                                <th class="px-2 py-1.5 text-left font-medium">Cliente</th>
+                                                <th class="px-2 py-1.5 text-right font-medium">Monto</th>
+                                                <th class="px-2 py-1.5 text-center font-medium">Facturas</th>
+                                                <th class="px-2 py-1.5 text-right font-medium">%</th>
+                                                <th class="px-2 py-1.5 text-center font-medium">Últ. Factura</th>
+                                            </tr></thead>
+                                            <tbody>
+                                                <template x-for="(c, i) in cfg.rows" :key="cfg.key + c.ruc">
+                                                    <tr :class="i % 2 === 0 ? 'bg-white' : 'bg-blue-50'" class="border-b border-gray-100 hover:bg-blue-100 transition-colors cursor-pointer" @click="abrirCliente(c, cfg.key)" title="Click para ver detalle">
+                                                        <td class="px-2 py-1.5 text-center font-bold text-gray-500" x-text="i + 1"></td>
+                                                        <td class="px-2 py-1.5 text-gray-600 font-mono" x-text="c.ruc"></td>
+                                                        <td class="px-2 py-1.5 text-gray-700 max-w-xs truncate" x-text="c.nombre"></td>
+                                                        <td class="px-2 py-1.5 text-right font-medium text-gray-700" x-text="monto(c.total)"></td>
+                                                        <td class="px-2 py-1.5 text-center text-gray-600" x-text="c.docs"></td>
+                                                        <td class="px-2 py-1.5 text-right text-blue-600" x-text="c.pct + '%'"></td>
+                                                        <td class="px-2 py-1.5 text-center text-gray-500" x-text="App.fechaDMY(c.ultima)"></td>
+                                                    </tr>
+                                                </template>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- ===================== LÍNEAS ===================== -->
+                    <div x-show="sub === 'lineas'" x-cloak>
+                        <h2 class="text-lg font-semibold text-gray-800 mb-4">Líneas de negocio · <span x-text="anio"></span></h2>
+                        <div class="bg-white rounded-lg shadow p-4">
+                            <h3 class="text-sm font-semibold text-gray-700 mb-3">Top Líneas (<span x-text="lineas.length"></span>)</h3>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-xs">
+                                    <thead><tr class="bg-gray-700 text-white">
+                                        <th class="px-2 py-1.5 text-center font-medium w-8">#</th>
+                                        <th class="px-2 py-1.5 text-left font-medium">Línea</th>
+                                        <th class="px-2 py-1.5 text-left font-medium">División</th>
+                                        <th class="px-2 py-1.5 text-right font-medium">Monto</th>
+                                        <th class="px-2 py-1.5 text-center font-medium">Facturas</th>
+                                        <th class="px-2 py-1.5 text-left font-medium w-1/3">Participación</th>
+                                    </tr></thead>
+                                    <tbody>
+                                        <template x-for="(l, i) in lineas" :key="'L' + l.linea">
+                                            <tr :class="i % 2 === 0 ? 'bg-white' : 'bg-blue-50'" class="border-b border-gray-100">
+                                                <td class="px-2 py-1.5 text-center font-bold text-gray-500" x-text="i + 1"></td>
+                                                <td class="px-2 py-1.5 font-medium text-gray-700" x-text="l.linea"></td>
+                                                <td class="px-2 py-1.5" x-text="l.division === 'rental' ? 'Rental' : 'Comercial'"></td>
+                                                <td class="px-2 py-1.5 text-right font-medium" x-text="monto(l.total)"></td>
+                                                <td class="px-2 py-1.5 text-center" x-text="l.docs"></td>
+                                                <td class="px-2 py-1.5"><div class="flex items-center gap-2"><div class="h-2 flex-1 rounded-full bg-gray-100"><div class="h-2 rounded-full" :class="l.division === 'rental' ? 'bg-emerald-500' : 'bg-indigo-500'" :style="'width:' + l.barra + '%'"></div></div><span class="w-10 text-right text-blue-600" x-text="l.pct + '%'"></span></div></td>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Drawer de detalle de cliente -->
+                <div x-show="drawer" x-cloak class="fixed inset-0 z-[60] bg-black/40" @click="drawer = null" x-transition.opacity></div>
+                <aside x-show="drawer" x-cloak @keydown.escape.window="drawer = null"
+                    x-transition:enter="transform transition ease-out duration-200" x-transition:enter-start="translate-x-full" x-transition:enter-end="translate-x-0"
+                    x-transition:leave="transform transition ease-in duration-150" x-transition:leave-start="translate-x-0" x-transition:leave-end="translate-x-full"
+                    class="fixed right-0 top-0 z-[70] h-screen w-full overflow-y-auto bg-white shadow-2xl md:w-1/2 lg:w-2/5 pt-7">
+                    <template x-if="drawer">
+                        <div>
+                            <header class="sticky top-0 z-10 flex items-center justify-between border-b border-gray-200 bg-white p-4">
+                                <div class="min-w-0">
+                                    <h2 class="text-lg font-bold text-gray-800 truncate" x-text="drawer.nombre"></h2>
+                                    <p class="text-xs font-mono text-gray-500"><span x-text="'RUC ' + drawer.ruc"></span> · <span x-text="anio"></span> · <span x-text="drawer.divisionLabel"></span></p>
+                                </div>
+                                <button type="button" @click="drawer = null" class="ml-3 inline-flex h-10 w-10 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100" aria-label="Cerrar">
+                                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                </button>
+                            </header>
+                            <div class="space-y-6 p-4">
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div class="rounded-lg bg-blue-50 p-3"><p class="text-xs font-medium uppercase text-blue-600" x-text="'Total ' + (moneda === 'USD' ? 'US$' : 'S/')"></p><p class="text-lg font-bold text-gray-900" x-text="monto(drawer.total)"></p></div>
+                                    <div class="rounded-lg bg-emerald-50 p-3"><p class="text-xs font-medium uppercase text-emerald-600">Facturas</p><p class="text-lg font-bold text-gray-900" x-text="drawer.docs"></p></div>
+                                </div>
+                                <section>
+                                    <h3 class="mb-2 text-sm font-semibold text-gray-700">Evolución mensual</h3>
+                                    <div class="flex items-end gap-1 h-32 border-b border-gray-200">
+                                        <template x-for="(v, i) in drawer.evol" :key="i">
+                                            <div class="flex-1 rounded-t transition-all" :class="v > 0 ? 'bg-indigo-500 hover:bg-indigo-600' : 'bg-gray-100'"
+                                                 :style="'height:' + (v > 0 ? Math.max(3, v / drawer.maxEvol * 100) : 0) + '%; min-height:' + (v > 0 ? '4px' : '2px')"
+                                                 :title="App.MESES_CORTOS[i] + ': ' + monto(v)"></div>
+                                        </template>
+                                    </div>
+                                    <div class="flex gap-1 text-[10px] text-gray-500 mt-1">
+                                        <template x-for="(m, i) in App.MESES_CORTOS" :key="m"><span class="flex-1 text-center" :class="drawer.evol[i] > 0 ? 'font-medium text-gray-700' : ''" x-text="m"></span></template>
+                                    </div>
+                                    <p class="mt-2 text-[11px] text-gray-500">Máximo mensual: <span x-text="monto(drawer.maxEvol)"></span></p>
+                                </section>
+                                <section>
+                                    <h3 class="mb-2 text-sm font-semibold text-gray-700">Líneas facturadas</h3>
+                                    <div class="space-y-1">
+                                        <template x-for="p in drawer.lineas" :key="p.linea">
+                                            <div class="flex items-center justify-between text-xs border-b border-gray-100 py-1"><span class="text-gray-700" x-text="p.linea"></span><span class="font-medium text-gray-900" x-text="monto(p.total)"></span></div>
+                                        </template>
+                                    </div>
+                                </section>
+                                <section>
+                                    <h3 class="mb-2 text-sm font-semibold text-gray-700">Últimas facturas</h3>
+                                    <table class="w-full text-xs">
+                                        <thead><tr class="bg-gray-100 text-gray-600"><th class="px-2 py-1 text-left">Fecha</th><th class="px-2 py-1 text-left">Línea</th><th class="px-2 py-1 text-right">Monto</th></tr></thead>
+                                        <tbody>
+                                            <template x-for="f in drawer.facturas" :key="f.id">
+                                                <tr class="border-b border-gray-100"><td class="px-2 py-1" x-text="App.fechaDMY(f.fecha)"></td><td class="px-2 py-1" x-text="f.linea"></td><td class="px-2 py-1 text-right" x-text="monto(conv(f.monto_pen))"></td></tr>
+                                            </template>
+                                        </tbody>
+                                    </table>
+                                </section>
+                            </div>
+                        </div>
+                    </template>
+                </aside>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+document.addEventListener('alpine:init', function () {
+    // Instancias de Chart.js FUERA del estado reactivo de Alpine (el proxy las rompe).
+    var charts = {};
+
+    Alpine.data('dashboard', function () {
+        return {
+            tabsPrincipales: [
+                { key: 'equipos', label: 'EQUIPOS', icon: 'fas fa-truck-monster' },
+                { key: 'comercial', label: 'COMERCIAL', icon: 'fas fa-chart-line' },
+                { key: 'valorizaciones', label: 'VALORIZACIONES', icon: 'fas fa-file-invoice-dollar' },
+                { key: 'reporte_campo', label: 'REPORTE CAMPO', icon: 'fas fa-hard-hat' },
+                { key: 'facturacion', label: 'FACTURACIÓN', icon: 'fas fa-file-invoice-dollar' },
+            ],
+            subTabs: [
+                { key: 'resumen', label: 'Resumen', demo: true, icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
+                { key: 'mensual', label: 'Mensual', demo: true, icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
+                { key: 'clientes', label: 'Clientes', demo: true, icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z' },
+                { key: 'obras', label: 'Obras', demo: false, icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4' },
+                { key: 'vendedores', label: 'Vendedores', demo: false, icon: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z' },
+                { key: 'lineas', label: 'Líneas', demo: true, icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4' },
+                { key: 'rentabilidad', label: 'Rentabilidad', demo: false, icon: 'M13 7h8m0 0v8m0-8l-8 8-4-4-6 6' },
+            ],
+            sub: 'resumen',
+            anios: DEMO.aniosFacturacion.slice().reverse(),
+            anio: 2026,
+            division: 'todas',
+            moneda: 'PEN',
+            drawer: null,
+
+            init: function () {
+                var self = this;
+                this.$watch('anio', function () { self.renderCharts(); });
+                this.$watch('division', function () { self.renderCharts(); });
+                this.$watch('moneda', function () { self.renderCharts(); });
+                this.$nextTick(function () { self.renderCharts(); });
+            },
+
+            cambiarSub: function (s) {
+                if (!s.demo) { App.toast('Sub-pestaña no incluida', 'La demo incluye Resumen, Mensual, Clientes y Líneas.', 'info'); return; }
+                this.sub = s.key;
+                // Chart.js no se redimensiona solo al salir de display:none
+                this.$nextTick(function () { Object.keys(charts).forEach(function (k) { charts[k].resize(); }); });
+            },
+
+            conv: function (pen) { return this.moneda === 'USD' ? pen / DEMO.tipoCambio : pen; },
+            monto: function (v) { return (this.moneda === 'USD' ? 'US$ ' : 'S/ ') + App.fmt0(v); },
+            get etiquetaDivision() { return { todas: 'Todas las divisiones', rental: 'Rental', comercial: 'Comercial' }[this.division]; },
+
+            facturasDe: function (anio, respetarDivision) {
+                var div = this.division;
+                return DEMO.facturas.filter(function (f) {
+                    return f.anio === anio && (!respetarDivision || div === 'todas' || f.division === div);
+                });
+            },
+
+            get kpis() {
+                var self = this;
+                var fs = this.facturasDe(this.anio, false);
+                var com = 0, ren = 0;
+                fs.forEach(function (f) { if (f.division === 'rental') ren += f.monto_pen; else com += f.monto_pen; });
+                var total = com + ren;
+                // Variación contra el mismo periodo del año anterior (el año en curso aún no cierra)
+                var mesesConDatos = {};
+                fs.forEach(function (f) { mesesConDatos[f.mes] = true; });
+                var prev = this.facturasDe(this.anio - 1, false).filter(function (f) { return mesesConDatos[f.mes]; }).reduce(function (s, f) { return s + f.monto_pen; }, 0);
+                return {
+                    total: self.conv(total),
+                    comercial: self.conv(com),
+                    rental: self.conv(ren),
+                    pctComercial: total ? (com / total * 100).toFixed(1) : 0,
+                    pctRental: total ? (ren / total * 100).toFixed(1) : 0,
+                    varTotal: prev > 0 ? Math.round((total - prev) / prev * 1000) / 10 : null,
+                    margen: ((DEMO.rentabilidad[this.anio] || 0) * 100).toFixed(2) + '%',
+                };
+            },
+
+            mensualDe: function (anio) {
+                var com = new Array(12).fill(0), ren = new Array(12).fill(0), hay = new Array(12).fill(false);
+                this.facturasDe(anio, false).forEach(function (f) {
+                    hay[f.mes - 1] = true;
+                    if (f.division === 'rental') ren[f.mes - 1] += f.monto_pen; else com[f.mes - 1] += f.monto_pen;
+                });
+                var self = this;
+                return {
+                    comercial: com.map(function (v, i) { return hay[i] ? Math.round(self.conv(v)) : null; }),
+                    rental: ren.map(function (v, i) { return hay[i] ? Math.round(self.conv(v)) : null; }),
+                };
+            },
+
+            totalMensual: function (anio) {
+                var m = this.mensualDe(anio), div = this.division;
+                return m.rental.map(function (r, i) {
+                    if (r === null) return null;
+                    if (div === 'rental') return r;
+                    if (div === 'comercial') return m.comercial[i];
+                    return r + m.comercial[i];
+                });
+            },
+
+            get matriz() {
+                var m = this.mensualDe(this.anio), prev = this.totalMensual(this.anio - 1), div = this.division;
+                return App.MESES.map(function (mes, i) {
+                    var c = div === 'rental' ? null : m.comercial[i];
+                    var r = div === 'comercial' ? null : m.rental[i];
+                    var total = (m.rental[i] === null) ? null : (c || 0) + (r || 0);
+                    var ant = prev[i];
+                    return { mes: mes, comercial: m.rental[i] === null ? null : c, rental: r, total: total, anterior: ant,
+                        var: (total !== null && ant) ? Math.round((total - ant) / ant * 1000) / 10 : null };
+                });
+            },
+
+            agruparClientes: function (fs) {
+                var map = {}, total = 0, self = this;
+                fs.forEach(function (f) {
+                    var c = map[f.ruc] || (map[f.ruc] = { ruc: f.ruc, nombre: f.cliente, total: 0, docs: 0, ultima: '' });
+                    c.total += f.monto_pen; c.docs++; total += f.monto_pen;
+                    if (f.fecha > c.ultima) c.ultima = f.fecha;
+                });
+                return Object.keys(map).map(function (k) {
+                    var c = map[k];
+                    return { ruc: c.ruc, nombre: c.nombre, docs: c.docs, ultima: c.ultima, pct: total ? (c.total / total * 100).toFixed(1) : 0, total: self.conv(c.total) };
+                }).sort(function (a, b) { return b.total - a.total; });
+            },
+
+            get clientes() { return this.agruparClientes(this.facturasDe(this.anio, true)); },
+
+            get concentracion() {
+                var cs = this.clientes, total = cs.reduce(function (s, c) { return s + c.total; }, 0);
+                function top(n) { return total ? (cs.slice(0, n).reduce(function (s, c) { return s + c.total; }, 0) / total * 100).toFixed(1) : 0; }
+                return { top5: top(5), top10: top(10), top15: top(15) };
+            },
+
+            get tablasClientes() {
+                var self = this, fs = this.facturasDe(this.anio, false), out = [];
+                if (this.division !== 'comercial') out.push({ key: 'rental', label: 'Rental', color: 'bg-emerald-700', rows: self.agruparClientes(fs.filter(function (f) { return f.division === 'rental'; })) });
+                if (this.division !== 'rental') out.push({ key: 'comercial', label: 'Comercial', color: 'bg-indigo-700', rows: self.agruparClientes(fs.filter(function (f) { return f.division === 'comercial'; })) });
+                return out;
+            },
+
+            get lineas() {
+                var map = {}, total = 0, self = this;
+                this.facturasDe(this.anio, true).forEach(function (f) {
+                    var l = map[f.linea] || (map[f.linea] = { linea: f.linea, division: f.division, total: 0, docs: 0 });
+                    l.total += f.monto_pen; l.docs++; total += f.monto_pen;
+                });
+                var arr = Object.keys(map).map(function (k) { return map[k]; }).sort(function (a, b) { return b.total - a.total; });
+                var max = arr.length ? arr[0].total : 1;
+                return arr.map(function (l) {
+                    return { linea: l.linea, division: l.division, docs: l.docs, total: self.conv(l.total), pct: total ? (l.total / total * 100).toFixed(1) : 0, barra: Math.max(2, l.total / max * 100) };
+                });
+            },
+
+            abrirCliente: function (c, divisionKey) {
+                var div = divisionKey || (this.division === 'todas' ? null : this.division);
+                var fs = DEMO.facturas.filter(function (f) { return f.ruc === c.ruc; }).filter(function (f) { return !div || f.division === div; });
+                var anio = this.anio, self = this;
+                var delAnio = fs.filter(function (f) { return f.anio === anio; });
+                var evol = new Array(12).fill(0), lin = {};
+                delAnio.forEach(function (f) { evol[f.mes - 1] += self.conv(f.monto_pen); lin[f.linea] = (lin[f.linea] || 0) + self.conv(f.monto_pen); });
+                this.drawer = {
+                    ruc: c.ruc, nombre: c.nombre,
+                    divisionLabel: div ? (div === 'rental' ? 'Rental' : 'Comercial') : 'Todas las divisiones',
+                    total: evol.reduce(function (s, v) { return s + v; }, 0),
+                    docs: delAnio.length,
+                    evol: evol,
+                    maxEvol: Math.max.apply(null, evol) || 1,
+                    lineas: Object.keys(lin).map(function (k) { return { linea: k, total: lin[k] }; }).sort(function (a, b) { return b.total - a.total; }),
+                    facturas: delAnio.slice().sort(function (a, b) { return a.fecha < b.fecha ? 1 : -1; }).slice(0, 8),
+                };
+            },
+
+            renderCharts: function () {
+                if (!window.Chart) return;
+                var m = this.mensualDe(this.anio), div = this.division, pref = this.moneda === 'USD' ? 'US$ ' : 'S/ ';
+                var datasets = [];
+                if (div !== 'rental') datasets.push({ label: 'Comercial', data: m.comercial, backgroundColor: '#6366F1', borderRadius: 3 });
+                if (div !== 'comercial') datasets.push({ label: 'Rental', data: m.rental, backgroundColor: '#10B981', borderRadius: 3 });
+                var tooltip = { callbacks: { label: function (ctx) { return ctx.raw === null ? ctx.dataset.label + ': Sin datos' : ctx.dataset.label + ': ' + pref + App.fmt0(ctx.raw); } } };
+                var escalaY = { beginAtZero: true, ticks: { callback: function (v) { return pref + App.fmt0(v / 1000) + 'k'; }, color: '#6b7280' }, grid: { color: '#f3f4f6' } };
+                var legend = { position: 'top', labels: { color: '#374151', usePointStyle: true, pointStyle: 'rectRounded' } };
+
+                if (charts.mensual) charts.mensual.destroy();
+                charts.mensual = new Chart(document.getElementById('chartFacturacionMensual'), {
+                    type: 'bar',
+                    data: { labels: App.MESES_CORTOS, datasets: datasets },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: legend, tooltip: tooltip },
+                        scales: { y: escalaY, x: { ticks: { color: '#6b7280' }, grid: { display: false } } } },
+                });
+
+                if (charts.tendencia) charts.tendencia.destroy();
+                charts.tendencia = new Chart(document.getElementById('chartDivisionTendencia'), {
+                    type: 'line',
+                    data: { labels: App.MESES_CORTOS, datasets: [
+                        { label: String(this.anio), data: this.totalMensual(this.anio), borderColor: '#2563EB', backgroundColor: 'rgba(37,99,235,.12)', fill: true, tension: .3, spanGaps: false },
+                        { label: String(this.anio - 1), data: this.totalMensual(this.anio - 1), borderColor: '#9CA3AF', borderDash: [5, 4], tension: .3, pointRadius: 2 },
+                    ] },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: legend, tooltip: tooltip },
+                        scales: { y: escalaY, x: { ticks: { color: '#6b7280' }, grid: { display: false } } } },
+                });
+            },
+        };
+    });
+});
+</script>
+</body>
+</html>

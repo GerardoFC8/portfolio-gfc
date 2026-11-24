@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Static ERP demo: plain browser scripts, not part of the app.
+    "public/erp-demo/**",
   ]),
   {
     files: ["src/app/(admin)/admin/components/**/*.{ts,tsx}"],
