@@ -12,7 +12,9 @@ type QuoteBuilderProps = {
 
 /*
  * Tiempos (s): cliente 0.3-0.9, máquina 1.0-1.6, horas 1.7-2.1, total 2.4,
- * PDF sale 3.1-3.6, cabecera 3.7, avión 4.2-5.0, insignia 5.0, fundido 6.4-6.9.
+ * PDF sale 3.1-3.6, cabecera 3.7, avión 4.2-5.0, insignia 5.0. Reinicio suave
+ * 6.6-6.9: solo se desvanece el contenido animado (valores, total, PDF,
+ * insignia); la ventana, las etiquetas y las cajas quedan siempre visibles.
  * Los estilos base son el estado final, así reduced-motion lo muestra completo.
  */
 const css = `
@@ -36,7 +38,7 @@ const css = `
 .qb-badge-text { fill: var(--primary-foreground); font-size: 10px; font-weight: 700; font-family: inherit; }
 .qb-check { fill: none; stroke: var(--primary-foreground); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
-.qb-scene { animation: qb-scene 7s linear infinite; }
+.qb-value { animation: qb-reset 7s linear infinite; }
 .qb-cover-1 { animation: qb-type-1 7s linear infinite; }
 .qb-cover-2 { animation: qb-type-2 7s linear infinite; }
 .qb-cover-3 { animation: qb-type-3 7s linear infinite; }
@@ -48,9 +50,9 @@ const css = `
 .qb-trail { animation: qb-trail 7s linear infinite; }
 .qb-badge { animation: qb-badge 7s ease-out infinite; }
 
-@keyframes qb-scene {
-  0%, 91% { opacity: 1; }
-  98%, 100% { opacity: 0; }
+@keyframes qb-reset {
+  0%, 94.5% { opacity: 1; }
+  99%, 100% { opacity: 0; }
 }
 @keyframes qb-type-1 {
   0%, 4.3% { transform: scaleX(1); animation-timing-function: steps(10, end); }
@@ -66,16 +68,19 @@ const css = `
 }
 @keyframes qb-sum {
   0%, 34.3% { opacity: 0; transform: translateY(4px); }
-  38%, 100% { opacity: 1; transform: translateY(0); }
+  38%, 94.5% { opacity: 1; transform: translateY(0); }
+  99%, 100% { opacity: 0; transform: translateY(0); }
 }
 @keyframes qb-hi {
   0%, 34.3% { opacity: 0; }
   38% { opacity: 0.35; }
-  45%, 100% { opacity: 0.12; }
+  45%, 94.5% { opacity: 0.12; }
+  99%, 100% { opacity: 0; }
 }
 @keyframes qb-doc {
   0%, 44.3% { opacity: 0; transform: translateX(-26px); }
-  51.4%, 100% { opacity: 1; transform: translateX(0); }
+  51.4%, 94.5% { opacity: 1; transform: translateX(0); }
+  99%, 100% { opacity: 0; transform: translateX(0); }
 }
 @keyframes qb-head {
   0%, 52.9% { transform: scaleX(0); }
@@ -95,11 +100,12 @@ const css = `
 @keyframes qb-badge {
   0%, 71.4% { opacity: 0; transform: scale(0.6); }
   74.5% { opacity: 1; transform: scale(1.08); }
-  77%, 100% { opacity: 1; transform: scale(1); }
+  77%, 94.5% { opacity: 1; transform: scale(1); }
+  99%, 100% { opacity: 0; transform: scale(1); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .qb-scene, .qb-cover-1, .qb-cover-2, .qb-cover-3, .qb-sum, .qb-hi, .qb-doc,
+  .qb-value, .qb-cover-1, .qb-cover-2, .qb-cover-3, .qb-sum, .qb-hi, .qb-doc,
   .qb-head, .qb-plane, .qb-trail, .qb-badge { animation: none; }
 }
 `
@@ -147,10 +153,10 @@ export function QuoteBuilder({
         ))}
         <line className="qb-rule" x1={22} y1={124} x2={166} y2={124} />
         <rect className="qb-hi" x={18} y={130} width={152} height={20} rx={4} />
+        <text className="qb-label" x={24} y={144}>
+          {totalLabel}
+        </text>
         <g className="qb-sum">
-          <text className="qb-label" x={24} y={144}>
-            {totalLabel}
-          </text>
           <text className="qb-total" x={164} y={144} textAnchor="end">
             S/ 12,980.00
           </text>

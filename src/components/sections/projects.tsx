@@ -54,8 +54,13 @@ export function Projects({
           </p>
         </div>
 
-        {/* Projects Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* Projects Grid: three columns, or two when three would leave one card alone */}
+        <div
+          className={
+            "grid grid-cols-1 md:grid-cols-2 gap-6 " +
+            (projects.length % 3 === 1 ? "lg:grid-cols-2 max-w-5xl mx-auto" : "lg:grid-cols-3")
+          }
+        >
           {projects.map((project, index) => (
             <ProjectCard
               key={project.id}

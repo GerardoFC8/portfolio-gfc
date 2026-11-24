@@ -186,7 +186,8 @@
     banner.id = 'demo-banner';
     banner.setAttribute('role', 'note');
     banner.className = 'demo-banner';
-    banner.textContent = 'Demo con datos ficticios · No es el sistema real';
+    // Same markup as the HTML pages: back to the portfolio, notice, contact.
+    if (!banner.querySelector('.db-back')) banner.innerHTML = '<a class="db-back" href="../">&larr; <span class="db-long">Volver al </span>portafolio</a><span class="db-note"><span class="db-long">Demo con datos ficticios · No es el sistema real</span><span class="db-short">Demo con datos ficticios</span></span><a class="db-cta" href="../#contact"><span class="db-long">¿Quieres algo así? </span>Hablemos</a>';
     if (!banner.parentNode) document.body.insertBefore(banner, document.body.firstChild);
     document.body.classList.add('has-demo-banner');
 

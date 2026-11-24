@@ -1,5 +1,7 @@
 // El equipo del cliente edita su propia web: cambia el título y la imagen en el
 // panel, guarda y la web se actualiza al instante. Bucle de 7 s.
+// Reinicio suave 6.6-6.9 s: el título y la imagen nuevos se funden de vuelta a
+// los originales; marcos, etiquetas, barras y botón no se desvanecen nunca.
 
 const css = `
 .cms-label { fill: var(--foreground); font-size: 11px; font-family: inherit; }
@@ -31,9 +33,9 @@ const css = `
 .cms-hole { fill: var(--card); }
 .cms-pct { fill: var(--primary-foreground); stroke: var(--primary-foreground); stroke-width: 1.5; stroke-linecap: round; }
 
-.cms-scene { animation: cms-scene 7s linear infinite; }
 .cms-sel { animation: cms-sel 7s linear infinite; }
 .cms-in .cms-old { animation: cms-old-in 7s linear infinite; }
+.cms-typed { animation: cms-typed 7s linear infinite; }
 .cms-cover { animation: cms-cover 7s linear infinite; }
 .cms-caret { animation: cms-caret 7s step-end infinite; }
 .cms-admin .cms-pa { animation: cms-pa-admin 7s ease-in-out infinite; }
@@ -46,9 +48,9 @@ const css = `
 .cms-site .cms-pb { animation: cms-pb-site 7s ease-out infinite; }
 .cms-hl, .cms-hl-ring { animation: cms-hl 7s ease-out infinite; }
 
-@keyframes cms-scene { 0%, 92% { opacity: 1; } 97%, 100% { opacity: 0; } }
 @keyframes cms-sel { 0%, 11% { opacity: 0; } 13%, 17% { opacity: 1; } 18.5%, 100% { opacity: 0; } }
-@keyframes cms-old-in { 0%, 17% { opacity: 1; } 18.5%, 100% { opacity: 0; } }
+@keyframes cms-old-in { 0%, 17% { opacity: 1; } 18.5%, 94.5% { opacity: 0; } 99%, 100% { opacity: 1; } }
+@keyframes cms-typed { 0%, 94.5% { opacity: 1; } 99%, 100% { opacity: 0; } }
 @keyframes cms-cover {
   0%, 23% { transform: translateX(0); animation-timing-function: steps(12, end); }
   37%, 100% { transform: translateX(106px); }
@@ -57,11 +59,12 @@ const css = `
   0% { opacity: 0; } 18.5% { opacity: 1; } 20.5% { opacity: 0; }
   22.5% { opacity: 1; } 38%, 100% { opacity: 0; }
 }
-@keyframes cms-pa-admin { 0%, 41% { opacity: 1; } 46%, 100% { opacity: 0; } }
+@keyframes cms-pa-admin { 0%, 41% { opacity: 1; } 46%, 94.5% { opacity: 0; } 99%, 100% { opacity: 1; } }
 @keyframes cms-pb-admin {
   0%, 41% { opacity: 0; transform: scale(0.85); }
   46% { opacity: 1; transform: scale(1.05); }
-  49%, 100% { opacity: 1; transform: scale(1); }
+  49%, 94.5% { opacity: 1; transform: scale(1); }
+  99%, 100% { opacity: 0; transform: scale(1); }
 }
 @keyframes cms-btn {
   0%, 52% { transform: scale(1); } 55% { transform: scale(0.92); }
@@ -78,17 +81,18 @@ const css = `
   65% { opacity: 1; transform: translateX(22px); }
   66.5%, 100% { opacity: 0; transform: translateX(26px); }
 }
-@keyframes cms-site-out { 0%, 66% { opacity: 1; } 68.5%, 100% { opacity: 0; } }
-@keyframes cms-site-in { 0%, 66% { opacity: 0; } 68.5%, 100% { opacity: 1; } }
+@keyframes cms-site-out { 0%, 66% { opacity: 1; } 68.5%, 94.5% { opacity: 0; } 99%, 100% { opacity: 1; } }
+@keyframes cms-site-in { 0%, 66% { opacity: 0; } 68.5%, 94.5% { opacity: 1; } 99%, 100% { opacity: 0; } }
 @keyframes cms-pb-site {
   0%, 66% { opacity: 0; transform: scale(0.9); }
   70% { opacity: 1; transform: scale(1.04); }
-  73%, 100% { opacity: 1; transform: scale(1); }
+  73%, 94.5% { opacity: 1; transform: scale(1); }
+  99%, 100% { opacity: 0; transform: scale(1); }
 }
 @keyframes cms-hl { 0%, 66% { opacity: 0; } 69% { opacity: 1; } 80%, 100% { opacity: 0; } }
 
 @media (prefers-reduced-motion: reduce) {
-  .cms-scene, .cms-sel, .cms-old, .cms-new, .cms-cover, .cms-caret, .cms-pa, .cms-pb,
+  .cms-sel, .cms-old, .cms-typed, .cms-new, .cms-cover, .cms-caret, .cms-pa, .cms-pb,
   .cms-btn, .cms-ring, .cms-chip, .cms-hl, .cms-hl-ring { animation: none !important; }
 }
 `
@@ -159,7 +163,7 @@ export function CmsLiveEdit({
           <rect className="cms-bar" x={18} y={35} width={30} height={5} rx={2} />
           <rect className="cms-input" x={18} y={44} width={108} height={20} rx={3} />
           <g className="cms-in" clipPath="url(#cms-clip-input)">
-            <text className="cms-in-text" x={23} y={57.5}>
+            <text className="cms-in-text cms-typed" x={23} y={57.5}>
               {newTitle}
             </text>
             <g className="cms-cover">

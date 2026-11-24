@@ -41,17 +41,6 @@ export function Footer({ footerData }: { footerData: FooterData[] | null }) {
   return (
     <footer className="bg-card border-t border-border">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Contact CTA, repeated from the Contact section */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 rounded-xl border border-border bg-muted/40 px-5 py-4 mb-8 text-center sm:text-left">
-          <p className="text-base font-semibold text-card-foreground">{t("footer_cta")}</p>
-          <a
-            href="#contact"
-            className="inline-flex min-h-11 items-center justify-center rounded-lg bg-primary px-5 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors duration-200"
-          >
-            {t("footer_cta_button")}
-          </a>
-        </div>
-
         {/* One row: brand, section links and social icons */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 lg:gap-8 text-center lg:text-left">
           <div className="shrink-0">
