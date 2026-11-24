@@ -28,6 +28,11 @@ import { ImageUploader, GalleryUploader } from "@/app/(admin)/admin/components/i
 
 const supabase = createClient();
 
+const categoryLabels: Record<Project["category"], string> = {
+  client: "Proyecto para clientes",
+  open_source: "Herramienta open source",
+};
+
 export const ProjectsAdmin = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [editingItem, setEditingItem] = useState<Partial<Project> | null>(null);
@@ -75,6 +80,7 @@ export const ProjectsAdmin = () => {
             tech: [],
             live_url: "",
             github_url: "",
+            category: "client",
           }
     );
     setIsModalOpen(true);
@@ -90,6 +96,7 @@ export const ProjectsAdmin = () => {
       order: Number(editingItem.order) || 0,
       tech: editingItem.tech || [],
       gallery_urls: editingItem.gallery_urls || [],
+      category: editingItem.category || "client",
     };
 
     // --- INICIO DE LA CORRECCIÓN DE PROMESA ---
@@ -125,7 +132,9 @@ export const ProjectsAdmin = () => {
   };
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
   ) => {
     if (!editingItem) return;
     const { name, value } = e.target;
@@ -188,6 +197,7 @@ export const ProjectsAdmin = () => {
               <tr className="border-b">
                 <th className="p-2 text-left">Orden</th>
                 <th className="p-2 text-left">Título (ES)</th>
+                <th className="p-2 text-left">Categoría</th>
                 <th className="p-2 text-left">Tecnologías</th>
                 <th className="p-2 text-right">Acciones</th>
               </tr>
@@ -214,6 +224,9 @@ export const ProjectsAdmin = () => {
                     </Button>
                   </td>
                   <td className="p-2">{item.title_es}</td>
+                  <td className="p-2 text-xs">
+                    {categoryLabels[item.category] ?? categoryLabels.client}
+                  </td>
                   <td className="p-2 text-xs">{item.tech.join(", ")}</td>
                   <td className="p-2 flex justify-end gap-2">
                     <Button
@@ -242,16 +255,33 @@ export const ProjectsAdmin = () => {
             </DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSave} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="order">Orden</Label>
-              <Input
-                id="order"
-                name="order"
-                type="number"
-                value={editingItem?.order}
-                onChange={handleChange}
-                required
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="order">Orden</Label>
+                <Input
+                  id="order"
+                  name="order"
+                  type="number"
+                  value={editingItem?.order}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="category">Categoría</Label>
+                <select
+                  id="category"
+                  name="category"
+                  value={editingItem?.category || "client"}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 bg-background border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                >
+                  <option value="client">{categoryLabels.client}</option>
+                  <option value="open_source">
+                    {categoryLabels.open_source}
+                  </option>
+                </select>
+              </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">

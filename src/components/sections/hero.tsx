@@ -3,13 +3,14 @@
 import Image from "next/image"
 import { useLanguage } from "@/context/language-context"
 import { Button } from "@/components/ui/button"
-import { ArrowRight, Download } from "lucide-react"
+import { ArrowRight, Download, MessageCircle } from "lucide-react"
 import { AuroraText } from "../ui/aurora-text"
 
 // --- Tipo de Datos (debe coincidir con page.tsx) ---
 interface HeroData {
   greeting: string
   title: string
+  headline: string
   subtitle: string
   cv_url: string
 }
@@ -29,11 +30,8 @@ export function Hero({ heroData }: { heroData: HeroData | null }) {
     link.click()
   }
 
-  const scrollToProjects = () => {
-    const element = document.querySelector("#projects")
-    if (element) {
-      element.scrollIntoView({ behavior: "smooth" })
-    }
+  const scrollTo = (selector: string) => {
+    document.querySelector(selector)?.scrollIntoView({ behavior: "smooth" })
   }
 
   // Muestra un loader si los datos (de props) aún no están
@@ -77,43 +75,68 @@ export function Hero({ heroData }: { heroData: HeroData | null }) {
 
         {/* Text column: no entrance animation, so it reads on first paint */}
         <div className="space-y-6 text-center lg:text-left">
-          <div className="space-y-3">
-            <p className="text-primary font-semibold text-lg">
-              {heroData.greeting}
-            </p>
-            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold text-foreground leading-tight">
-              <AuroraText colors={["#007BFF", "#7B68EE", "#00C0FF"]} speed={2}>
-                {heroData.title}
-              </AuroraText>
-            </h1>
-          </div>
+          {heroData.headline ? (
+            // The headline says what the client gets; the name supports it.
+            <div className="space-y-4">
+              <p className="text-xl sm:text-2xl font-semibold text-foreground">
+                {heroData.greeting}{" "}
+                <AuroraText colors={["#007BFF", "#7B68EE", "#00C0FF"]} speed={2}>
+                  {heroData.title}
+                </AuroraText>
+              </p>
+              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-bold text-foreground leading-tight text-balance">
+                {heroData.headline}
+              </h1>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <p className="text-primary font-semibold text-lg">
+                {heroData.greeting}
+              </p>
+              <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold text-foreground leading-tight">
+                <AuroraText colors={["#007BFF", "#7B68EE", "#00C0FF"]} speed={2}>
+                  {heroData.title}
+                </AuroraText>
+              </h1>
+            </div>
+          )}
 
           {/* Subtitle */}
           <p className="text-lg sm:text-xl text-muted-foreground leading-relaxed max-w-2xl mx-auto lg:mx-0 text-pretty">
             {heroData.subtitle}
           </p>
 
-          {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row justify-center lg:justify-start gap-4 pt-4">
+          {/* CTA Buttons: see the work, or start a conversation */}
+          <div className="flex flex-col sm:flex-row justify-center lg:justify-start gap-4 pt-2">
             <Button
-              onClick={scrollToProjects}
+              onClick={() => scrollTo("#projects")}
               size="lg"
-              className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground"
+              className="gap-2 min-h-11 bg-primary hover:bg-primary/90 text-primary-foreground"
             >
-              {t("hero_projects")}
+              {t("hero_cases")}
               <ArrowRight className="w-4 h-4" />
             </Button>
             <Button
-              onClick={handleDownloadCV}
+              onClick={() => scrollTo("#contact")}
               size="lg"
               variant="outline"
-              className="gap-2 border-border hover:bg-muted bg-transparent hover:text-black dark:hover:text-white dark:hover:bg-gray-600 dark:border-blue-700"
-              disabled={!heroData.cv_url}
+              className="gap-2 min-h-11 border-border hover:bg-muted bg-transparent hover:text-black dark:hover:text-white dark:hover:bg-gray-600 dark:border-blue-700"
+            >
+              <MessageCircle className="w-4 h-4" />
+              {t("hero_talk")}
+            </Button>
+          </div>
+
+          {/* CV: still there, but as a quiet text link */}
+          {heroData.cv_url && (
+            <button
+              onClick={handleDownloadCV}
+              className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors duration-200"
             >
               <Download className="w-4 h-4" />
               {t("hero_cv")}
-            </Button>
-          </div>
+            </button>
+          )}
         </div>
       </div>
     </section>

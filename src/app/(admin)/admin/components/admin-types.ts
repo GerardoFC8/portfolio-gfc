@@ -14,6 +14,8 @@ export type Hero = {
   greeting_es: string;
   greeting_en: string;
   title: string;
+  headline_es: string;
+  headline_en: string;
   subtitle_es: string;
   subtitle_en: string;
   cv_url: string;
@@ -31,6 +33,7 @@ export type Project = {
   tech: string[];
   live_url?: string;
   github_url?: string;
+  category: "client" | "open_source";
 };
 
 export type Experience = {
@@ -61,6 +64,20 @@ export type AISkill = {
   logo_url: string;
 };
 
+export type Service = {
+  id: string;
+  order: number;
+  icon: string; // clave de ícono lucide (history, gauge, layout-dashboard, ...)
+  featured: boolean;
+  title_es: string;
+  title_en: string;
+  description_es: string;
+  description_en: string;
+  items_es: string[];
+  items_en: string[];
+  created_at?: string;
+};
+
 export type SocialLink = {
   id: string;
   name: string;
@@ -75,6 +92,7 @@ export type Section =
   | "general_text"
   | "hero"
   | "projects"
+  | "services"
   | "experience"
   | "technologies"
   | "ai_skills"
