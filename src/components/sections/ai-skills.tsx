@@ -38,7 +38,7 @@ export function AISkills({
     return (
       <section
         id="ai-skills"
-        className="py-20 px-4 sm:px-6 lg:px-8 bg-muted/30"
+        className="py-14 px-4 sm:px-6 lg:px-8 bg-muted/30"
       >
         <div className="max-w-7xl mx-auto text-center">
           <p className="text-muted-foreground">Cargando habilidades de IA...</p>
@@ -54,7 +54,7 @@ export function AISkills({
   return (
     <section
       id="ai-skills"
-      className="py-20 px-4 sm:px-6 lg:px-8 bg-background/60"
+      className="py-14 px-4 sm:px-6 lg:px-8 bg-background/60"
     >
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-12">

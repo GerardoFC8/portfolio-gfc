@@ -84,7 +84,8 @@ const MatrixRain = () => {
       ref={canvasRef}
       aria-hidden
       // Kept faint so it reads as texture, not as content competing with the text.
-      className="fixed top-0 left-0 w-full h-full -z-10 bg-background opacity-45 dark:opacity-70"
+      // Light mode gets much less, since there it competes with dark text.
+      className="fixed top-0 left-0 w-full h-full -z-10 bg-background opacity-20 dark:opacity-60"
     />
   )
 }

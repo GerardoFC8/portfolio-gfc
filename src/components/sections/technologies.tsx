@@ -114,7 +114,7 @@ export function Technologies({
     return (
       <section
         id="technologies"
-        className="py-20 px-4 sm:px-6 lg:px-8 bg-muted/30"
+        className="py-14 px-4 sm:px-6 lg:px-8 bg-muted/30"
       >
         <div className="max-w-7xl mx-auto text-center">
           <p className="text-muted-foreground">Cargando tecnologías...</p>
@@ -126,39 +126,23 @@ export function Technologies({
   return (
     <section
       id="technologies"
-      className="py-20 px-4 sm:px-6 lg:px-8 bg-background/60"
+      className="py-14 px-4 sm:px-6 lg:px-8 bg-background/60"
     >
       <div className="max-w-7xl mx-auto">
-        {/* Section Header y Toggle Button */}
-        <div className="flex flex-col sm:flex-row justify-between items-center text-center sm:text-left mb-10">
-          <div>
-            <h2 className="text-4xl sm:text-5xl font-bold text-foreground mb-4">
-              {t("tech_title")} {/* 't' del contexto */}
-            </h2>
-            <p className="text-muted-foreground text-lg max-w-2xl mx-auto sm:mx-0">
-              {t("tech_subtitle") || "Herramientas que uso para crear soluciones"}
-            </p>
-          </div>
-          <div className="mt-4 sm:mt-0">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => setViewMode(viewMode === "grid" ? "cloud" : "grid")}
-              aria-label="Cambiar vista"
-              className="dark:hover:text-blue-100"
-            >
-              {viewMode === "grid" ? (
-                <Cloud className="h-5 w-5" />
-              ) : (
-                <Grid className="h-5 w-5" />
-              )}
-            </Button>
-          </div>
+        {/* Section Header: same style as the other sections */}
+        <div className="text-center mb-12">
+          <h2 className="text-4xl sm:text-5xl font-bold text-foreground mb-4">
+            {t("tech_title")}
+          </h2>
+          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+            {t("tech_subtitle") || "Herramientas que uso para crear soluciones"}
+          </p>
         </div>
 
-        {viewMode === "grid" ? (
-          <div>
-            <p className="flex flex-wrap items-center justify-center sm:justify-start gap-x-5 gap-y-1 mb-6 text-sm text-muted-foreground">
+        {/* Legend on the left, view toggle on the right */}
+        <div className="flex items-center justify-between gap-4 mb-6">
+          {viewMode === "grid" ? (
+            <p className="flex flex-wrap items-center gap-x-5 gap-y-1 text-sm text-muted-foreground">
               <span className="inline-flex items-center gap-2">
                 <span className="h-2 w-2 rounded-full bg-primary" aria-hidden="true" />
                 {t("tech_dominant_title")}
@@ -168,6 +152,27 @@ export function Technologies({
                 {t("tech_knowledge_title")}
               </span>
             </p>
+          ) : (
+            <span />
+          )}
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => setViewMode(viewMode === "grid" ? "cloud" : "grid")}
+            aria-label={viewMode === "grid" ? t("tech_view_cloud") : t("tech_view_grid")}
+            title={viewMode === "grid" ? t("tech_view_cloud") : t("tech_view_grid")}
+            className="shrink-0 size-11 dark:hover:text-blue-100"
+          >
+            {viewMode === "grid" ? (
+              <Cloud className="h-5 w-5" />
+            ) : (
+              <Grid className="h-5 w-5" />
+            )}
+          </Button>
+        </div>
+
+        {viewMode === "grid" ? (
+          <div>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {groups.map(({ area, items }) => {
                 const key = `tech_area_${area}`

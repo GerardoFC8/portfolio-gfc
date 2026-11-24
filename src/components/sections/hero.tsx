@@ -4,7 +4,6 @@ import Image from "next/image"
 import { useLanguage } from "@/context/language-context"
 import { Button } from "@/components/ui/button"
 import { ArrowRight, Download } from "lucide-react"
-import { TypingAnimation } from "../ui/typing-animation"
 import { AuroraText } from "../ui/aurora-text"
 
 // --- Tipo de Datos (debe coincidir con page.tsx) ---
@@ -47,35 +46,39 @@ export function Hero({ heroData }: { heroData: HeroData | null }) {
   }
 
   return (
-    <section className="min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-8 py-20 bg-background/60">
-      <div className="max-w-4xl mx-auto w-full">
-        <div className="space-y-8">
-          <div className="mb-8">
-            {/* A looping MP4 is ~46x lighter than the original 6.3 MB GIF.
-                The poster paints at once and stays put under reduced motion. */}
-            <video
-              src="/avatar.mp4"
-              poster="/avatar-poster.webp"
-              autoPlay
-              muted
-              loop
-              playsInline
-              preload="metadata"
-              aria-label="Avatar pixel art de Gerardo Franco"
-              className="w-32 h-32 lg:w-56 lg:h-56 rounded-full mx-auto object-cover ring-4 ring-white dark:ring-gray-800 shadow-lg motion-reduce:hidden"
-            />
-            <Image
-              src="/avatar-poster.webp"
-              alt="Avatar pixel art de Gerardo Franco"
-              width={224}
-              height={224}
-              priority
-              className="hidden motion-reduce:block w-32 h-32 lg:w-56 lg:h-56 rounded-full mx-auto object-cover ring-4 ring-white dark:ring-gray-800 shadow-lg"
-            />
-          </div>
-          {/* Greeting */}
-          <div className="space-y-4">
-            <p className="text-primary font-semibold text-lg animate-fade-in">
+    // pt-28 clears the fixed 64px navbar; no min-h-screen, so at 1440x900
+    // the start of the next section is already in view.
+    <section className="flex items-center px-4 sm:px-6 lg:px-8 pt-28 pb-16 lg:pt-32 lg:pb-20 bg-background/60">
+      <div className="max-w-6xl mx-auto w-full grid items-center gap-10 lg:gap-16 lg:grid-cols-[1fr_auto]">
+        {/* Avatar: first and centered on mobile, right column on desktop */}
+        <div className="lg:order-last">
+          {/* A looping MP4 is ~46x lighter than the original 6.3 MB GIF.
+              The poster paints at once and stays put under reduced motion. */}
+          <video
+            src="/avatar.mp4"
+            poster="/avatar-poster.webp"
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="metadata"
+            aria-label="Avatar pixel art de Gerardo Franco"
+            className="w-32 h-32 sm:w-40 sm:h-40 lg:w-72 lg:h-72 rounded-full mx-auto object-cover ring-4 ring-white dark:ring-gray-800 shadow-lg motion-reduce:hidden"
+          />
+          <Image
+            src="/avatar-poster.webp"
+            alt="Avatar pixel art de Gerardo Franco"
+            width={288}
+            height={288}
+            priority
+            className="hidden motion-reduce:block w-32 h-32 sm:w-40 sm:h-40 lg:w-72 lg:h-72 rounded-full mx-auto object-cover ring-4 ring-white dark:ring-gray-800 shadow-lg"
+          />
+        </div>
+
+        {/* Text column: no entrance animation, so it reads on first paint */}
+        <div className="space-y-6 text-center lg:text-left">
+          <div className="space-y-3">
+            <p className="text-primary font-semibold text-lg">
               {heroData.greeting}
             </p>
             <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold text-foreground leading-tight">
@@ -86,12 +89,12 @@ export function Hero({ heroData }: { heroData: HeroData | null }) {
           </div>
 
           {/* Subtitle */}
-          <p className="text-lg sm:text-xl text-muted-foreground leading-relaxed max-w-3xl text-pretty">
-            <TypingAnimation className="leading-0" duration={40}>{heroData.subtitle}</TypingAnimation>
+          <p className="text-lg sm:text-xl text-muted-foreground leading-relaxed max-w-2xl mx-auto lg:mx-0 text-pretty">
+            {heroData.subtitle}
           </p>
 
           {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 pt-8">
+          <div className="flex flex-col sm:flex-row justify-center lg:justify-start gap-4 pt-4">
             <Button
               onClick={scrollToProjects}
               size="lg"
@@ -110,16 +113,6 @@ export function Hero({ heroData }: { heroData: HeroData | null }) {
               <Download className="w-4 h-4" />
               {t("hero_cv")}
             </Button>
-          </div>
-
-          {/* Scroll Indicator */}
-          <div className="flex justify-center pt-12">
-            <div className="animate-bounce flex flex-col items-center gap-2">
-              <p className="text-xs text-muted-foreground uppercase tracking-widest">Scroll</p>
-              <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-              </svg>
-            </div>
           </div>
         </div>
       </div>
