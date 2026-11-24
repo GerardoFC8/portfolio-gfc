@@ -55,6 +55,7 @@ export type Technology = {
   name: string;
   logo_url: string;
   category: "dominant" | "knowledge";
+  featured: boolean;
 };
 
 export type AISkill = {

@@ -47,6 +47,7 @@ interface TechnologyData {
   name: string
   logo_url: string
   category: "dominant" | "knowledge"
+  featured: boolean
 }
 
 interface AISkillData {
@@ -133,7 +134,7 @@ async function getPageContent(supabase: SupabaseClient, lang: Language) {
       .returns<ExperienceRow[]>(),
     supabase
       .from("technologies")
-      .select(`id, name, logo_url, category`)
+      .select(`id, name, logo_url, category, featured`)
       .order("order", { ascending: true })
       .returns<TechnologyData[]>(),
     supabase
