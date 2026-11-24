@@ -1,0 +1,543 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Tarjetas de Crédito - Finanzentral (demo)</title>
+<meta name="description" content="Demo estática de Finanzentral con datos ficticios">
+<link rel="icon" href="./icon-finanzentral.webp">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Outfit:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="./styles.css">
+<script src="./app.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.1.11/dist/index.global.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.9/dist/chart.umd.min.js"></script>
+</head>
+<body class="font-sans antialiased">
+<div class="fz-banner" role="note">Demo con datos ficticios · No es la aplicación real</div>
+<aside id="fz-sidebar"></aside>
+<div class="fz-inset">
+  <div id="fz-header"></div>
+  <main class="flex flex-1 flex-col gap-4 p-4 pb-20 md:gap-6 md:p-6 md:pb-6" x-data="tarjetas()" x-init="init()">
+    <div class="dash-dot-grid space-y-6 min-w-0">
+
+      <!-- ================= LIST VIEW (app/dashboard/credit-cards/page.tsx + credit-card-manager.tsx) ================= -->
+      <div x-show="!detailId" class="space-y-6">
+        <div class="dash-card-reveal dash-card-reveal-1 flex items-center gap-3">
+          <div class="h-8 w-1 rounded-full bg-gradient-to-b from-violet-500 to-rose-500"></div>
+          <div>
+            <h1 class="font-display text-2xl font-bold tracking-tight md:text-3xl">Tarjetas de Credito</h1>
+            <p class="text-[11px] uppercase tracking-wider text-muted-foreground mt-1">Gestiona tus tarjetas de credito, registra consumos y realiza pagos</p>
+          </div>
+        </div>
+
+        <div class="space-y-8">
+          <!-- Summary Cards -->
+          <div class="grid gap-4 md:grid-cols-3 dash-card-reveal dash-card-reveal-2">
+            <div class="dash-card-glass rounded-xl relative overflow-hidden" :class="totals.hasDebt ? 'dash-glow-expense' : ''">
+              <div class="px-5 pt-5 pb-2">
+                <p class="dash-section-label text-[11px] flex items-center gap-2">
+                  <span x-html="FZ.icon('trending-down', 'h-4 w-4 ' + (totals.hasDebt ? 'text-rose-500' : 'text-emerald-500'))"></span>
+                  Deuda Total
+                </p>
+              </div>
+              <div class="px-5 pb-5">
+                <div class="space-y-1" x-show="totals.hasDebt">
+                  <div x-show="totals.debtLocal > 0" class="font-display text-2xl font-bold dash-text-expense dash-number-roll" x-text="FZ.money(totals.debtLocal, 'PEN')"></div>
+                  <div x-show="totals.debtUsd > 0" class="font-display font-bold dash-text-expense dash-number-roll" :class="totals.debtLocal > 0 ? 'text-lg' : 'text-2xl'" x-text="FZ.money(totals.debtUsd, 'USD')"></div>
+                </div>
+                <div x-show="!totals.hasDebt" class="font-display text-2xl font-bold dash-text-income dash-number-roll" x-text="FZ.money(0, 'PEN')"></div>
+                <p class="text-[10px] text-muted-foreground mt-1" x-text="totals.hasDebt ? 'Pendiente de pago' : 'Sin deudas!'"></p>
+              </div>
+            </div>
+
+            <div class="dash-card-glass rounded-xl relative overflow-hidden">
+              <div class="px-5 pt-5 pb-2">
+                <p class="dash-section-label text-[11px] flex items-center gap-2"><i data-icon="wallet" class="h-4 w-4 text-blue-500"></i>Disponible</p>
+              </div>
+              <div class="px-5 pb-5">
+                <div class="space-y-1">
+                  <div class="font-display text-2xl font-bold dash-text-primary dash-number-roll" x-text="FZ.money(totals.available, 'PEN')"></div>
+                  <p class="text-[10px] text-muted-foreground" x-text="'Linea total: ' + FZ.money(totals.limit, 'PEN')"></p>
+                </div>
+              </div>
+            </div>
+
+            <div class="dash-card-glass rounded-xl relative overflow-hidden">
+              <div class="px-5 pt-5 pb-2">
+                <p class="dash-section-label text-[11px] flex items-center gap-2"><i data-icon="credit-card" class="h-4 w-4"></i>Lineas de Credito</p>
+              </div>
+              <div class="px-5 pb-5">
+                <div class="space-y-1">
+                  <div class="font-display text-2xl font-bold dash-number-roll" x-text="FZ.money(totals.limit, 'PEN')"></div>
+                </div>
+                <p class="text-[10px] text-muted-foreground mt-2" x-text="cards.length + (cards.length === 1 ? ' tarjeta' : ' tarjetas')"></p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Header with Add Button -->
+          <div class="dash-card-reveal dash-card-reveal-3 flex items-center justify-between gap-3">
+            <div class="flex items-center gap-2 min-w-0">
+              <div class="h-5 w-1 rounded-full bg-violet-500 shrink-0"></div>
+              <div class="min-w-0">
+                <h2 class="font-display text-lg font-semibold">Mis Tarjetas</h2>
+                <p class="text-[11px] text-muted-foreground">Gestiona tus tarjetas de credito y registra consumos</p>
+              </div>
+            </div>
+            <button type="button" @click="FZ.notInDemo()" class="shrink-0 inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium h-9 px-3 bg-primary text-primary-foreground hover:bg-primary/90 shadow-md">
+              <i data-icon="plus" class="h-4 w-4"></i><span class="hidden sm:inline">Nueva Tarjeta</span><span class="sm:hidden">Nueva</span>
+            </button>
+          </div>
+
+          <!-- Credit Cards Grid -->
+          <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3 dash-card-reveal dash-card-reveal-4">
+            <template x-for="c in cards" :key="c.id">
+              <div class="space-y-3 min-w-0">
+                <!-- credit-card-display.tsx -->
+                <div class="space-y-3">
+                  <div class="relative overflow-hidden rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300">
+                    <div class="relative h-40 bg-gradient-to-br p-4 text-white" :class="c.gradient">
+                      <div class="absolute inset-0 opacity-[0.08]">
+                        <div class="absolute -top-8 -right-8 w-32 h-32 bg-white rounded-full"></div>
+                        <div class="absolute -bottom-6 -left-6 w-24 h-24 bg-white rounded-full"></div>
+                      </div>
+                      <div class="absolute top-12 left-4 w-9 h-6 rounded-sm bg-gradient-to-br from-yellow-300 to-yellow-500 shadow-sm">
+                        <div class="absolute inset-0.5 rounded-sm border border-yellow-600/30 flex items-center justify-center"><div class="w-2 h-2 border border-yellow-700/40 rounded-sm"></div></div>
+                      </div>
+                      <div class="relative z-10 h-full flex flex-col justify-between">
+                        <div class="flex justify-between items-start gap-2">
+                          <p class="text-xs font-medium opacity-80 tracking-wide uppercase truncate" x-text="c.bank"></p>
+                          <div class="flex items-center gap-2 shrink-0">
+                            <div class="bg-white/20 px-2 py-0.5 rounded text-[10px] font-bold" x-text="c.brand"></div>
+                            <button type="button" @click="FZ.notInDemo()" class="fz-icon-btn inline-flex items-center justify-center rounded-md text-white/80 hover:text-white hover:bg-white/20 h-6 w-6" aria-label="Editar tarjeta"><i data-icon="eye" class="h-3 w-3"></i></button>
+                          </div>
+                        </div>
+                        <div class="mt-auto min-w-0">
+                          <p class="text-sm font-semibold truncate" x-text="c.name"></p>
+                          <p class="text-xs font-mono tracking-[0.2em] opacity-75" x-text="'•••• •••• •••• ' + c.last4"></p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Balance & Info Card -->
+                  <div class="dash-card-glass rounded-xl">
+                    <div class="p-4 space-y-3">
+                      <div class="space-y-2">
+                        <div class="flex justify-between items-center gap-2">
+                          <span class="dash-section-label text-[10px]">Disponible</span>
+                          <span class="font-display text-lg font-bold dash-text-primary dash-number-roll" x-text="FZ.money(c.available, 'PEN')"></span>
+                        </div>
+                        <div class="dash-progress h-2 rounded-full overflow-hidden">
+                          <div class="h-full rounded-full transition-all duration-500" :class="c.usage > 80 ? 'bg-rose-500' : c.usage > 50 ? 'bg-amber-500' : 'bg-emerald-500'" :style="'width:' + Math.min(c.usage, 100) + '%'"></div>
+                        </div>
+                        <div class="flex justify-between gap-2 text-[10px] text-muted-foreground">
+                          <span x-text="'Linea: ' + FZ.money(c.limit, 'PEN')"></span>
+                          <span x-text="c.usage.toFixed(0) + '% usado'"></span>
+                        </div>
+                      </div>
+
+                      <div x-show="c.hasDebt" class="pt-2 border-t border-white/5 space-y-1">
+                        <p class="dash-section-label text-[10px]">Deuda Actual</p>
+                        <div class="space-y-1">
+                          <div x-show="c.debtLocal > 0" class="flex justify-between text-sm"><span class="text-muted-foreground">PEN:</span><span class="font-display font-semibold dash-text-expense" x-text="FZ.money(c.debtLocal, 'PEN')"></span></div>
+                          <div x-show="c.debtUsd > 0" class="flex justify-between text-sm"><span class="text-muted-foreground">USD:</span><span class="font-display font-semibold dash-text-expense" x-text="FZ.money(c.debtUsd, 'USD')"></span></div>
+                        </div>
+                      </div>
+
+                      <div x-show="c.hasDebt" class="pt-2 border-t border-white/5">
+                        <div class="flex justify-between text-[10px]"><span class="text-muted-foreground">Prox. Pago:</span><span class="font-medium" x-text="shortDate(c.nextPayment)"></span></div>
+                      </div>
+
+                      <button type="button" @click="openDetail(c.id)" class="w-full flex items-center justify-center gap-2 text-[11px] text-blue-500 hover:text-blue-400 font-medium transition-colors pt-2">
+                        <i data-icon="external-link" class="h-3.5 w-3.5"></i>Ver detalle completo
+                      </button>
+
+                      <button type="button" x-show="c.hasDebt" @click="FZ.notInDemo()" class="w-full inline-flex items-center justify-center gap-1.5 h-8 rounded-md px-3 text-sm font-medium bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-sm">
+                        <i data-icon="credit-card" class="h-3.5 w-3.5"></i>Realizar Pago
+                      </button>
+
+                      <div x-show="!c.hasDebt" class="text-center py-2 text-[11px] text-muted-foreground">
+                        <p class="font-medium dash-text-income">Sin deuda pendiente!</p>
+                        <p class="text-[10px] mt-0.5">Tu tarjeta esta al dia</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="flex gap-2 justify-center">
+                  <button type="button" @click="FZ.notInDemo()" class="flex-1 inline-flex items-center justify-center gap-1.5 h-8 rounded-md px-3 text-sm font-medium border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50">
+                    <i data-icon="pencil" class="h-3.5 w-3.5"></i>Editar
+                  </button>
+                  <button type="button" @click="FZ.notInDemo()" :disabled="c.hasDebt" class="inline-flex items-center justify-center gap-1.5 h-8 rounded-md px-3 text-sm font-medium border bg-background shadow-xs dark:bg-input/30 dark:border-input text-destructive hover:text-destructive hover:bg-destructive/10 disabled:pointer-events-none disabled:opacity-50">
+                    <i data-icon="trash" class="h-3.5 w-3.5"></i>Eliminar
+                  </button>
+                </div>
+              </div>
+            </template>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= DETAIL VIEW (credit-card-detail.tsx) ================= -->
+      <template x-if="detail">
+        <div class="space-y-6 min-w-0" id="card-detail">
+          <div class="flex items-center gap-4">
+            <button type="button" @click="closeDetail()" class="fz-icon-btn inline-flex size-9 shrink-0 items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50" aria-label="Volver a Tarjetas">
+              <span x-html="FZ.icon('chevron-left', 'h-5 w-5')"></span>
+            </button>
+            <div class="min-w-0">
+              <h1 class="text-2xl font-bold tracking-tight truncate" x-text="detail.name"></h1>
+              <p class="text-muted-foreground truncate" x-text="detail.bank + ' • •••• ' + detail.last4"></p>
+            </div>
+          </div>
+
+          <div class="grid gap-4 md:grid-cols-3">
+            <div class="relative overflow-hidden rounded-xl shadow-lg md:col-span-1">
+              <div class="relative h-44 bg-gradient-to-br p-5 text-white" :class="detail.gradient">
+                <div class="absolute inset-0 opacity-[0.08]">
+                  <div class="absolute -top-8 -right-8 w-32 h-32 bg-white rounded-full"></div>
+                  <div class="absolute -bottom-6 -left-6 w-24 h-24 bg-white rounded-full"></div>
+                </div>
+                <div class="absolute top-14 left-5 w-10 h-7 rounded-sm bg-gradient-to-br from-yellow-300 to-yellow-500 shadow-sm">
+                  <div class="absolute inset-0.5 rounded-sm border border-yellow-600/30 flex items-center justify-center"><div class="w-2.5 h-2.5 border border-yellow-700/40 rounded-sm"></div></div>
+                </div>
+                <div class="relative z-10 h-full flex flex-col justify-between">
+                  <div class="flex justify-between items-start gap-2">
+                    <p class="text-xs font-medium opacity-80 tracking-wide uppercase truncate" x-text="detail.bank"></p>
+                    <div class="bg-white/20 px-2 py-0.5 rounded text-xs font-bold shrink-0" x-text="detail.brand"></div>
+                  </div>
+                  <div class="mt-auto min-w-0">
+                    <p class="text-sm font-semibold truncate" x-text="detail.name"></p>
+                    <p class="text-xs font-mono tracking-[0.2em] opacity-75" x-text="'•••• •••• •••• ' + detail.last4"></p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="bg-card text-card-foreground flex flex-col gap-4 rounded-xl border py-5 shadow-sm">
+              <div class="px-6 pb-0">
+                <p class="text-sm font-medium text-muted-foreground flex items-center gap-2"><span x-html="FZ.icon('trending-up', 'h-4 w-4')"></span>Disponible / Límite</p>
+              </div>
+              <div class="px-6 space-y-3">
+                <div>
+                  <p class="text-2xl font-bold text-primary" x-text="FZ.money(detail.available, 'PEN')"></p>
+                  <p class="text-xs text-muted-foreground" x-text="'de ' + FZ.money(detail.limit, 'PEN')"></p>
+                </div>
+                <div class="h-2 bg-muted rounded-full overflow-hidden">
+                  <div class="h-full rounded-full transition-all duration-500" :class="detail.usage > 80 ? 'bg-red-500' : detail.usage > 50 ? 'bg-yellow-500' : 'bg-green-500'" :style="'width:' + Math.min(detail.usage, 100) + '%'"></div>
+                </div>
+                <p class="text-xs text-muted-foreground text-right" x-text="detail.usage.toFixed(0) + '% utilizado'"></p>
+              </div>
+            </div>
+
+            <div class="bg-card text-card-foreground flex flex-col gap-4 rounded-xl border py-5 shadow-sm">
+              <div class="px-6">
+                <p class="text-sm font-medium text-muted-foreground flex items-center gap-2"><span x-html="FZ.icon('calendar', 'h-4 w-4')"></span>Fechas de Facturación</p>
+              </div>
+              <div class="px-6 space-y-3">
+                <div class="grid grid-cols-2 gap-3">
+                  <div><p class="text-xs text-muted-foreground">Día de Corte</p><p class="text-lg font-bold" x-text="detail.cutDay"></p></div>
+                  <div><p class="text-xs text-muted-foreground">Día de Pago</p><p class="text-lg font-bold" x-text="detail.dueDay"></p></div>
+                </div>
+                <div class="pt-2 border-t">
+                  <div class="flex items-center gap-2">
+                    <span x-html="billing.isOverdue ? FZ.icon('alert-circle', 'h-4 w-4 text-red-500') : billing.daysUntilDue <= 7 ? FZ.icon('clock', 'h-4 w-4 text-yellow-500') : FZ.icon('check-circle', 'h-4 w-4 text-green-500')"></span>
+                    <span class="text-sm" x-text="billing.isOverdue ? 'Pago vencido' : billing.daysUntilDue + ' días para pagar'"></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Debt Summary -->
+          <div x-show="detail.hasDebt" class="bg-card text-card-foreground flex flex-col gap-4 rounded-xl border py-5 shadow-sm">
+            <div class="px-6 flex flex-wrap items-center justify-between gap-3">
+              <p class="text-base font-semibold">Deuda Actual</p>
+              <button type="button" @click="FZ.notInDemo()" class="inline-flex items-center justify-center gap-2 h-8 rounded-md px-3 text-sm font-medium text-white bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700">
+                <span x-html="FZ.icon('credit-card', 'h-4 w-4')"></span>Realizar Pago
+              </button>
+            </div>
+            <div class="px-6">
+              <div class="flex flex-wrap gap-4">
+                <div x-show="detail.debtLocal > 0" class="flex items-center gap-2">
+                  <span class="inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium text-red-600 border-red-200 bg-red-50 dark:bg-red-500/10 dark:border-red-500/30">PEN</span>
+                  <span class="text-lg font-semibold text-red-600" x-text="FZ.money(detail.debtLocal, 'PEN')"></span>
+                </div>
+                <div x-show="detail.debtUsd > 0" class="flex flex-wrap items-center gap-2">
+                  <span class="inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium text-blue-600 border-blue-200 bg-blue-50 dark:bg-blue-500/10 dark:border-blue-500/30">USD</span>
+                  <span class="text-lg font-semibold text-blue-600" x-text="FZ.money(detail.debtUsd, 'USD')"></span>
+                  <span class="text-xs text-muted-foreground" x-text="'(≈ ' + FZ.money(detail.debtUsdLocal, 'PEN') + ')'"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tabs -->
+          <div class="space-y-4">
+            <div class="overflow-x-auto pb-2 -mx-1 px-1">
+              <div role="tablist" class="bg-muted text-muted-foreground inline-flex h-9 max-md:h-auto items-center justify-center rounded-lg p-[3px] w-max sm:grid sm:w-full sm:grid-cols-2 sm:max-w-md">
+                <button type="button" role="tab" :aria-selected="tab === 'pending'" :data-state="tab === 'pending' ? 'active' : 'inactive'" @click="tab = 'pending'" class="hover:bg-background/50 dark:hover:bg-background/20 not-data-[state=active]:hover:text-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:border-border/60 data-[state=active]:shadow-md dark:data-[state=active]:border-primary/30 dark:data-[state=active]:bg-primary/15 text-foreground dark:text-muted-foreground inline-flex h-[calc(100%-1px)] items-center justify-center gap-1.5 rounded-md border border-transparent px-2 py-1 text-sm font-medium whitespace-nowrap transition-all duration-200 flex-none sm:flex-1">Pendientes por Pagar</button>
+                <button type="button" role="tab" :aria-selected="tab === 'schedule'" :data-state="tab === 'schedule' ? 'active' : 'inactive'" @click="tab = 'schedule'" class="hover:bg-background/50 dark:hover:bg-background/20 not-data-[state=active]:hover:text-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:border-border/60 data-[state=active]:shadow-md dark:data-[state=active]:border-primary/30 dark:data-[state=active]:bg-primary/15 text-foreground dark:text-muted-foreground inline-flex h-[calc(100%-1px)] items-center justify-center gap-1.5 rounded-md border border-transparent px-2 py-1 text-sm font-medium whitespace-nowrap transition-all duration-200 flex-none sm:flex-1">Cronograma de Cuotas</button>
+              </div>
+            </div>
+
+            <!-- Pending (pending-items-list.tsx) -->
+            <div x-show="tab === 'pending'" class="space-y-4" id="tab-pending">
+              <div class="bg-card text-card-foreground rounded-xl border shadow-sm py-4 px-6">
+                <div class="flex items-center justify-between gap-3">
+                  <div class="min-w-0"><p class="text-sm text-muted-foreground">Periodo actual</p><p class="font-semibold" x-text="billing.periodLabel"></p></div>
+                  <div class="text-right"><p class="text-sm text-muted-foreground">Fecha de pago</p><p class="font-semibold" x-text="shortDate(billing.dueDate)"></p></div>
+                  <div class="shrink-0">
+                    <span class="inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium whitespace-nowrap" :class="billing.isOverdue ? 'border-transparent bg-destructive text-white' : billing.daysUntilDue <= 7 ? 'text-yellow-600 border-yellow-300 bg-yellow-50 dark:bg-yellow-500/10' : 'text-green-600 border-green-300 bg-green-50 dark:bg-green-500/10'" x-text="billing.isOverdue ? 'Vencido' : billing.daysUntilDue + ' días'"></span>
+                  </div>
+                </div>
+              </div>
+
+              <template x-for="sec in pending" :key="sec.currency">
+                <div class="bg-card text-card-foreground rounded-xl border shadow-sm py-5">
+                  <div class="px-6 pb-3 flex items-center justify-between gap-2">
+                    <p class="text-base font-semibold flex items-center gap-2 min-w-0">
+                      <span class="inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium" :class="sec.currency === 'PEN' ? 'text-green-600 border-green-200 bg-green-50 dark:bg-green-500/10 dark:border-green-500/30' : 'text-blue-600 border-blue-200 bg-blue-50 dark:bg-blue-500/10 dark:border-blue-500/30'" x-text="sec.currency"></span>
+                      <span class="truncate" x-text="sec.currency === 'PEN' ? 'Deuda en PEN' : 'Deuda en Dólares'"></span>
+                    </p>
+                    <button type="button" @click="selectAll(sec)" class="shrink-0 inline-flex items-center h-8 rounded-md px-3 text-xs font-medium hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50" x-text="countSel(sec) === sec.items.length ? 'Deseleccionar' : 'Seleccionar todo'"></button>
+                  </div>
+                  <div class="px-6">
+                    <div class="border rounded-lg divide-y">
+                      <template x-for="it in sec.items" :key="it.id">
+                        <label class="flex items-center gap-3 p-3 transition-colors cursor-pointer" :class="selPend[it.id] ? 'bg-primary/5' : 'hover:bg-muted/50'">
+                          <input type="checkbox" class="h-4 w-4 shrink-0 accent-[var(--primary)]" :checked="!!selPend[it.id]" @change="togglePend(it.id)" :aria-label="'Seleccionar ' + it.description">
+                          <span class="flex-shrink-0" x-html="FZ.icon(it.status === 'overdue' ? 'alert-circle' : 'clock', 'h-4 w-4 ' + (it.status === 'overdue' ? 'text-red-500' : it.status === 'due_soon' ? 'text-yellow-500' : 'text-muted-foreground'))"></span>
+                          <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-2 min-w-0">
+                              <span class="font-medium text-sm truncate" x-text="it.description"></span>
+                              <span x-show="it.type === 'installment'" class="inline-flex items-center rounded-md border border-transparent bg-secondary text-secondary-foreground px-2 py-0.5 text-xs font-medium shrink-0">Cuota</span>
+                              <span x-show="it.status === 'overdue'" class="inline-flex items-center rounded-md border border-transparent bg-destructive text-white px-2 py-0.5 text-xs font-medium shrink-0">Vencido</span>
+                              <span x-show="it.status === 'due_soon'" class="inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium text-yellow-600 border-yellow-300 bg-yellow-50 dark:bg-yellow-500/10 shrink-0">Próximo</span>
+                            </div>
+                            <p class="text-xs text-muted-foreground" x-text="(it.type === 'installment' ? it.label + ' · ' : '') + 'Vence: ' + shortDate(FZ.parseDate(it.dueDate))"></p>
+                          </div>
+                          <div class="text-right shrink-0"><p class="font-semibold text-sm" x-text="FZ.money(it.amount, sec.currency)"></p></div>
+                        </label>
+                      </template>
+                    </div>
+                    <div class="flex justify-between items-center mt-3 pt-3 border-t">
+                      <span class="text-sm text-muted-foreground" x-text="countSel(sec) > 0 ? countSel(sec) + ' seleccionado(s)' : 'Total'"></span>
+                      <span class="font-bold text-lg" x-text="FZ.money(countSel(sec) > 0 ? sumSel(sec) : sec.total, sec.currency)"></span>
+                    </div>
+                  </div>
+                </div>
+              </template>
+
+              <div x-show="pending.length === 0" class="bg-card text-card-foreground rounded-xl border shadow-sm py-8 text-center">
+                <span class="inline-block" x-html="FZ.icon('check-circle', 'h-12 w-12 text-green-500 mx-auto mb-3')"></span>
+                <p class="font-medium text-green-600">¡Sin deuda pendiente!</p>
+                <p class="text-sm text-muted-foreground">Tu tarjeta está al día</p>
+              </div>
+
+              <div x-show="anyPendSel()" class="bg-primary/5 border border-primary/20 rounded-xl shadow-sm sticky bottom-20 md:bottom-4 py-4 px-6 backdrop-blur">
+                <div class="flex flex-wrap items-center justify-between gap-4">
+                  <div class="space-y-1 min-w-0">
+                    <p class="text-sm text-muted-foreground">Total seleccionado</p>
+                    <div class="flex flex-wrap gap-3">
+                      <template x-for="sec in pending" :key="'t' + sec.currency">
+                        <span x-show="sumSel(sec) > 0" class="font-semibold" :class="sec.currency !== 'PEN' ? 'text-blue-600' : ''" x-text="(sec.currency !== 'PEN' ? '+ ' : '') + FZ.money(sumSel(sec), sec.currency)"></span>
+                      </template>
+                    </div>
+                  </div>
+                  <button type="button" @click="FZ.notInDemo()" class="inline-flex items-center justify-center gap-2 h-9 rounded-md px-4 text-sm font-medium text-white bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700">
+                    <span x-html="FZ.icon('credit-card', 'h-4 w-4')"></span>Pagar Selección
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Schedule (installment-schedule.tsx) -->
+            <div x-show="tab === 'schedule'" class="space-y-4" id="tab-schedule">
+              <template x-for="g in schedule" :key="g.id">
+                <div class="bg-card text-card-foreground rounded-xl border shadow-sm pt-5">
+                  <div class="px-6 pb-2">
+                    <button type="button" class="flex items-center justify-between gap-3 w-full text-left" @click="toggleGroup(g.id)" :aria-expanded="!!expanded[g.id]">
+                      <div class="flex-1 min-w-0">
+                        <p class="text-base font-semibold flex flex-wrap items-center gap-2">
+                          <span class="min-w-0 truncate" x-text="g.description"></span>
+                          <span class="inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium" :class="g.currency === 'USD' ? 'text-blue-600 border-blue-200 dark:border-blue-500/30' : 'text-green-600 border-green-200 dark:border-green-500/30'" x-text="g.currency"></span>
+                        </p>
+                        <p class="text-sm text-muted-foreground mt-1" x-text="g.paidCount + ' de ' + g.count + ' cuotas pagadas'"></p>
+                      </div>
+                      <div class="flex items-center gap-2 sm:gap-4 shrink-0">
+                        <div class="text-right">
+                          <p class="text-sm font-semibold" x-text="FZ.money(g.total, g.currency)"></p>
+                          <p class="text-xs text-muted-foreground">Total</p>
+                        </div>
+                        <span x-html="FZ.icon(expanded[g.id] ? 'chevron-up' : 'chevron-down', 'h-5 w-5 text-muted-foreground')"></span>
+                      </div>
+                    </button>
+                  </div>
+                  <div class="px-6 pb-4">
+                    <div class="h-2 bg-muted rounded-full overflow-hidden">
+                      <div class="h-full bg-green-500 rounded-full transition-all duration-500" :style="'width:' + (g.paidCount / g.count * 100) + '%'"></div>
+                    </div>
+                  </div>
+                  <div x-show="expanded[g.id]" class="px-6 pb-5">
+                    <div class="border rounded-lg divide-y overflow-hidden">
+                      <template x-for="it in g.items" :key="g.id + '-' + it.n">
+                        <label class="flex items-center gap-3 p-3 transition-colors" :class="it.paid ? 'bg-green-50 dark:bg-green-950/20' : 'hover:bg-muted/50 cursor-pointer'">
+                          <template x-if="!it.paid">
+                            <input type="checkbox" class="h-4 w-4 shrink-0 accent-[var(--primary)]" :checked="!!selInst[g.id + '-' + it.n]" @change="toggleInst(g, it)" :aria-label="'Seleccionar cuota ' + it.n">
+                          </template>
+                          <span class="flex-shrink-0" x-html="instIcon(it)"></span>
+                          <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-2">
+                              <span class="font-medium text-sm" x-text="'Cuota ' + it.n + '/' + g.count"></span>
+                              <span x-show="it.paid" class="inline-flex items-center rounded-md border border-transparent px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700 dark:bg-green-500/15 dark:text-green-400">Pagada</span>
+                            </div>
+                            <p class="text-xs text-muted-foreground" x-text="it.paid && it.paidDate ? 'Pagada el ' + FZ.fmtDate(it.paidDate) : 'Vence: ' + FZ.fmtDate(it.due)"></p>
+                          </div>
+                          <div class="text-right shrink-0">
+                            <p class="font-semibold text-sm" :class="it.paid ? 'text-muted-foreground line-through' : ''" x-text="FZ.money(it.amount, g.currency)"></p>
+                          </div>
+                        </label>
+                      </template>
+                    </div>
+                  </div>
+                </div>
+              </template>
+
+              <div x-show="schedule.length === 0" class="bg-card text-card-foreground rounded-xl border shadow-sm py-8 text-center text-muted-foreground">No hay transacciones en cuotas</div>
+
+              <div x-show="instSelCount() > 0" class="bg-primary/5 border border-primary/20 rounded-xl shadow-sm py-3 px-6">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                  <span class="text-sm" x-text="instSelCount() + ' cuota(s) seleccionada(s)'"></span>
+                  <span class="font-semibold" x-text="instSelTotal()"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </template>
+
+    </div>
+  </main>
+</div>
+<div id="fz-bottomnav"></div>
+
+<script src="./data.js"></script>
+<script>FZ.mountShell("tarjetas");</script>
+<script>
+  function tarjetas() {
+    var D = FZDATA;
+    var today = D.today;
+    var DAY = 86400000;
+    var GRADIENTS = {
+      blue: "from-blue-600 via-blue-700 to-blue-900", green: "from-emerald-600 via-emerald-700 to-emerald-900",
+      purple: "from-purple-600 via-purple-700 to-purple-900", orange: "from-orange-500 via-orange-600 to-orange-800",
+      red: "from-red-600 via-red-700 to-red-900", pink: "from-pink-500 via-pink-600 to-pink-800",
+      gold: "from-amber-500 via-yellow-600 to-amber-800", slate: "from-slate-600 via-slate-700 to-slate-900"
+    };
+    function nextPayment(day) {
+      var d = new Date(today.getFullYear(), today.getMonth(), day);
+      if (d < today) d = new Date(today.getFullYear(), today.getMonth() + 1, day);
+      return d;
+    }
+    function daysUntil(d) { return Math.ceil((d - today) / DAY); }
+    function statusFor(d) { var n = daysUntil(d); return n < 0 ? "overdue" : n <= 7 ? "due_soon" : "pending"; }
+    /* lib/utils/billing-period.ts getCurrentBillingInfo */
+    function billingInfo(cutDay, payDay) {
+      var y = today.getFullYear(), m = today.getMonth(), day = today.getDate(), due;
+      if (day <= payDay) due = new Date(y, m, payDay);
+      else due = new Date(y, m + 1, payDay);
+      var n = daysUntil(due);
+      return { dueDate: due, daysUntilDue: n, isOverdue: n < 0, periodLabel: FZ.MONTHS[due.getMonth()] + " " + due.getFullYear() };
+    }
+    function calc(c) {
+      var usdLocal = c.debtUsd * D.USD_RATE, used = c.debtLocal + usdLocal;
+      return {
+        id: c.id, name: c.name, bank: c.bank, brand: c.brand, last4: c.last4, cutDay: c.cutDay, dueDay: c.dueDay,
+        gradient: GRADIENTS[c.color] || GRADIENTS.blue, limit: c.limit, debtLocal: c.debtLocal, debtUsd: c.debtUsd, debtUsdLocal: usdLocal,
+        available: Math.max(0, c.limit - used), usage: c.limit > 0 ? used / c.limit * 100 : 0,
+        hasDebt: c.debtLocal > 0 || c.debtUsd > 0, nextPayment: nextPayment(c.dueDay)
+      };
+    }
+    return {
+      cards: [], totals: {}, detailId: null, detail: null, billing: {}, tab: "pending",
+      pending: [], schedule: [], expanded: {}, selInst: {}, selPend: {},
+      init: function () {
+        this.cards = D.creditCards.map(calc);
+        var t = { debtLocal: 0, debtUsd: 0, limit: 0 };
+        D.creditCards.forEach(function (c) { t.debtLocal += c.debtLocal; t.debtUsd += c.debtUsd; t.limit += c.limit; });
+        t.hasDebt = t.debtLocal > 0 || t.debtUsd > 0;
+        t.available = t.limit - (t.debtLocal + t.debtUsd * D.USD_RATE);
+        this.totals = t;
+        var self = this;
+        window.addEventListener("keydown", function (e) { if (e.key === "Escape" && self.detailId) self.closeDetail(); });
+      },
+      shortDate: function (d) { return d ? ("0" + d.getDate()).slice(-2) + " " + FZ.MONTHS_SHORT[d.getMonth()] : "N/A"; },
+      openDetail: function (id) {
+        var c = this.cards.filter(function (x) { return x.id === id; })[0];
+        this.detailId = id; this.detail = c; this.tab = "pending";
+        this.expanded = {}; this.selInst = {}; this.selPend = {};
+        this.billing = billingInfo(c.cutDay, c.dueDay);
+        this.pending = this.buildPending(c);
+        this.schedule = D.installments.filter(function (g) { return g.card === id; }).map(function (g) {
+          var paid = g.items.filter(function (i) { return i.paid; }).length;
+          return { id: g.id, description: g.description, currency: g.currency, total: g.total, count: g.count, items: g.items, paidCount: paid };
+        });
+        window.scrollTo(0, 0);
+      },
+      closeDetail: function () { this.detailId = null; this.detail = null; window.scrollTo(0, 0); },
+      /* app/api/credit-cards/[id]/pending-items: next unpaid installment of each plan + recent purchases (last 30 days) */
+      buildPending: function (c) {
+        var by = {}, due = this.billing.dueDate, dueIso = D.iso(due);
+        function push(cur, item) { (by[cur] = by[cur] || []).push(item); }
+        D.installments.forEach(function (g) {
+          if (g.card !== c.id) return;
+          var next = g.items.filter(function (i) { return !i.paid; })[0];
+          if (!next) return;
+          push(g.currency, { id: g.id + "-" + next.n, description: g.description, label: "Cuota " + next.n + "/" + g.count, amount: next.amount, dueDate: next.due, type: "installment", status: statusFor(FZ.parseDate(next.due)) });
+        });
+        var from = new Date(today.getTime() - 30 * DAY);
+        D.transactions.forEach(function (t) {
+          if (t.card !== c.id || t.type !== "gasto" || t.installments > 1) return;
+          if (FZ.parseDate(t.date) < from) return;
+          push(t.currency, { id: t.id, description: t.description, amount: t.amount, dueDate: dueIso, type: "purchase", status: statusFor(due) });
+        });
+        return ["PEN", "USD"].filter(function (k) { return by[k] && by[k].length; }).map(function (k) {
+          var items = by[k].sort(function (a, b) { return a.dueDate < b.dueDate ? -1 : 1; });
+          return { currency: k, items: items, total: items.reduce(function (s, i) { return s + i.amount; }, 0) };
+        });
+      },
+      togglePend: function (id) { var o = Object.assign({}, this.selPend); if (o[id]) delete o[id]; else o[id] = true; this.selPend = o; },
+      countSel: function (sec) { var s = this.selPend; return sec.items.filter(function (i) { return s[i.id]; }).length; },
+      sumSel: function (sec) { var s = this.selPend; return sec.items.reduce(function (a, i) { return a + (s[i.id] ? i.amount : 0); }, 0); },
+      selectAll: function (sec) {
+        var o = Object.assign({}, this.selPend), all = this.countSel(sec) === sec.items.length;
+        sec.items.forEach(function (i) { if (all) delete o[i.id]; else o[i.id] = true; });
+        this.selPend = o;
+      },
+      anyPendSel: function () { return Object.keys(this.selPend).length > 0; },
+      toggleGroup: function (id) { var o = Object.assign({}, this.expanded); o[id] = !o[id]; this.expanded = o; },
+      toggleInst: function (g, it) { var k = g.id + "-" + it.n, o = Object.assign({}, this.selInst); if (o[k]) delete o[k]; else o[k] = { amount: it.amount, currency: g.currency }; this.selInst = o; },
+      instSelCount: function () { return Object.keys(this.selInst).length; },
+      instSelTotal: function () {
+        var by = {}, s = this.selInst;
+        Object.keys(s).forEach(function (k) { by[s[k].currency] = (by[s[k].currency] || 0) + s[k].amount; });
+        return ["PEN", "USD"].filter(function (c) { return by[c]; }).map(function (c) { return FZ.money(by[c], c); }).join(" + ");
+      },
+      instIcon: function (it) {
+        if (it.paid) return FZ.icon("check-circle", "h-4 w-4 text-green-500");
+        var n = daysUntil(FZ.parseDate(it.due));
+        if (n < 0) return FZ.icon("alert-circle", "h-4 w-4 text-red-500");
+        if (n <= 7) return FZ.icon("clock", "h-4 w-4 text-yellow-500");
+        return FZ.icon("clock", "h-4 w-4 text-muted-foreground");
+      }
+    };
+  }
+</script>
+<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.9/dist/cdn.min.js"></script>
+</body>
+</html>

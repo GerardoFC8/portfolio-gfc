@@ -1,0 +1,219 @@
+/* Same layer order as Tailwind v4, declared first so the components layer below sits under utilities. */
+@layer theme, base, components, utilities;
+
+/* Finanzentral demo: theme tokens copied from app/globals.css of the real app */
+:root {
+  --banner-h: 32px;
+  --background: oklch(0.99 0 0);
+  --foreground: oklch(0.15 0 0);
+  --card: oklch(0.98 0 0);
+  --card-foreground: oklch(0.15 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.15 0 0);
+  --primary: oklch(0.55 0.22 250);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.92 0 0);
+  --secondary-foreground: oklch(0.15 0 0);
+  --muted: oklch(0.95 0 0);
+  --muted-foreground: oklch(0.5 0 0);
+  --accent: oklch(0.6 0.24 290);
+  --accent-foreground: oklch(0.99 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.99 0 0);
+  --border: oklch(0.88 0 0);
+  --input: oklch(0.88 0 0);
+  --ring: oklch(0.3 0 0);
+  --zen: oklch(0.6 0.18 160);
+  --chart-1: oklch(0.55 0.22 250);
+  --chart-2: oklch(0.6 0.24 290);
+  --chart-3: oklch(0.65 0.26 330);
+  --chart-4: oklch(0.58 0.2 160);
+  --chart-5: oklch(0.62 0.22 200);
+  --radius: 0.75rem;
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.55 0.22 250);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+}
+
+.dark {
+  --background: oklch(0.08 0 0);
+  --foreground: oklch(0.96 0 0);
+  --card: oklch(0.12 0 0);
+  --card-foreground: oklch(0.96 0 0);
+  --popover: oklch(0.1 0 0);
+  --popover-foreground: oklch(0.96 0 0);
+  --primary: oklch(0.68 0.22 250);
+  --primary-foreground: oklch(0.1 0 0);
+  --secondary: oklch(0.18 0 0);
+  --secondary-foreground: oklch(0.96 0 0);
+  --muted: oklch(0.18 0 0);
+  --muted-foreground: oklch(0.6 0 0);
+  --accent: oklch(0.7 0.24 290);
+  --accent-foreground: oklch(0.1 0 0);
+  --destructive: oklch(0.45 0.2 25);
+  --destructive-foreground: oklch(0.96 0 0);
+  --border: oklch(0.28 0 0);
+  --input: oklch(0.24 0 0);
+  --ring: oklch(0.35 0 0);
+  --zen: oklch(0.75 0.18 160);
+  --sidebar: oklch(0.1 0 0);
+  --sidebar-foreground: oklch(0.96 0 0);
+  --sidebar-primary: oklch(0.68 0.22 250);
+  --sidebar-primary-foreground: oklch(0.96 0 0);
+  --sidebar-accent: oklch(0.18 0 0);
+  --sidebar-accent-foreground: oklch(0.96 0 0);
+  --sidebar-border: oklch(0.28 0 0);
+  --sidebar-ring: oklch(0.35 0 0);
+}
+
+* { border-color: var(--border); }
+html, body { max-width: 100%; overflow-x: clip; }
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: "Geist", ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  padding-top: var(--banner-h);
+}
+button:not(:disabled), [role="button"]:not(:disabled) { cursor: pointer; }
+[x-cloak] { display: none !important; }
+
+/* ===== Demo banner ===== */
+.fz-banner {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 90;
+  height: var(--banner-h);
+  display: flex; align-items: center; justify-content: center;
+  padding: 0 12px;
+  font-size: 12px; font-weight: 600; letter-spacing: .01em;
+  color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  background: linear-gradient(90deg, oklch(0.5 0.22 250), oklch(0.55 0.24 290));
+}
+
+/* ===== Layout shell (shadcn Sidebar: 16rem desktop, 18rem mobile sheet) ===== */
+#fz-sidebar {
+  position: fixed; top: var(--banner-h); bottom: 0; left: 0; z-index: 40;
+  width: 16rem; display: none; flex-direction: column;
+  background: linear-gradient(to bottom, var(--sidebar), color-mix(in oklab, var(--sidebar) 95%, transparent));
+  color: var(--sidebar-foreground);
+  border-right: 1px solid color-mix(in oklab, var(--sidebar-border) 50%, transparent);
+  transition: transform .2s ease;
+}
+.fz-inset { min-height: calc(100vh - var(--banner-h)); display: flex; flex-direction: column; transition: margin-left .2s ease; min-width: 0; }
+#fz-overlay { position: fixed; inset: var(--banner-h) 0 0 0; z-index: 75; background: rgb(0 0 0 / .5); display: none; }
+@media (min-width: 768px) {
+  #fz-sidebar { display: flex; }
+  .fz-inset { margin-left: 16rem; }
+  html.fz-collapsed #fz-sidebar { transform: translateX(-100%); }
+  html.fz-collapsed .fz-inset { margin-left: 0; }
+}
+@media (max-width: 767px) {
+  html.fz-sheet-open #fz-sidebar { display: flex; width: 18rem; z-index: 80; }
+  html.fz-sheet-open #fz-overlay { display: block; }
+}
+#fz-header { position: sticky; top: var(--banner-h); z-index: 20; }
+
+/* ===== Touch targets on mobile (requirement: >= 44px) ===== */
+@media (max-width: 767px) {
+  button, select, input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), textarea, .fz-touch, [role="tab"] { min-height: 44px; }
+  .fz-icon-btn { min-width: 44px; }
+}
+
+/* ===== "Liquid Noir" dashboard styles (copied from globals.css) ===== */
+@keyframes dash-reveal { 0% { opacity: 0; transform: translateY(16px) scale(.98); filter: blur(4px); } 100% { opacity: 1; transform: none; filter: blur(0); } }
+@keyframes dash-number-roll { 0% { opacity: 0; transform: translateY(12px); } 100% { opacity: 1; transform: none; } }
+@keyframes dash-shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+.dash-card-reveal { opacity: 0; animation: dash-reveal .6s cubic-bezier(.22,1,.36,1) forwards; }
+.dash-card-reveal-1 { animation-delay: 0ms; } .dash-card-reveal-2 { animation-delay: 80ms; }
+.dash-card-reveal-3 { animation-delay: 160ms; } .dash-card-reveal-4 { animation-delay: 240ms; }
+.dash-card-reveal-5 { animation-delay: 320ms; } .dash-card-reveal-6 { animation-delay: 400ms; }
+.dash-card-reveal-7 { animation-delay: 480ms; } .dash-card-reveal-8 { animation-delay: 560ms; }
+.dash-number-roll { animation: dash-number-roll .5s cubic-bezier(.22,1,.36,1) forwards; animation-delay: .3s; opacity: 0; }
+
+.dash-card-glass {
+  background: linear-gradient(135deg, oklch(0.98 0 0 / .6) 0%, oklch(0.96 0 0 / .4) 100%);
+  backdrop-filter: blur(12px) saturate(150%);
+  border: 1px solid oklch(0.9 0 0 / .3);
+  box-shadow: 0 1px 3px oklch(0 0 0 / .06), 0 4px 16px oklch(0 0 0 / .04), inset 0 1px 0 oklch(1 0 0 / .6);
+  transition: all .35s cubic-bezier(.22,1,.36,1);
+}
+.dash-card-glass.dash-hover:hover { box-shadow: 0 2px 4px oklch(0 0 0 / .08), 0 8px 32px oklch(0 0 0 / .08), inset 0 1px 0 oklch(1 0 0 / .8); border-color: oklch(0.82 0 0 / .5); transform: translateY(-2px); }
+.dark .dash-card-glass {
+  background: linear-gradient(135deg, oklch(0.14 0.005 250 / .6) 0%, oklch(0.11 0.005 290 / .4) 100%);
+  border: 1px solid oklch(0.28 0.02 250 / .3);
+  box-shadow: 0 1px 2px oklch(0 0 0 / .3), 0 4px 16px oklch(0 0 0 / .2), inset 0 1px 0 oklch(1 0 0 / .05);
+}
+.dark .dash-card-glass.dash-hover:hover { border-color: oklch(0.68 0.22 250 / .4); box-shadow: 0 2px 4px oklch(0 0 0 / .4), 0 8px 32px oklch(0.55 0.22 250 / .08), inset 0 1px 0 oklch(1 0 0 / .08); transform: translateY(-2px); }
+
+.dash-glow-income, .dash-glow-expense, .dash-glow-balance, .dash-glow-count { position: relative; overflow: hidden; }
+.dash-glow-income::before, .dash-glow-expense::before, .dash-glow-balance::before, .dash-glow-count::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  animation: dash-shimmer 3s ease-in-out infinite; background-size: 200% 100%;
+}
+.dash-glow-income::before { background-image: linear-gradient(90deg, transparent, oklch(0.65 0.2 155), transparent); }
+.dash-glow-expense::before { background-image: linear-gradient(90deg, transparent, oklch(0.65 0.2 25), transparent); }
+.dash-glow-balance::before { background-image: linear-gradient(90deg, transparent, oklch(0.55 0.22 250), transparent); }
+.dash-glow-count::before { background-image: linear-gradient(90deg, transparent, oklch(0.6 0.24 290), transparent); }
+
+.dash-section-label { font-family: "Outfit", "Geist", system-ui, sans-serif; font-weight: 600; letter-spacing: -.02em; font-size: .7rem; text-transform: uppercase; color: oklch(0.5 0 0); padding-left: 2px; }
+.dark .dash-section-label { color: oklch(0.5 0.02 250); }
+
+.dash-dot-grid { background-image: radial-gradient(oklch(0 0 0 / .04) 1px, transparent 1px); background-size: 24px 24px; }
+.dark .dash-dot-grid { background-image: radial-gradient(oklch(1 0 0 / .03) 1px, transparent 1px); }
+
+.dash-text-income, .dash-text-expense, .dash-text-primary, .dash-text-accent { -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+.dash-text-income { background-image: linear-gradient(135deg, oklch(0.55 0.2 155), oklch(0.65 0.18 160)); }
+.dark .dash-text-income { background-image: linear-gradient(135deg, oklch(0.7 0.2 155), oklch(0.8 0.18 160)); }
+.dash-text-expense { background-image: linear-gradient(135deg, oklch(0.6 0.22 25), oklch(0.58 0.2 15)); }
+.dark .dash-text-expense { background-image: linear-gradient(135deg, oklch(0.72 0.2 25), oklch(0.7 0.18 15)); }
+.dash-text-primary { background-image: linear-gradient(135deg, oklch(0.5 0.22 250), oklch(0.55 0.24 270)); }
+.dark .dash-text-primary { background-image: linear-gradient(135deg, oklch(0.68 0.22 250), oklch(0.72 0.24 270)); }
+.dash-text-accent { background-image: linear-gradient(135deg, oklch(0.55 0.24 290), oklch(0.6 0.22 310)); }
+.dark .dash-text-accent { background-image: linear-gradient(135deg, oklch(0.7 0.24 290), oklch(0.75 0.22 310)); }
+
+.dash-tx-row { transition: all .2s ease; border-radius: .5rem; padding: .5rem .75rem; margin: 0 -.75rem; }
+.dash-tx-row:hover { background: oklch(0.95 0 0 / .6); }
+.dark .dash-tx-row:hover { background: oklch(0.18 0.005 250 / .5); }
+
+.dash-progress { position: relative; overflow: hidden; border-radius: 9999px; background: color-mix(in oklab, var(--muted) 40%, transparent); }
+.dash-progress::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, oklch(1 0 0 / .15), transparent); animation: dash-shimmer 2s ease-in-out infinite; background-size: 200% 100%; }
+
+@media (prefers-reduced-motion: reduce) {
+  .dash-card-reveal, .dash-number-roll { animation: none; opacity: 1; }
+  .dash-progress::after, .dash-glow-income::before, .dash-glow-expense::before, .dash-glow-balance::before, .dash-glow-count::before { animation: none; }
+}
+
+/* Native form controls styled like shadcn (new-york). In a layer so Tailwind utilities (w-*, pl-9, h-*) can override them. */
+@layer components {
+.fz-input, .fz-select {
+  height: 2.25rem; width: 100%; border-radius: calc(var(--radius) - 2px);
+  border: 1px solid var(--input); background: transparent; color: var(--foreground);
+  padding: 0 .75rem; font-size: .875rem; box-shadow: 0 1px 2px oklch(0 0 0 / .05);
+  outline: none; transition: box-shadow .15s, border-color .15s;
+}
+.fz-select { appearance: none; -webkit-appearance: none; padding-right: 2rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right .6rem center; background-size: 1rem; }
+.fz-select option { background: var(--popover); color: var(--popover-foreground); }
+.dark .fz-input, .dark .fz-select { background-color: color-mix(in oklab, var(--input) 30%, transparent); }
+.fz-input:focus, .fz-select:focus { border-color: var(--ring); box-shadow: 0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent); }
+.dark .fz-input[type="date"] { color-scheme: dark; }
+textarea.fz-input { height: auto; padding: .5rem .75rem; }
+
+}
+
+.fz-scroll::-webkit-scrollbar { width: 4px; height: 4px; }
+.fz-scroll::-webkit-scrollbar-thumb { border-radius: 9999px; background: color-mix(in oklab, var(--primary) 12%, transparent); }
+
+/* Toast */
+#fz-toast { position: fixed; left: 50%; bottom: 84px; transform: translateX(-50%); z-index: 100; max-width: calc(100vw - 32px); }
+@media (min-width: 768px) { #fz-toast { left: auto; right: 24px; bottom: 24px; transform: none; } }
+
+/* Typing dots for the canned assistant */
+@keyframes fz-blink { 0%, 80%, 100% { opacity: .2; } 40% { opacity: 1; } }
+.fz-dot { display: inline-block; width: 6px; height: 6px; border-radius: 9999px; background: currentColor; animation: fz-blink 1.2s infinite; }
+.fz-dot:nth-child(2) { animation-delay: .2s; } .fz-dot:nth-child(3) { animation-delay: .4s; }

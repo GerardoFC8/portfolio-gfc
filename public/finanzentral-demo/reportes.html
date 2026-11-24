@@ -1,0 +1,1084 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Reportes - Finanzentral (demo)</title>
+<meta name="description" content="Demo estática de Finanzentral con datos ficticios">
+<link rel="icon" href="./icon-finanzentral.webp">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Outfit:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="./styles.css">
+<script src="./app.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.1.11/dist/index.global.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.9/dist/chart.umd.min.js"></script>
+</head>
+<body class="font-sans antialiased">
+<div class="fz-banner" role="note">Demo con datos ficticios · No es la aplicación real</div>
+<aside id="fz-sidebar"></aside>
+<div class="fz-inset">
+  <div id="fz-header"></div>
+  <main class="flex flex-1 flex-col gap-4 p-4 pb-20 md:gap-6 md:p-6 md:pb-6" x-data="reports()" x-init="init()">
+    <!-- app/dashboard/reports/page.tsx -->
+    <div class="dash-dot-grid space-y-6 min-w-0">
+      <div class="dash-card-reveal dash-card-reveal-1 flex items-center gap-3">
+        <div class="h-8 w-1 rounded-full bg-gradient-to-b from-cyan-500 to-blue-500"></div>
+        <div>
+          <h1 class="font-display text-2xl font-bold tracking-tight md:text-3xl">Reportes</h1>
+          <p class="text-[11px] uppercase tracking-wider text-muted-foreground mt-1">Análisis financiero detallado</p>
+        </div>
+      </div>
+
+      <!-- components/dashboard/reports/reports-content.tsx -->
+      <div class="space-y-6 min-w-0">
+        <div class="dash-card-reveal dash-card-reveal-2 min-w-0">
+          <div class="overflow-x-auto pb-2 -mx-1 px-1 fz-scroll">
+            <div role="tablist" aria-label="Secciones de reportes" class="dash-card-glass bg-muted text-muted-foreground inline-flex h-auto sm:h-9 w-max items-center justify-center rounded-lg p-[3px] sm:grid sm:w-full sm:grid-cols-5 sm:max-w-3xl">
+              <template x-for="t in tabs" :key="t.k">
+                <button type="button" role="tab" :id="'tab-' + t.k" :aria-selected="tab === t.k ? 'true' : 'false'" :aria-controls="'panel-' + t.k" @click="setTab(t.k)"
+                  class="inline-flex h-[calc(100%-1px)] items-center justify-center gap-1.5 rounded-md border px-2 py-1 font-medium transition-[color,box-shadow] flex-none whitespace-nowrap text-xs sm:text-sm sm:flex-1"
+                  :class="tab === t.k ? 'bg-background text-foreground border-border/60! shadow-md dark:border-primary/30 dark:bg-primary/15' : 'border-transparent! text-foreground dark:text-muted-foreground hover:bg-background/50 dark:hover:bg-background/20'"
+                  x-text="t.t"></button>
+              </template>
+            </div>
+          </div>
+
+          <!-- ===================== Resumen (overview-tab.tsx) ===================== -->
+          <section id="panel-overview" role="tabpanel" aria-labelledby="tab-overview" x-show="tab === 'overview'" class="space-y-6 mt-6">
+            <div class="grid gap-6 grid-cols-1 md:grid-cols-2">
+              <div class="dash-card-glass rounded-xl flex flex-col gap-6 py-6 min-w-0">
+                <div class="px-6 flex items-start justify-between gap-2 flex-wrap">
+                  <div class="min-w-0">
+                    <h3 class="leading-none font-semibold">Tendencia Mensual</h3>
+                    <p class="text-muted-foreground text-sm mt-2">Comparación de ingresos vs gastos</p>
+                  </div>
+                  <button type="button" data-inert class="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium h-8 px-3 hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50">
+                    <i data-icon="bar-chart-3" class="h-4 w-4 mr-2"></i>Ver Tendencias<i data-icon="external-link" class="h-3 w-3 ml-1"></i>
+                  </button>
+                </div>
+                <div class="px-6">
+                  <div class="h-[250px] sm:h-[300px] md:h-[350px] w-full relative"><canvas id="trendChart" role="img" aria-label="Tendencia mensual de ingresos y gastos"></canvas></div>
+                </div>
+              </div>
+
+              <div class="dash-card-glass rounded-xl flex flex-col gap-6 py-6 min-w-0">
+                <div class="px-6">
+                  <h3 class="leading-none font-semibold">Gastos por Día</h3>
+                  <p class="text-muted-foreground text-sm mt-2">Última semana</p>
+                </div>
+                <div class="px-6">
+                  <div class="h-[250px] sm:h-[300px] md:h-[350px] w-full relative"><canvas id="weekChart" role="img" aria-label="Gastos por día de la última semana"></canvas></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="dash-card-glass rounded-xl flex flex-col gap-6 py-6">
+              <div class="px-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h3 class="leading-none font-semibold text-lg sm:text-xl">Análisis de Rendimiento</h3>
+                  <p class="text-muted-foreground text-xs sm:text-sm mt-2">Métricas clave del período</p>
+                </div>
+                <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                  <label class="sr-only" for="perf-period">Período</label>
+                  <div class="relative w-full sm:w-[180px]">
+                    <span class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"><i data-icon="calendar" class="h-4 w-4"></i></span>
+                    <select id="perf-period" class="fz-select" style="padding-left:2.25rem" x-model="perfPeriod" @change="computePerf()">
+                      <option value="month">Mes actual</option>
+                      <option value="lastMonth">Mes anterior</option>
+                      <option value="3months">Últimos 3 meses</option>
+                      <option value="6months">Últimos 6 meses</option>
+                    </select>
+                  </div>
+                  <button type="button" @click="FZ.notInDemo()" class="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium h-8 px-3 border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 w-full sm:w-auto">
+                    <i data-icon="download" class="mr-2 h-4 w-4"></i>Exportar PDF
+                  </button>
+                </div>
+              </div>
+              <div class="px-6">
+                <div class="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+                  <div class="space-y-2 p-3 rounded-lg border bg-muted/30 min-w-0">
+                    <p class="text-xs sm:text-sm text-muted-foreground">Promedio Diario</p>
+                    <p class="text-xl sm:text-2xl font-bold" x-text="perf.daily"></p>
+                    <p class="text-xs text-muted-foreground" x-text="perf.dailyNote"></p>
+                  </div>
+                  <div class="space-y-2 p-3 rounded-lg border bg-muted/30 min-w-0">
+                    <p class="text-xs sm:text-sm text-muted-foreground">Tasa de Ahorro</p>
+                    <p class="text-xl sm:text-2xl font-bold" x-text="perf.rate"></p>
+                    <p class="text-xs text-muted-foreground">De tus ingresos</p>
+                  </div>
+                  <div class="space-y-2 p-3 rounded-lg border bg-muted/30 min-w-0">
+                    <p class="text-xs sm:text-sm text-muted-foreground">Categoría Principal</p>
+                    <p class="text-xl sm:text-2xl font-bold truncate" x-text="perf.top"></p>
+                    <p class="text-xs text-muted-foreground" x-text="perf.topPct + '% del total'"></p>
+                  </div>
+                  <div class="space-y-2 p-3 rounded-lg border bg-muted/30 min-w-0">
+                    <p class="text-xs sm:text-sm text-muted-foreground">Proyección Mensual</p>
+                    <p class="text-xl sm:text-2xl font-bold" x-text="perf.proj"></p>
+                    <p class="text-xs text-muted-foreground">Basado en tendencia</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- ===================== Categorías (categories-tab.tsx) ===================== -->
+          <section id="panel-categories" role="tabpanel" aria-labelledby="tab-categories" x-show="tab === 'categories'" x-cloak class="space-y-6 mt-6">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 min-w-0">
+              <div class="overflow-x-auto pb-2 -mx-1 px-1 fz-scroll">
+                <div role="tablist" aria-label="Origen de los gastos" class="dash-card-glass bg-muted text-muted-foreground inline-flex h-auto sm:h-9 w-max items-center justify-center rounded-lg p-[3px] sm:grid sm:w-full sm:max-w-md sm:grid-cols-2">
+                  <button type="button" role="tab" :aria-selected="catSource === 'money_source' ? 'true' : 'false'" @click="catSource = 'money_source'; computeCats()"
+                    class="inline-flex h-[calc(100%-1px)] items-center justify-center rounded-md border px-2 py-1 font-medium flex-none whitespace-nowrap text-xs sm:text-sm sm:flex-1"
+                    :class="catSource === 'money_source' ? 'bg-background text-foreground border-border/60! shadow-md dark:border-primary/30 dark:bg-primary/15' : 'border-transparent! text-foreground dark:text-muted-foreground hover:bg-background/50'">
+                    <i data-icon="wallet" class="h-4 w-4 mr-2 shrink-0"></i>Fuentes de Dinero
+                  </button>
+                  <button type="button" role="tab" :aria-selected="catSource === 'credit_card' ? 'true' : 'false'" @click="catSource = 'credit_card'; computeCats()"
+                    class="inline-flex h-[calc(100%-1px)] items-center justify-center rounded-md border px-2 py-1 font-medium flex-none whitespace-nowrap text-xs sm:text-sm sm:flex-1"
+                    :class="catSource === 'credit_card' ? 'bg-background text-foreground border-border/60! shadow-md dark:border-primary/30 dark:bg-primary/15' : 'border-transparent! text-foreground dark:text-muted-foreground hover:bg-background/50'">
+                    <i data-icon="credit-card" class="h-4 w-4 mr-2 shrink-0"></i>Tarjetas de Crédito
+                  </button>
+                </div>
+              </div>
+              <button type="button" x-show="catList.length" @click="FZ.notInDemo()" class="fz-icon-btn self-end sm:self-auto inline-flex items-center justify-center rounded-md text-sm font-medium h-8 px-2.5 border bg-transparent shadow-xs hover:bg-accent dark:border-input" aria-label="Exportar">
+                <i data-icon="download" class="h-4 w-4 sm:mr-2"></i><span class="hidden sm:inline">Exportar</span>
+              </button>
+            </div>
+
+            <!-- period-selector.tsx -->
+            <div class="dash-card-glass rounded-xl p-4 flex flex-col gap-4">
+              <div class="flex gap-2 overflow-x-auto pb-2 sm:pb-0">
+                <template x-for="p in [{k:'week',t:'Semana'},{k:'month',t:'Mes'},{k:'year',t:'Año'}]" :key="p.k">
+                  <button type="button" @click="catPeriod = p.k; computeCats()" class="shrink-0 inline-flex items-center justify-center rounded-md font-medium h-8 px-3 text-xs sm:text-sm"
+                    :class="catPeriod === p.k ? 'bg-primary text-primary-foreground hover:bg-primary/90' : 'border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input'" x-text="p.t"></button>
+                </template>
+              </div>
+              <div x-show="catPeriod === 'month'" class="flex items-center gap-2">
+                <label for="month-select" class="text-sm font-medium whitespace-nowrap">Seleccionar mes:</label>
+                <div class="relative w-full sm:w-[200px]">
+                  <span class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"><i data-icon="calendar" class="h-4 w-4"></i></span>
+                  <select id="month-select" class="fz-select" style="padding-left:2.25rem" x-model="catMonth" @change="computeCats()">
+                    <template x-for="m in monthOpts" :key="m.value"><option :value="m.value" x-text="m.label" :selected="m.value === catMonth"></option></template>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid gap-6 grid-cols-1">
+              <!-- category-chart.tsx -->
+              <div class="dash-card-glass rounded-xl flex flex-col gap-6 py-6 min-w-0">
+                <div class="px-6">
+                  <h3 class="leading-none font-semibold" x-text="catSource === 'credit_card' ? 'Distribución por Categoría - Tarjetas de Crédito' : 'Distribución por Categoría'"></h3>
+                  <p class="text-muted-foreground text-sm mt-2" x-text="catSource === 'credit_card' ? 'Consumos con tarjetas de crédito del período seleccionado - Categorías y Subcategorías' : 'Gastos del período seleccionado - Categorías y Subcategorías'"></p>
+                </div>
+                <div class="px-2 sm:px-0">
+                  <div x-show="catList.length" class="h-[300px] md:h-[350px] w-full relative"><canvas id="catChart" role="img" aria-label="Gastos por categoría y subcategoría"></canvas></div>
+                  <div x-show="!catList.length" class="flex flex-col items-center justify-center h-[300px] space-y-2 text-center px-6">
+                    <p class="text-lg font-medium text-muted-foreground">No hay datos para el período seleccionado</p>
+                    <p class="text-sm text-muted-foreground" x-text="catSource === 'credit_card' ? 'Registra algunos consumos con tarjetas de crédito para ver el análisis por categorías' : 'Registra algunas transacciones para ver el análisis por categorías'"></p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- category-detail-list.tsx -->
+              <div class="dash-card-glass rounded-xl flex flex-col gap-6 py-6 min-w-0">
+                <div class="px-6">
+                  <h3 class="leading-none font-semibold" x-text="catSource === 'credit_card' ? 'Detalle de Categorías - Tarjetas de Crédito' : 'Detalle de Categorías'"></h3>
+                  <p class="text-muted-foreground text-sm mt-2" x-text="catSource === 'credit_card' ? 'Montos por categoría en tarjetas de crédito' : 'Montos por categoría'"></p>
+                </div>
+                <div class="px-6">
+                  <div class="space-y-4">
+                    <template x-for="c in catList" :key="c.id">
+                      <div class="space-y-2">
+                        <div class="flex items-center justify-between gap-3 text-sm">
+                          <span class="font-medium truncate" x-text="c.name"></span>
+                          <span class="shrink-0 whitespace-nowrap"><span class="text-muted-foreground font-bold" x-text="FZ.money(c.value)"></span> <span class="text-xs text-muted-foreground/70 tabular-nums" x-text="'(' + c.pct.toFixed(1) + '%)'"></span></span>
+                        </div>
+                        <div class="h-2 rounded-full bg-muted overflow-hidden">
+                          <div class="h-full rounded-full" :style="'width:' + c.pct + '%;background-color:' + c.color"></div>
+                        </div>
+                        <div class="ml-4 space-y-1 text-xs text-muted-foreground">
+                          <template x-for="s in c.subs" :key="s.name">
+                            <div class="flex justify-between gap-3"><span class="truncate" x-text="'• ' + s.name"></span><span class="shrink-0" x-text="FZ.money(s.value)"></span></div>
+                          </template>
+                        </div>
+                      </div>
+                    </template>
+                    <div x-show="!catList.length" class="text-center text-muted-foreground py-8" x-text="catSource === 'credit_card' ? 'No hay categorías con consumos en tarjetas de crédito en este período' : 'No hay categorías con gastos en este período'"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- ===================== Radiografía (xray/xray-tab-content.tsx) ===================== -->
+          <section id="panel-xray" role="tabpanel" aria-labelledby="tab-xray" x-show="tab === 'xray'" x-cloak class="space-y-6 mt-6">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <div class="flex flex-wrap items-center gap-3 min-w-0">
+                <label for="xray-month" class="text-sm font-medium text-muted-foreground whitespace-nowrap">Mes a analizar:</label>
+                <select id="xray-month" class="fz-select" style="width:200px;max-width:100%" x-model="xMonth" @change="computeXray()">
+                  <template x-for="m in monthOpts" :key="m.value"><option :value="m.value" x-text="m.label" :selected="m.value === xMonth"></option></template>
+                </select>
+                <button type="button" @click="computeXray(); FZ.toast('Radiografía actualizada', 'Datos de ejemplo recalculados en el navegador.')" title="Actualizar radiografía" class="fz-icon-btn inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium h-8 px-2.5 border bg-background shadow-xs hover:bg-accent dark:bg-input/30 dark:border-input">
+                  <i data-icon="refresh-cw" class="h-4 w-4"></i><span class="hidden sm:inline">Actualizar</span>
+                </button>
+              </div>
+              <button type="button" @click="FZ.notInDemo()" class="fz-icon-btn inline-flex items-center justify-center rounded-md text-sm font-medium h-8 px-2.5 border bg-transparent shadow-xs hover:bg-accent dark:border-input" aria-label="Exportar">
+                <i data-icon="download" class="h-4 w-4 sm:mr-2"></i><span class="hidden sm:inline">Exportar</span>
+              </button>
+            </div>
+
+            <!-- ai-narrative.tsx (CTA state) -->
+            <div class="dash-card-glass rounded-xl">
+              <div class="py-4 px-5 flex flex-wrap items-center justify-between gap-3">
+                <div class="flex items-center gap-2.5 min-w-0">
+                  <div class="flex items-center justify-center h-8 w-8 shrink-0 rounded-lg bg-primary/10"><i data-icon="sparkles" class="h-4 w-4 text-primary"></i></div>
+                  <div class="min-w-0">
+                    <p class="text-sm font-medium">Análisis Narrativo con IA</p>
+                    <p class="text-[11px] text-muted-foreground">Genera un análisis inteligente de tu radiografía de gastos</p>
+                  </div>
+                </div>
+                <button type="button" @click="FZ.toast('Demo sin IA real', 'En la aplicación real este botón genera un análisis narrativo con IA.')" class="inline-flex items-center justify-center gap-1.5 rounded-md text-sm font-medium h-8 px-3 bg-primary text-primary-foreground hover:bg-primary/90 shrink-0">
+                  <i data-icon="sparkles" class="h-3.5 w-3.5"></i>Analizar con IA
+                </button>
+              </div>
+            </div>
+
+            <!-- spending-heatmap.tsx -->
+            <div class="dash-card-glass rounded-xl flex flex-col gap-6 py-6 min-w-0">
+              <div class="px-6">
+                <h3 class="leading-none font-semibold flex items-center gap-2 text-base"><i data-icon="flame" class="h-5 w-5 text-orange-500"></i>Heatmap Semanal</h3>
+                <p class="text-muted-foreground text-sm mt-2">Distribución de gastos por día de la semana y franja horaria</p>
+              </div>
+              <div class="px-6">
+                <div class="overflow-x-auto fz-scroll">
+                  <div class="grid gap-1 min-w-[520px]" style="grid-template-columns: 120px repeat(7, minmax(44px, 1fr));">
+                    <div></div>
+                    <template x-for="d in DAY_LABELS" :key="d"><div class="text-center text-xs font-medium text-muted-foreground py-1" x-text="d"></div></template>
+                    <template x-for="cell in heatFlat" :key="cell.key">
+                      <div :class="cell.isLabel ? 'flex items-center text-xs font-medium text-muted-foreground pr-2' : ('rounded-md h-12 sm:h-14 flex items-center justify-center text-xs font-medium cursor-default transition-colors ' + cell.txt)"
+                        :style="cell.isLabel ? '' : 'background-color:' + cell.bg" :title="cell.title" :aria-label="cell.title">
+                        <span :class="cell.isLabel ? '' : 'text-[10px] sm:text-xs'" x-text="cell.isLabel ? cell.label : (cell.count > 0 ? cell.count : '')"></span>
+                      </div>
+                    </template>
+                  </div>
+                </div>
+                <div class="flex items-center justify-end gap-2 mt-4 text-xs text-muted-foreground">
+                  <span>Menos</span>
+                  <div class="flex gap-1">
+                    <template x-for="i in [0, 0.15, 0.35, 0.6, 0.8, 0.95]" :key="i"><div class="w-4 h-4 rounded-sm" :style="'background-color:' + heatColor(i)"></div></template>
+                  </div>
+                  <span>Más</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid gap-6 grid-cols-1 lg:grid-cols-2">
+              <!-- recurring-expenses.tsx -->
+              <div class="dash-card-glass rounded-xl flex flex-col gap-6 py-6 min-w-0">
+                <div class="px-6">
+                  <h3 class="leading-none font-semibold flex items-center gap-2 text-base"><i data-icon="repeat" class="h-5 w-5 text-blue-500"></i>Top Gastos Recurrentes</h3>
+                  <p class="text-muted-foreground text-sm mt-2">Agrupados por subcategoría · categoría · descripción</p>
+                </div>
+                <div class="px-6">
+                  <div x-show="!recurring.length" class="flex items-center gap-3 rounded-lg border border-dashed p-4 text-muted-foreground">
+                    <i data-icon="alert-circle" class="h-5 w-5 shrink-0"></i>
+                    <p class="text-sm">No se detectaron gastos recurrentes este mes.</p>
+                  </div>
+                  <div class="space-y-3">
+                    <template x-for="r in recurring" :key="r.key">
+                      <div class="flex items-center justify-between rounded-lg border p-3 hover:bg-muted/50 transition-colors">
+                        <div class="space-y-1 min-w-0 flex-1">
+                          <div class="flex items-center gap-2 min-w-0">
+                            <p class="text-sm font-medium truncate" x-text="r.description"></p>
+                            <span class="shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-medium" :class="r.groupType === 'subcategory' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300' : 'bg-muted text-muted-foreground'" x-text="r.groupType === 'subcategory' ? 'Subcategoría' : 'Descripción'"></span>
+                          </div>
+                          <p class="text-xs text-muted-foreground truncate" x-text="r.frequencyLabel + ' · Promedio ' + FZ.money(r.averageAmount) + ' c/u'"></p>
+                        </div>
+                        <div class="text-right ml-4 shrink-0">
+                          <p class="text-sm font-semibold" x-text="FZ.money(r.projectedMonthly)"></p>
+                          <p class="text-xs text-muted-foreground">/mes</p>
+                        </div>
+                      </div>
+                    </template>
+                  </div>
+                </div>
+              </div>
+
+              <!-- ant-expenses.tsx -->
+              <div class="dash-card-glass rounded-xl flex flex-col gap-6 py-6 min-w-0">
+                <div class="px-6">
+                  <h3 class="leading-none font-semibold flex items-center gap-2 text-base"><i data-icon="bug" class="h-5 w-5 text-amber-500"></i>Gastos Hormiga</h3>
+                  <p class="text-muted-foreground text-sm mt-2">Agrupados por subcategoría · categoría · descripción</p>
+                </div>
+                <div class="px-6 space-y-4">
+                  <div x-show="!ants.length" class="flex items-center gap-3 rounded-lg border border-dashed p-4 text-muted-foreground">
+                    <i data-icon="alert-circle" class="h-5 w-5 shrink-0"></i>
+                    <p class="text-sm">No se detectaron gastos hormiga este mes. Se buscan gastos pequeños (hasta S/ 40) que se repiten 2 o más veces en el mismo grupo.</p>
+                  </div>
+                  <div x-show="ants.length" class="rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-950/30">
+                    <div class="flex items-center gap-2">
+                      <i data-icon="alert-triangle" class="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0"></i>
+                      <p class="text-sm font-medium text-amber-700 dark:text-amber-400">Estos pequeños gastos suman <span class="font-bold" x-text="FZ.money(antTotal)"></span> al mes (<span x-text="FZ.money(antTotal * 12)"></span>/año)</p>
+                    </div>
+                  </div>
+                  <div class="space-y-3">
+                    <template x-for="a in ants" :key="a.key">
+                      <div class="rounded-lg border p-3 transition-colors" :class="a.yearly >= 2400 ? 'border-rose-200 bg-rose-50/50 dark:border-rose-800 dark:bg-rose-950/20' : (a.yearly >= 600 ? 'border-amber-200 bg-amber-50/50 dark:border-amber-800 dark:bg-amber-950/20' : 'border-border')">
+                        <div class="flex items-center justify-between">
+                          <div class="space-y-1 min-w-0 flex-1">
+                            <div class="flex items-center gap-2 min-w-0">
+                              <p class="text-sm font-medium truncate" x-text="a.description"></p>
+                              <span class="shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-medium" :class="a.groupType === 'subcategory' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300' : 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300'" x-text="a.groupType === 'subcategory' ? 'Subcategoría' : 'Categoría'"></span>
+                            </div>
+                            <p class="text-xs text-muted-foreground" x-text="a.occurrences + 'x este mes · ~' + FZ.money(a.unit) + ' c/u'"></p>
+                          </div>
+                          <div class="text-right ml-4 shrink-0">
+                            <p class="text-sm font-semibold" x-text="FZ.money(a.monthly) + '/mes'"></p>
+                            <p class="text-xs text-muted-foreground" x-text="FZ.money(a.yearly) + '/año'"></p>
+                          </div>
+                        </div>
+                      </div>
+                    </template>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- month-comparison.tsx -->
+            <div class="dash-card-glass rounded-xl flex flex-col gap-6 py-6 min-w-0">
+              <div class="px-6">
+                <h3 class="leading-none font-semibold flex items-center gap-2 text-base"><span x-html="xic('git-compare', 'h-5 w-5 text-purple-500')"></span>Tu yo del mes pasado</h3>
+                <p class="text-muted-foreground text-sm mt-2" x-text="'Comparación con el mes anterior por categoría: ' + monthLabel(xMonth) + ' vs ' + monthLabel(prevKey(xMonth))"></p>
+              </div>
+              <div class="px-6 space-y-4">
+                <div x-show="topIncrease" class="rounded-lg border border-rose-200 bg-rose-50 p-3 dark:border-rose-800 dark:bg-rose-950/30">
+                  <p class="text-sm text-rose-700 dark:text-rose-400" x-show="topIncrease">Gastaste <span class="font-bold" x-text="topIncrease ? '+' + topIncrease.percentDelta.toFixed(1) + '%' : ''"></span> en <span class="font-medium" x-text="topIncrease ? topIncrease.name : ''"></span> vs el mes pasado</p>
+                </div>
+                <p x-show="!comparison.length" class="text-sm text-muted-foreground text-center py-4">No hay datos de categorías para comparar este mes.</p>
+                <div x-show="comparison.length" class="overflow-x-auto fz-scroll">
+                  <table class="w-full text-sm min-w-[440px]">
+                    <thead>
+                      <tr class="border-b">
+                        <th class="text-left font-medium text-muted-foreground py-2 pr-4">Categoría</th>
+                        <th class="text-right font-medium text-muted-foreground py-2 px-2 whitespace-nowrap">Mes anterior</th>
+                        <th class="text-right font-medium text-muted-foreground py-2 px-2 whitespace-nowrap">Este mes</th>
+                        <th class="text-right font-medium text-muted-foreground py-2 pl-2">Cambio</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <template x-for="c in comparison" :key="c.id">
+                        <tr class="border-b last:border-0 hover:bg-muted/50 transition-colors">
+                          <td class="py-2.5 pr-4"><div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full shrink-0" :style="'background-color:' + c.color"></div><span class="font-medium truncate" x-text="c.name"></span></div></td>
+                          <td class="text-right py-2.5 px-2 text-muted-foreground whitespace-nowrap" x-text="FZ.money(c.prev)"></td>
+                          <td class="text-right py-2.5 px-2 font-medium whitespace-nowrap" x-text="FZ.money(c.cur)"></td>
+                          <td class="text-right py-2.5 pl-2">
+                            <div class="flex items-center justify-end gap-1">
+                              <span x-html="xic(c.icon, 'h-4 w-4 ' + c.cls)"></span>
+                              <span class="text-xs font-medium whitespace-nowrap" :class="c.cls" x-text="c.label"></span>
+                            </div>
+                          </td>
+                        </tr>
+                      </template>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- hourly-distribution.tsx -->
+            <div class="dash-card-glass rounded-xl flex flex-col gap-6 py-6 min-w-0">
+              <div class="px-6">
+                <h3 class="leading-none font-semibold flex items-center gap-2 text-base"><i data-icon="clock" class="h-5 w-5 text-indigo-500"></i>Desglose por Hora</h3>
+                <p class="text-muted-foreground text-sm mt-2">Distribución de gastos por hora del día<span x-show="peakLabel"> · Pico a las <span class="font-medium" x-text="peakLabel"></span></span></p>
+              </div>
+              <div class="px-6"><div class="h-[280px] w-full relative"><canvas id="hourChart" role="img" aria-label="Gastos por hora del día"></canvas></div></div>
+            </div>
+          </section>
+
+          <!-- ===================== Comparativa Anual (yoy/*) ===================== -->
+          <section id="panel-yoy" role="tabpanel" aria-labelledby="tab-yoy" x-show="tab === 'yoy'" x-cloak class="space-y-6 mt-6">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <div class="flex items-center gap-3">
+                <label for="yoy-year" class="text-sm font-medium text-muted-foreground whitespace-nowrap">Año a comparar:</label>
+                <select id="yoy-year" class="fz-select" style="width:120px" x-model.number="yYear" @change="computeYoY()">
+                  <template x-for="y in yearOpts" :key="y"><option :value="y" x-text="y" :selected="y === yYear"></option></template>
+                </select>
+              </div>
+              <button type="button" @click="FZ.notInDemo()" class="fz-icon-btn inline-flex items-center justify-center rounded-md text-sm font-medium h-8 px-2.5 border bg-transparent shadow-xs hover:bg-accent dark:border-input" aria-label="Exportar">
+                <i data-icon="download" class="h-4 w-4 sm:mr-2"></i><span class="hidden sm:inline">Exportar</span>
+              </button>
+            </div>
+
+            <div x-show="!yoy.hasPrev" class="rounded-lg border border-amber-200 bg-amber-50 p-4 text-amber-700 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-400">
+              <p class="text-sm font-medium" x-text="'Sin datos del año anterior (' + (yYear - 1) + ')'"></p>
+              <p class="text-xs mt-1 text-amber-600 dark:text-amber-500" x-text="'No se encontraron transacciones para ' + (yYear - 1) + '. Los datos de comparación mostrarán ceros.'"></p>
+            </div>
+
+            <!-- yoy-summary-cards.tsx -->
+            <div class="grid gap-4 grid-cols-1 sm:grid-cols-3">
+              <template x-for="card in yoy.cards" :key="card.title">
+                <div class="dash-card-glass rounded-xl flex flex-col gap-6 py-6 min-w-0" :class="card.glow">
+                  <div class="px-6 pb-2 -mb-6"><h3 class="text-sm font-medium text-muted-foreground" x-text="card.title"></h3></div>
+                  <div class="px-6 space-y-3 pt-4">
+                    <div>
+                      <p class="text-2xl font-bold truncate" x-text="card.cur"></p>
+                      <p class="text-xs text-muted-foreground" x-text="yYear"></p>
+                    </div>
+                    <div class="flex items-center justify-between gap-2">
+                      <div class="min-w-0">
+                        <p class="text-sm text-muted-foreground truncate" x-text="card.prev"></p>
+                        <p class="text-xs text-muted-foreground" x-text="yYear - 1"></p>
+                      </div>
+                      <span class="flex items-center gap-1 text-sm font-medium shrink-0" :class="card.changeCls">
+                        <span x-html="xic(card.changeIcon, 'h-4 w-4')"></span><span x-text="card.changeText"></span>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </template>
+            </div>
+
+            <!-- yoy-monthly-chart.tsx -->
+            <div class="dash-card-glass rounded-xl flex flex-col gap-6 py-6 min-w-0">
+              <div class="px-6">
+                <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <h3 class="leading-none font-semibold">Comparativa Mensual</h3>
+                    <p class="text-muted-foreground text-sm mt-2" x-text="yYear + ' vs ' + (yYear - 1) + ' · ' + viewLabels[yView]"></p>
+                  </div>
+                  <div class="flex gap-1 flex-wrap">
+                    <template x-for="v in ['ingresos', 'gastos', 'ahorro']" :key="v">
+                      <button type="button" @click="yView = v; drawYoY()" class="inline-flex items-center justify-center rounded-md font-medium text-xs h-7 px-3"
+                        :class="yView === v ? 'bg-primary text-primary-foreground hover:bg-primary/90' : 'border bg-background shadow-xs hover:bg-accent dark:bg-input/30 dark:border-input'" x-text="viewLabels[v]"></button>
+                    </template>
+                  </div>
+                </div>
+              </div>
+              <div class="px-6">
+                <div class="flex flex-wrap items-center justify-center gap-4 text-xs text-muted-foreground mb-3">
+                  <span class="flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-sm" style="background:#7b879d"></span><span x-text="'Año pasado (' + (yYear - 1) + ')'"></span></span>
+                  <span class="flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-sm" style="background:#308ce8"></span><span x-text="'Este año (' + yYear + ')'"></span></span>
+                </div>
+                <div class="h-[280px] sm:h-[340px] w-full relative"><canvas id="yoyChart" role="img" aria-label="Comparativa mensual año contra año"></canvas></div>
+                <p class="text-[11px] text-muted-foreground/70 mt-2" x-show="yYear === curYear">Se muestran solo los meses con datos en <span x-text="curYear"></span>.</p>
+              </div>
+            </div>
+
+            <!-- yoy-category-table.tsx -->
+            <div class="dash-card-glass rounded-xl flex flex-col gap-6 py-6 min-w-0">
+              <div class="px-6">
+                <h3 class="leading-none font-semibold">Desglose por Categoría</h3>
+                <p class="text-muted-foreground text-sm mt-2" x-text="'Top categorías de gasto · ' + yYear + ' vs ' + (yYear - 1)"></p>
+              </div>
+              <p x-show="!yoy.cats.length" class="text-sm text-muted-foreground text-center py-8 px-6">Sin datos de categorías para mostrar.</p>
+              <div x-show="yoy.cats.length" class="overflow-x-auto fz-scroll">
+                <table class="w-full text-sm min-w-[560px]">
+                  <thead>
+                    <tr class="border-b border-border/60 bg-muted/30">
+                      <th class="text-left py-3 px-4 font-medium text-muted-foreground">Categoría</th>
+                      <th class="text-right py-3 px-4 font-medium text-muted-foreground whitespace-nowrap" x-text="yYear - 1"></th>
+                      <th class="text-right py-3 px-4 font-medium text-muted-foreground whitespace-nowrap" x-text="yYear"></th>
+                      <th class="text-right py-3 px-4 font-medium text-muted-foreground whitespace-nowrap">Diferencia</th>
+                      <th class="text-right py-3 px-4 font-medium text-muted-foreground whitespace-nowrap">Cambio %</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <template x-for="(c, i) in yoy.cats" :key="c.id">
+                      <tr class="border-b border-border/40 transition-colors hover:bg-muted/20" :class="i % 2 ? 'bg-muted/10' : ''">
+                        <td class="py-3 px-4 font-medium" x-text="c.name"></td>
+                        <td class="py-3 px-4 text-right text-muted-foreground whitespace-nowrap"><span x-show="c.prev > 0" x-text="FZ.money(c.prev)"></span><span x-show="!(c.prev > 0)" class="text-muted-foreground/50 text-xs">Sin datos</span></td>
+                        <td class="py-3 px-4 text-right font-medium whitespace-nowrap" x-text="FZ.money(c.cur)"></td>
+                        <td class="py-3 px-4 text-right whitespace-nowrap"><span :class="c.change > 0 ? 'text-rose-500' : (c.change < 0 ? 'text-emerald-500' : 'text-muted-foreground')" x-text="(c.change > 0 ? '+' : '') + FZ.money(c.change)"></span></td>
+                        <td class="py-3 px-4 text-right"><span class="inline-flex items-center gap-1 text-sm font-medium" :class="c.pct === 0 ? 'text-muted-foreground' : (c.change > 0 ? 'text-rose-500' : 'text-emerald-500')"><span x-html="xic(c.pct === 0 ? 'minus' : (c.change > 0 ? 'trending-up' : 'trending-down'), 'h-3.5 w-3.5')"></span><span x-text="(c.pct > 0 ? '+' : '') + c.pct.toFixed(1) + '%'"></span></span></td>
+                      </tr>
+                    </template>
+                  </tbody>
+                </table>
+              </div>
+              <p class="text-[11px] text-muted-foreground/70 px-6" x-show="yoy.cats.length">Demo: el detalle por categoría del año anterior es ficticio y se deriva de los totales mensuales.</p>
+            </div>
+          </section>
+
+          <!-- ===================== Insights IA (insights-config.tsx + insights-tab.tsx + insights-predictions.tsx) ===================== -->
+          <section id="panel-insights" role="tabpanel" aria-labelledby="tab-insights" x-show="tab === 'insights'" x-cloak class="space-y-6 mt-6">
+            <div class="dash-card-glass rounded-xl flex flex-col gap-6 py-6 min-w-0">
+              <div class="px-4">
+                <h3 class="leading-none font-semibold">Configuración del Análisis</h3>
+                <p class="text-muted-foreground text-sm mt-2">Define tus ahorros y clasifica tus categorías antes de generar el análisis</p>
+              </div>
+              <div class="px-4 space-y-4">
+                <div class="space-y-2">
+                  <label for="savings-source" class="text-sm font-medium leading-none">Fuente de Dinero para Ahorros Actuales (Opcional)</label>
+                  <div class="relative">
+                    <span class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"><i data-icon="wallet" class="h-4 w-4"></i></span>
+                    <select id="savings-source" class="fz-select" style="padding-left:2.25rem" x-model="savingsSource">
+                      <option value="">No especificar ahorros</option>
+                      <template x-for="s in sources" :key="s.id"><option :value="s.id" x-text="s.name + ' - ' + FZ.money(s.balance, s.currency)"></option></template>
+                    </select>
+                  </div>
+                  <p class="text-xs text-muted-foreground">Selecciona la fuente de dinero que representa tus ahorros actuales para que la IA los considere en el análisis</p>
+                </div>
+                <div class="space-y-2">
+                  <div class="flex items-center justify-between gap-2">
+                    <span class="text-sm font-medium leading-none">Clasificación de Categorías y Subcategorías</span>
+                    <button type="button" @click="showClassifier = !showClassifier" class="inline-flex items-center justify-center rounded-md text-sm font-medium h-8 px-3 hover:bg-accent hover:text-accent-foreground shrink-0">
+                      <span x-html="FZ.icon(showClassifier ? 'chevron-up' : 'chevron-down', 'mr-2 h-4 w-4')"></span><span x-text="showClassifier ? 'Ocultar' : 'Mostrar'"></span>
+                    </button>
+                  </div>
+                  <div x-show="showClassifier" class="space-y-3 p-2 border rounded-lg bg-muted/30">
+                    <p class="text-sm text-muted-foreground">Clasifica tus categorías de gastos como buenas, neutrales o malas. Esto ayudará a la IA a dar recomendaciones más precisas.</p>
+                    <template x-for="c in expenseCats" :key="c.id">
+                      <div class="flex flex-wrap items-center justify-between gap-2 p-3 border rounded-lg bg-background">
+                        <span class="font-medium text-sm" x-text="c.name"></span>
+                        <div class="flex flex-wrap gap-1">
+                          <template x-for="o in [{v:'good',t:'Buena'},{v:'neutral',t:'Neutral'},{v:'bad',t:'Mala'}]" :key="o.v">
+                            <button type="button" @click="classes[c.id] = o.v" class="inline-flex items-center justify-center rounded-md font-medium h-8 px-3 text-xs sm:text-sm"
+                              :class="classes[c.id] === o.v ? 'bg-primary text-primary-foreground' : 'border bg-background shadow-xs hover:bg-accent dark:bg-input/30 dark:border-input'" x-text="o.t"></button>
+                          </template>
+                        </div>
+                      </div>
+                    </template>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="dash-card-glass rounded-xl flex flex-col gap-6 py-6 min-w-0">
+              <div class="px-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div class="min-w-0">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <h3 class="leading-none font-semibold text-base sm:text-lg">Análisis con IA</h3>
+                    <span class="inline-flex items-center rounded-md bg-amber-500/15 text-amber-700 dark:text-amber-400 text-[10px] px-1.5 h-4 font-semibold">Ejemplo</span>
+                    <span class="inline-flex items-center gap-0.5 rounded-md bg-secondary text-secondary-foreground text-[10px] px-1.5 h-4 font-medium"><i data-icon="sparkles" class="h-2.5 w-2.5"></i>IA</span>
+                  </div>
+                  <p class="text-muted-foreground text-xs sm:text-sm mt-2">Recomendaciones personalizadas basadas en tus patrones</p>
+                </div>
+                <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                  <label class="sr-only" for="ai-period">Período del análisis</label>
+                  <div class="relative w-full sm:w-[180px]">
+                    <span class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"><i data-icon="calendar" class="h-4 w-4"></i></span>
+                    <select id="ai-period" class="fz-select" style="padding-left:2.25rem" x-model="aiPeriod">
+                      <option value="week">Última semana</option>
+                      <option value="month">Mes actual</option>
+                      <option value="lastMonth">Mes anterior</option>
+                      <option value="3months">Último trimestre</option>
+                      <option value="6months">Últimos 6 meses</option>
+                      <option value="year">Último año</option>
+                    </select>
+                  </div>
+                  <button type="button" @click="FZ.toast('Demo sin IA real', 'Este análisis es un ejemplo fijo calculado con los datos ficticios; no se llama a ningún modelo.')" class="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium h-8 px-3 bg-primary text-primary-foreground hover:bg-primary/90 w-full sm:w-auto">
+                    <i data-icon="sparkles" class="mr-2 h-4 w-4"></i>Generar insight
+                  </button>
+                </div>
+              </div>
+              <div class="px-6">
+                <p class="text-xs text-muted-foreground mb-4 flex items-center gap-1.5"><i data-icon="info" class="h-3.5 w-3.5 shrink-0"></i>Análisis de ejemplo generado con los datos ficticios de la demo (últimos 6 meses), sin IA real.</p>
+                <div class="space-y-4">
+                  <template x-for="ins in insights" :key="ins.title">
+                    <div class="flex gap-3 sm:gap-4 p-4 rounded-lg border border-border bg-muted/30">
+                      <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full" :class="ins.impact === 'high' ? 'bg-red-500/10 text-red-500' : (ins.impact === 'medium' ? 'bg-yellow-500/10 text-yellow-600' : 'bg-green-500/10 text-green-600')">
+                        <i data-icon="trending-up" class="h-5 w-5"></i>
+                      </div>
+                      <div class="flex-1 space-y-1 min-w-0">
+                        <h4 class="font-semibold" x-text="ins.title"></h4>
+                        <p class="text-sm text-muted-foreground" x-text="ins.description"></p>
+                        <p class="text-xs text-muted-foreground" x-text="'Categoría: ' + ins.category"></p>
+                      </div>
+                    </div>
+                  </template>
+                  <div class="mt-4 p-4 rounded-lg border border-border bg-background">
+                    <h4 class="font-semibold mb-2">Resumen Ejecutivo</h4>
+                    <p class="text-sm text-muted-foreground whitespace-pre-line" x-text="summary"></p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="dash-card-glass rounded-xl flex flex-col gap-6 py-6 min-w-0">
+              <div class="px-6">
+                <h3 class="leading-none font-semibold flex items-center gap-2"><i data-icon="message-square" class="h-5 w-5"></i>Refinar Análisis</h3>
+                <p class="text-muted-foreground text-sm mt-2">Haz aclaraciones sobre tus gastos para mejorar el análisis. Por ejemplo: "El gasto en transporte es imprescindible porque trabajo lejos"</p>
+              </div>
+              <div class="px-6 space-y-4">
+                <div class="space-y-2">
+                  <label for="clarification" class="text-sm font-medium leading-none">Aclaraciones</label>
+                  <textarea id="clarification" rows="3" class="fz-input" x-model="clarification" placeholder="Ejemplo: Los gastos en salud son imprescindibles, el gasto en entretenimiento es ocasional..."></textarea>
+                  <p class="text-xs text-muted-foreground">Describe qué gastos son imprescindibles o necesarios para que la IA ajuste sus recomendaciones</p>
+                </div>
+                <button type="button" :disabled="!clarification.trim()" @click="FZ.toast('Demo sin IA real', 'En la aplicación real el análisis se refina con tus aclaraciones.'); clarification = ''" class="inline-flex w-full items-center justify-center whitespace-nowrap rounded-md text-sm font-medium h-9 px-4 bg-primary text-primary-foreground hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50">
+                  <i data-icon="send" class="mr-2 h-4 w-4"></i>Refinar Análisis con Aclaraciones
+                </button>
+              </div>
+            </div>
+
+            <div class="dash-card-glass rounded-xl flex flex-col gap-6 py-6 min-w-0">
+              <div class="px-6">
+                <h3 class="leading-none font-semibold text-lg sm:text-xl">Predicciones Financieras</h3>
+                <p class="text-muted-foreground text-xs sm:text-sm mt-2">Ejemplo calculado con los datos de la demo (en la app real: análisis de IA con Gemini)</p>
+              </div>
+              <div class="px-6">
+                <div class="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+                  <div class="space-y-2 rounded-lg border border-border p-4 min-w-0">
+                    <p class="text-sm text-muted-foreground">Gastos al Final del Mes Actual</p>
+                    <p class="text-2xl font-bold truncate" x-text="FZ.money(pred.monthEnd)"></p>
+                    <p class="text-xs text-muted-foreground">Proyección al final del mes actual</p>
+                  </div>
+                  <div class="space-y-2 rounded-lg border border-border p-4 min-w-0">
+                    <p class="text-sm text-muted-foreground">Gastos Próximo Mes</p>
+                    <p class="text-2xl font-bold truncate" x-text="FZ.money(pred.next)"></p>
+                    <p class="text-xs text-muted-foreground">Proyección para próximo mes</p>
+                  </div>
+                  <div class="space-y-2 rounded-lg border border-border p-4 min-w-0">
+                    <p class="text-sm text-muted-foreground">Ahorro Potencial</p>
+                    <p class="text-2xl font-bold text-green-600 truncate" x-text="FZ.money(pred.savings)"></p>
+                    <p class="text-xs text-green-600">Identificado por IA (ejemplo)</p>
+                  </div>
+                  <div class="space-y-2 rounded-lg border border-border p-4 min-w-0">
+                    <p class="text-sm text-muted-foreground">Confianza</p>
+                    <div class="flex items-center gap-2">
+                      <p class="text-2xl font-bold" x-text="pred.confidence + '%'"></p>
+                      <div class="flex-1"><div class="h-2 bg-muted rounded-full overflow-hidden"><div class="h-full transition-all" :class="pred.confidence >= 80 ? 'bg-green-500' : (pred.confidence >= 60 ? 'bg-yellow-500' : 'bg-orange-500')" :style="'width:' + pred.confidence + '%'"></div></div></div>
+                    </div>
+                    <p class="text-xs text-muted-foreground" x-text="pred.confidence >= 80 ? 'Alta confianza - Datos consistentes' : (pred.confidence >= 60 ? 'Confianza media - Algunas variaciones' : 'Confianza baja - Datos variables')"></p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+<div id="fz-bottomnav"></div>
+
+<script src="./data.js"></script>
+<script>FZ.mountShell("reportes");</script>
+<script>
+  /* Chart instances live outside Alpine state */
+  var trendChart = null, weekChart = null, catChart = null, hourChart = null, yoyChart = null;
+
+  /* Lucide icons that are not in the shared FZ map */
+  var XI = {
+    "minus": '<path d="M5 12h14"/>',
+    "arrow-down-right": '<path d="m7 7 10 10"/><path d="M17 7v10H7"/>',
+    "git-compare": '<circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 0 1 2 2v7"/><path d="M11 18H8a2 2 0 0 1-2-2V9"/>'
+  };
+  function xic(name, cls) {
+    if (!XI[name]) return FZ.icon(name, cls);
+    return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="' + (cls || "h-4 w-4") + '">' + XI[name] + "</svg>";
+  }
+
+  /* Respect prefers-reduced-motion for chart animations */
+  function chartOpts(fn) {
+    var o = FZ.baseChartOptions(fn);
+    if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) o.animation = false;
+    return o;
+  }
+  function kTick(v) { return Math.abs(v) >= 1000 ? (v / 1000).toFixed(v % 1000 ? 1 : 0) + "k" : v; }
+
+  function reports() {
+    var D = FZDATA, now = D.today, Y = now.getFullYear();
+    function pad(n) { return ("0" + n).slice(-2); }
+    function addDays(d, n) { return new Date(d.getFullYear(), d.getMonth(), d.getDate() + n); }
+    function dim(y, m) { return new Date(y, m + 1, 0).getDate(); }
+    function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+    function monthLabel(key) { var p = key.split("-"); return FZ.MONTHS[+p[1] - 1].toLowerCase() + " de " + p[0]; }
+    function prevKey(key) { var p = key.split("-"); var d = new Date(+p[0], +p[1] - 2, 1); return D.monthKey(d.getFullYear(), d.getMonth()); }
+    function isExp(t) { return t.type === "gasto"; }
+    function sumPEN(list) { return list.reduce(function (s, t) { return s + D.toPEN(t); }, 0); }
+    function hourOf(t) { return parseInt((t.time || "12:00").split(":")[0], 10); }
+    function hash(str) { var h = 0; for (var i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) % 997; return h; }
+    var curKey = D.monthKey(Y, now.getMonth());
+    var TB = [{ k: "manana", t: "Mañana (6–12)", from: 6, to: 12 }, { k: "tarde", t: "Tarde (12–18)", from: 12, to: 18 }, { k: "noche", t: "Noche (18–24)", from: 18, to: 24 }, { k: "madrugada", t: "Madrugada (0–6)", from: 0, to: 6 }];
+    var DAY_LABELS = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
+    var SUB_COLORS = ["#26d9b3", "#5c9ded", "#ec9f33", "#e05252", "#6c7793", "#a78bfa", "#f472b6", "#22d3ee", "#facc15", "#84cc16", "#fb923c", "#818cf8"];
+    var catPlain = { labels: [], subs: [], data: {}, totals: [] };
+    var hourPlain = [];
+    var yoyPlain = { labels: [], cur: {}, prev: {} };
+
+    function heatColor(i) {
+      if (i === 0) return "var(--muted)";
+      if (i < 0.25) return "hsl(142, 71%, 85%)";
+      if (i < 0.5) return "hsl(142, 71%, 65%)";
+      if (i < 0.75) return "hsl(48, 96%, 65%)";
+      if (i < 0.9) return "hsl(25, 95%, 60%)";
+      return "hsl(0, 72%, 55%)";
+    }
+    function heatText(i) {
+      if (i === 0) return "text-muted-foreground";
+      if (i < 0.5) return "text-emerald-900";
+      if (i < 0.75) return "text-yellow-900";
+      return "text-white";
+    }
+
+    return {
+      tabs: [{ k: "overview", t: "Resumen" }, { k: "categories", t: "Categorías" }, { k: "xray", t: "Radiografía" }, { k: "yoy", t: "Comparativa Anual" }, { k: "insights", t: "Insights IA" }],
+      tab: "overview",
+      monthOpts: D.lastMonths(6).reverse().map(function (m) { return { value: m.key, label: monthLabel(m.key) }; }),
+      monthLabel: monthLabel, prevKey: prevKey, heatColor: heatColor, DAY_LABELS: DAY_LABELS, curYear: Y,
+      // Resumen
+      perfPeriod: "month", perf: { daily: "", dailyNote: "", rate: "", top: "", topPct: 0, proj: "" },
+      // Categorías
+      catSource: "money_source", catPeriod: "month", catMonth: curKey, catList: [],
+      // Radiografía
+      xMonth: curKey, heatFlat: [], recurring: [], ants: [], antTotal: 0, comparison: [], topIncrease: null, peakLabel: "",
+      // Comparativa anual
+      yYear: Y, yearOpts: [Y, Y - 1, Y - 2], yView: "gastos", viewLabels: { ingresos: "Ingresos", gastos: "Gastos", ahorro: "Ahorro Neto" }, yoy: { hasPrev: true, cards: [], cats: [] },
+      // Insights
+      sources: D.moneySources, savingsSource: "", showClassifier: false, classes: {}, aiPeriod: "6months", clarification: "",
+      expenseCats: D.categories.filter(function (c) { return c.type === "gasto"; }),
+      insights: [], summary: "", pred: { monthEnd: 0, next: 0, savings: 0, confidence: 0 },
+
+      init: function () {
+        var self = this;
+        var defaults = { viv: "good", serv: "good", salud: "good", alim: "good", edu: "good", trans: "neutral", susc: "neutral", comp: "neutral", rest: "bad", ent: "bad" };
+        this.classes = defaults;
+        this.computePerf(); this.computeCats(); this.computeXray(); this.computeYoY(); this.computeInsights();
+        this.$nextTick(function () { self.drawTab(); });
+        window.addEventListener("fz-theme", function () { self.drawTab(); });
+      },
+      setTab: function (k) {
+        var self = this; this.tab = k;
+        // Alpine shows x-show elements on the next animation frame; draw after that so the canvas has a size
+        requestAnimationFrame(function () { setTimeout(function () { self.drawTab(); }, 0); });
+      },
+      drawTab: function () {
+        if (this.tab === "overview") { this.drawTrend(); this.drawWeek(); }
+        else if (this.tab === "categories") this.drawCat();
+        else if (this.tab === "xray") this.drawHour();
+        else if (this.tab === "yoy") this.drawYoY();
+      },
+
+      /* ---------- Resumen ---------- */
+      computePerf: function () {
+        var p = this.perfPeriod, start, end = now, days;
+        if (p === "month") { start = new Date(Y, now.getMonth(), 1); days = now.getDate(); }
+        else if (p === "lastMonth") { start = new Date(Y, now.getMonth() - 1, 1); end = new Date(Y, now.getMonth(), 0); days = end.getDate(); }
+        else { var n = p === "3months" ? 3 : 6; start = new Date(Y, now.getMonth() - (n - 1), 1); days = Math.round((now - start) / 864e5) + 1; }
+        var s = D.iso(start), e = D.iso(end);
+        var list = D.transactions.filter(function (t) { return t.date >= s && t.date <= e; });
+        var inc = sumPEN(list.filter(function (t) { return t.type === "ingreso"; }));
+        var exp = sumPEN(list.filter(isExp));
+        var cats = D.byCategory(list);
+        var totalCat = cats.reduce(function (a, c) { return a + c.value; }, 0);
+        var proj = p === "month" ? exp / Math.max(days, 1) * dim(Y, now.getMonth()) : (p === "lastMonth" ? exp : exp / Math.max(days, 1) * 30);
+        this.perf = {
+          daily: FZ.money(exp / Math.max(days, 1)),
+          dailyNote: p === "month" ? "Últimos " + days + " días" : (p === "lastMonth" ? "Mes anterior completo" : "Últimos " + days + " días"),
+          rate: (inc > 0 ? (inc - exp) / inc * 100 : 0).toFixed(1) + "%",
+          top: cats[0] ? cats[0].name : "N/A",
+          topPct: cats[0] && totalCat ? (cats[0].value / totalCat * 100).toFixed(1) : 0,
+          proj: FZ.money(proj)
+        };
+      },
+      drawTrend: function () {
+        var el = document.getElementById("trendChart"); if (!el || !window.Chart) return;
+        if (trendChart) trendChart.destroy();
+        var ms = D.lastMonths(6), labels = [], inc = [], exp = [];
+        ms.forEach(function (m) { var t = D.monthTotals(D.transactions, m.key); labels.push(cap(FZ.MONTHS_SHORT[m.m]) + " " + String(m.y).slice(2)); inc.push(Math.round(t.income * 100) / 100); exp.push(Math.round(t.expenses * 100) / 100); });
+        trendChart = new Chart(el, {
+          type: "line",
+          data: { labels: labels, datasets: [
+            { label: "Ingresos", data: inc, borderColor: "#8884d8", backgroundColor: "#8884d8", borderWidth: 3, tension: 0.35, pointRadius: 4, pointHoverRadius: 6, pointBackgroundColor: "#10b981" },
+            { label: "Gastos", data: exp, borderColor: "#82ca9d", backgroundColor: "#82ca9d", borderWidth: 3, tension: 0.35, pointRadius: 4, pointHoverRadius: 6, pointBackgroundColor: "#db2777" }
+          ] },
+          options: chartOpts(function (o, th) {
+            o.plugins.legend = { display: true, position: "bottom", labels: { color: th.text, usePointStyle: true, boxWidth: 8, font: { size: 11 } } };
+            o.scales.x.grid = { display: true, color: th.grid };
+            o.scales.x.ticks.font = { size: 10 }; o.scales.y.ticks.font = { size: 10 };
+          })
+        });
+      },
+      drawWeek: function () {
+        var el = document.getElementById("weekChart"); if (!el || !window.Chart) return;
+        if (weekChart) weekChart.destroy();
+        var names = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"], labels = [], data = [];
+        for (var i = 6; i >= 0; i--) {
+          var d = addDays(now, -i), key = D.iso(d);
+          labels.push(names[d.getDay()]);
+          data.push(Math.round(sumPEN(D.transactions.filter(function (t) { return isExp(t) && t.date === key; })) * 100) / 100);
+        }
+        weekChart = new Chart(el, {
+          type: "bar",
+          data: { labels: labels, datasets: [{ label: "Gastos", data: data, backgroundColor: "#6366f1", borderRadius: { topLeft: 8, topRight: 8 }, borderSkipped: false, maxBarSize: 48 }] },
+          options: chartOpts(function (o, th) { o.scales.x.grid = { display: true, color: th.grid }; })
+        });
+      },
+
+      /* ---------- Categorías ---------- */
+      computeCats: function () {
+        var isCC = this.catSource === "credit_card", s, e;
+        if (this.catPeriod === "week") { s = D.iso(addDays(now, -6)); e = D.iso(now); }
+        else if (this.catPeriod === "month") { var p = this.catMonth.split("-"); s = this.catMonth + "-01"; e = this.catMonth + "-" + pad(dim(+p[0], +p[1] - 1)); }
+        else { s = Y + "-01-01"; e = D.iso(now); }
+        var map = {};
+        D.transactions.forEach(function (t) {
+          if (!isExp(t) || t.date < s || t.date > e || (isCC ? !t.card : !!t.card)) return;
+          var c = map[t.category];
+          if (!c) { var cat = D.catById(t.category); c = map[t.category] = { id: t.category, name: cat.name, color: cat.color, value: 0, subMap: {} }; }
+          var v = D.toPEN(t); c.value += v; c.subMap[t.subcategory] = (c.subMap[t.subcategory] || 0) + v;
+        });
+        var list = Object.keys(map).map(function (k) { return map[k]; }).sort(function (a, b) { return b.value - a.value; });
+        var total = list.reduce(function (a, c) { return a + c.value; }, 0) || 1;
+        var subNames = [];
+        this.catList = list.map(function (c) {
+          var subs = Object.keys(c.subMap).map(function (n) { if (subNames.indexOf(n) < 0) subNames.push(n); return { name: n, value: c.subMap[n] }; }).sort(function (a, b) { return b.value - a.value; });
+          return { id: c.id, name: c.name, color: c.color, value: c.value, pct: c.value / total * 100, subs: subs };
+        });
+        catPlain = { labels: list.map(function (c) { return c.name; }), subs: subNames.slice(), totals: list.map(function (c) { return Math.round(c.value * 100) / 100; }), data: {} };
+        subNames.forEach(function (n) { catPlain.data[n] = list.map(function (c) { return Math.round((c.subMap[n] || 0) * 100) / 100; }); });
+        var self = this;
+        if (this.tab === "categories") this.$nextTick(function () { self.drawCat(); });
+      },
+      drawCat: function () {
+        var el = document.getElementById("catChart"); if (!el || !window.Chart) return;
+        if (catChart) { catChart.destroy(); catChart = null; }
+        if (!catPlain.labels.length) return;
+        var datasets = catPlain.subs.map(function (n, i) {
+          return { label: n, data: catPlain.data[n], backgroundColor: SUB_COLORS[i % SUB_COLORS.length], stack: "a", borderRadius: i === catPlain.subs.length - 1 ? { topRight: 4, bottomRight: 4 } : 0, borderSkipped: false, maxBarSize: 28 };
+        });
+        catChart = new Chart(el, {
+          type: "bar",
+          data: { labels: catPlain.labels.slice(), datasets: datasets },
+          options: chartOpts(function (o, th) {
+            o.indexAxis = "y";
+            o.interaction = { mode: "index", axis: "y", intersect: false };
+            o.scales = {
+              x: { stacked: true, beginAtZero: true, grid: { color: th.grid }, border: { display: false }, ticks: { color: th.text, font: { size: 10 }, callback: kTick } },
+              y: { stacked: true, grid: { display: false }, border: { display: false }, ticks: { color: th.dark ? "#e5e5e5" : "#262626", font: { size: 11 }, autoSkip: false } }
+            };
+            o.plugins.tooltip.filter = function (item) { return item.parsed.x > 0; };
+            o.plugins.tooltip.callbacks = {
+              label: function (c) { return " " + c.dataset.label + ": " + FZ.money(c.parsed.x); },
+              footer: function (items) { return items.length ? "Total: " + FZ.money(catPlain.totals[items[0].dataIndex]) : ""; }
+            };
+            o.plugins.tooltip.footerColor = th.tooltipFg;
+          })
+        });
+      },
+
+      /* ---------- Radiografía ---------- */
+      computeXray: function () {
+        var key = this.xMonth, pk = prevKey(key);
+        var monthTx = D.transactions.filter(function (t) { return isExp(t) && D.ym(t.date) === key; });
+
+        // Heatmap 7 days x 4 time blocks
+        var grid = {}, max = 0;
+        monthTx.forEach(function (t) {
+          var d = (FZ.parseDate(t.date).getDay() + 6) % 7, h = hourOf(t);
+          var tb = TB.filter(function (b) { return h >= b.from && h < b.to; })[0] || TB[0];
+          var g = grid[d + "-" + tb.k] || (grid[d + "-" + tb.k] = { total: 0, count: 0 });
+          g.total += D.toPEN(t); g.count++;
+          if (g.total > max) max = g.total;
+        });
+        var flat = [];
+        TB.forEach(function (tb) {
+          flat.push({ key: "l-" + tb.k, isLabel: true, label: tb.t, title: "" });
+          for (var d = 0; d < 7; d++) {
+            var g = grid[d + "-" + tb.k] || { total: 0, count: 0 };
+            var it = max ? g.total / max : 0;
+            flat.push({ key: d + "-" + tb.k, isLabel: false, count: g.count, bg: heatColor(it), txt: heatText(it),
+              title: DAY_LABELS[d] + " · " + tb.t + "\nTotal: " + FZ.money(g.total) + "\n" + g.count + " transacciones" });
+          }
+        });
+        this.heatFlat = flat;
+
+        // Gastos hormiga: small amounts (<= S/ 40) repeated 2+ times, grouped by subcategory, then by category
+        var small = monthTx.filter(function (t) { return D.toPEN(t) <= 40; });
+        var bySub = {};
+        small.forEach(function (t) { (bySub[t.subcategory] = bySub[t.subcategory] || []).push(t); });
+        var ants = [], left = [];
+        Object.keys(bySub).forEach(function (k) {
+          var l = bySub[k];
+          if (l.length >= 2) ants.push({ key: "s-" + k, description: k, groupType: "subcategory", list: l });
+          else left = left.concat(l);
+        });
+        var byCat = {};
+        left.forEach(function (t) { (byCat[t.category] = byCat[t.category] || []).push(t); });
+        Object.keys(byCat).forEach(function (k) { if (byCat[k].length >= 2) ants.push({ key: "c-" + k, description: D.catById(k).name, groupType: "category", list: byCat[k] }); });
+        this.ants = ants.map(function (a) {
+          var tot = sumPEN(a.list);
+          return { key: a.key, description: a.description, groupType: a.groupType, occurrences: a.list.length, unit: tot / a.list.length, monthly: tot, yearly: tot * 12 };
+        }).sort(function (a, b) { return b.monthly - a.monthly; });
+        this.antTotal = this.ants.reduce(function (s, a) { return s + a.monthly; }, 0);
+
+        // Recurring: fixed charges seen in 3+ of the last months (stable amount) + groups with 3+ charges this month
+        var window6 = [], d0 = FZ.parseDate(key + "-01");
+        for (var i = 0; i < 6; i++) { var md = new Date(d0.getFullYear(), d0.getMonth() - i, 1); window6.push(D.monthKey(md.getFullYear(), md.getMonth())); }
+        var byDesc = {};
+        D.transactions.forEach(function (t) {
+          if (!isExp(t) || window6.indexOf(D.ym(t.date)) < 0) return;
+          var g = byDesc[t.description] || (byDesc[t.description] = { months: {}, amounts: [], inMonth: false });
+          g.months[D.ym(t.date)] = true; g.amounts.push(D.toPEN(t)); if (D.ym(t.date) === key) g.inMonth = true;
+        });
+        var rec = [];
+        Object.keys(byDesc).forEach(function (k) {
+          var g = byDesc[k], nm = Object.keys(g.months).length;
+          if (nm < 3 || !g.inMonth || g.amounts.length / nm >= 2) return;
+          var avg = g.amounts.reduce(function (a, b) { return a + b; }, 0) / g.amounts.length;
+          var sd = Math.sqrt(g.amounts.reduce(function (a, b) { return a + (b - avg) * (b - avg); }, 0) / g.amounts.length);
+          if (avg > 0 && sd / avg <= 0.2) rec.push({ key: "d-" + k, description: k, groupType: "description", frequencyLabel: "Mensual (" + nm + " de " + window6.length + " meses)", averageAmount: avg, projectedMonthly: avg * g.amounts.length / nm });
+        });
+        var subCount = {};
+        monthTx.forEach(function (t) { var s = subCount[t.subcategory] || (subCount[t.subcategory] = { n: 0, tot: 0 }); s.n++; s.tot += D.toPEN(t); });
+        Object.keys(subCount).forEach(function (k) {
+          var s = subCount[k];
+          if (s.n >= 3) rec.push({ key: "s-" + k, description: k, groupType: "subcategory", frequencyLabel: s.n + "x/mes", averageAmount: s.tot / s.n, projectedMonthly: s.tot });
+        });
+        this.recurring = rec.sort(function (a, b) { return b.projectedMonthly - a.projectedMonthly; }).slice(0, 14);
+
+        // Month comparison by category
+        var cur = D.byCategory(D.transactions, function (t) { return D.ym(t.date) === key; });
+        var prev = D.byCategory(D.transactions, function (t) { return D.ym(t.date) === pk; });
+        var pm = {}; prev.forEach(function (c) { pm[c.id] = c.value; });
+        var ids = cur.map(function (c) { return c.id; });
+        prev.forEach(function (c) { if (ids.indexOf(c.id) < 0) cur.push({ id: c.id, name: c.name, color: c.color, value: 0 }); });
+        this.comparison = cur.map(function (c) {
+          var p = pm[c.id] || 0, delta = p > 0 ? (c.value - p) / p * 100 : 0;
+          var dir = p === 0 ? "new" : (Math.abs(delta) < 0.5 ? "same" : (delta > 0 ? "up" : "down"));
+          return { id: c.id, name: c.name, color: c.color, prev: p, cur: c.value, percentDelta: delta, direction: dir,
+            icon: { up: "arrow-up-right", down: "arrow-down-right", "new": "sparkles", same: "minus" }[dir],
+            cls: { up: "text-rose-500", down: "text-emerald-500", "new": "text-blue-500", same: "text-muted-foreground" }[dir],
+            label: dir === "new" ? "Nuevo" : (dir === "same" ? "Sin cambio" : (delta > 0 ? "+" : "") + delta.toFixed(1) + "%") };
+        });
+        this.topIncrease = this.comparison.filter(function (c) { return c.direction === "up"; }).sort(function (a, b) { return b.percentDelta - a.percentDelta; })[0] || null;
+
+        // Hourly buckets
+        hourPlain = [];
+        for (var h = 0; h < 24; h++) hourPlain.push({ label: pad(h) + ":00", total: 0, count: 0 });
+        monthTx.forEach(function (t) { var b = hourPlain[hourOf(t)]; b.total += D.toPEN(t); b.count++; });
+        var peak = hourPlain.reduce(function (m, b) { return b.total > m.total ? b : m; }, hourPlain[0]);
+        this.peakLabel = peak.total > 0 ? peak.label : "";
+        var self = this;
+        if (this.tab === "xray") this.$nextTick(function () { self.drawHour(); });
+      },
+      drawHour: function () {
+        var el = document.getElementById("hourChart"); if (!el || !window.Chart) return;
+        if (hourChart) hourChart.destroy();
+        var th = FZ.chartTheme();
+        var max = Math.max.apply(null, hourPlain.map(function (b) { return b.total; }));
+        hourChart = new Chart(el, {
+          type: "bar",
+          data: { labels: hourPlain.map(function (b) { return b.label; }), datasets: [{ label: "Total", data: hourPlain.map(function (b) { return Math.round(b.total * 100) / 100; }),
+            backgroundColor: hourPlain.map(function (b) { return b.total === max && max > 0 ? "#df3a3a" : th.primary; }), borderRadius: { topLeft: 4, topRight: 4 }, borderSkipped: false, maxBarSize: 24 }] },
+          options: chartOpts(function (o, th2) {
+            o.scales.x.grid = { display: true, color: th2.grid };
+            o.scales.x.ticks.font = { size: 10 }; o.scales.x.ticks.maxRotation = 0; o.scales.x.ticks.autoSkip = true;
+            o.scales.y.ticks.font = { size: 10 };
+            o.plugins.tooltip.callbacks.afterLabel = function (c) { return " " + hourPlain[c.dataIndex].count + " transacciones"; };
+          })
+        });
+      },
+
+      /* ---------- Comparativa anual ---------- */
+      computeYoY: function () {
+        var yr = this.yYear, months = [], cur = { ingresos: [], gastos: [], ahorro: [] }, prev = { ingresos: [], gastos: [], ahorro: [] };
+        var ti = 0, te = 0, pi = 0, pe = 0;
+        for (var m = 0; m < 12; m++) {
+          var ci = 0, ce = 0, has = false, p = { income: 0, expenses: 0 };
+          if (yr === Y) {
+            var t = D.monthTotals(D.transactions, D.monthKey(Y, m)); has = t.count > 0; ci = t.income; ce = t.expenses; p = D.prevYear[m];
+          } else if (yr === Y - 1) { has = true; ci = D.prevYear[m].income; ce = D.prevYear[m].expenses; }
+          else has = true;
+          if (!has) continue;
+          months.push(cap(FZ.MONTHS_SHORT[m]));
+          cur.ingresos.push(ci); cur.gastos.push(ce); cur.ahorro.push(ci - ce);
+          prev.ingresos.push(p.income); prev.gastos.push(p.expenses); prev.ahorro.push(p.income - p.expenses);
+          ti += ci; te += ce; pi += p.income; pe += p.expenses;
+        }
+        yoyPlain = { labels: months, cur: cur, prev: prev };
+        function chg(a, b) { return b > 0 ? (a - b) / b * 100 : 0; }
+        function ind(pct, goodUp) {
+          if (pct === 0) return { changeText: "Sin cambio", changeIcon: "minus", changeCls: "text-muted-foreground" };
+          var good = goodUp ? pct > 0 : pct < 0;
+          return { changeText: (pct > 0 ? "+" : "") + pct.toFixed(1) + "%", changeIcon: pct > 0 ? "trending-up" : "trending-down", changeCls: good ? "text-emerald-500" : "text-rose-500" };
+        }
+        var cr = ti > 0 ? (ti - te) / ti * 100 : 0, pr = pi > 0 ? (pi - pe) / pi * 100 : 0;
+        this.yoy = {
+          hasPrev: pi > 0 || pe > 0,
+          cards: [
+            Object.assign({ title: "Total Ingresos", glow: "dash-glow-income", cur: FZ.money(ti), prev: FZ.money(pi) }, ind(chg(ti, pi), true)),
+            Object.assign({ title: "Total Gastos", glow: "dash-glow-expense", cur: FZ.money(te), prev: FZ.money(pe) }, ind(chg(te, pe), false)),
+            Object.assign({ title: "Tasa de Ahorro", glow: "dash-glow-balance", cur: cr.toFixed(1) + "%", prev: pr.toFixed(1) + "%" }, ind(pr !== 0 ? cr - pr : 0, true))
+          ],
+          cats: []
+        };
+        // Category breakdown. Last year's per-category amounts are synthesized (prevYear only has monthly totals).
+        var curCats = D.byCategory(D.transactions, function (t) { return FZ.parseDate(t.date).getFullYear() === Y; });
+        var curTotal = curCats.reduce(function (a, c) { return a + c.value; }, 0) || 1;
+        var ratio = (yr === Y ? pe : D.prevYear.reduce(function (a, p) { return a + p.expenses; }, 0)) / curTotal;
+        var synth = curCats.map(function (c) { return { id: c.id, name: c.name, value: c.value * ratio * (0.8 + (hash(c.id) % 41) / 100) }; });
+        var rows = [];
+        if (yr === Y) rows = curCats.map(function (c, i) { return { id: c.id, name: c.name, cur: c.value, prev: synth[i].value }; });
+        else if (yr === Y - 1) rows = synth.map(function (s) { return { id: s.id, name: s.name, cur: s.value, prev: 0 }; });
+        this.yoy.cats = rows.sort(function (a, b) { return b.cur - a.cur; }).slice(0, 10).map(function (r) {
+          var change = r.cur - r.prev;
+          return Object.assign(r, { change: change, pct: r.prev > 0 ? change / r.prev * 100 : 0 });
+        });
+        var self = this;
+        if (this.tab === "yoy") this.$nextTick(function () { self.drawYoY(); });
+      },
+      drawYoY: function () {
+        var el = document.getElementById("yoyChart"); if (!el || !window.Chart) return;
+        if (yoyChart) yoyChart.destroy();
+        var v = this.yView, yr = this.yYear;
+        function r2(a) { return a.map(function (x) { return Math.round(x * 100) / 100; }); }
+        yoyChart = new Chart(el, {
+          type: "bar",
+          data: { labels: yoyPlain.labels.slice(), datasets: [
+            { label: "Año pasado (" + (yr - 1) + ")", data: r2(yoyPlain.prev[v]), backgroundColor: "#7b879d", borderRadius: { topLeft: 4, topRight: 4 }, borderSkipped: false, categoryPercentage: 0.8, barPercentage: 0.9 },
+            { label: "Este año (" + yr + ")", data: r2(yoyPlain.cur[v]), backgroundColor: "#308ce8", borderRadius: { topLeft: 4, topRight: 4 }, borderSkipped: false, categoryPercentage: 0.8, barPercentage: 0.9 }
+          ] },
+          options: chartOpts(function (o, th) {
+            o.scales.x.grid = { display: true, color: th.grid };
+            o.scales.y.beginAtZero = true;
+          })
+        });
+      },
+
+      /* ---------- Insights IA (canned example computed from the data) ---------- */
+      computeInsights: function () {
+        var ms = D.lastMonths(6), full = ms.slice(0, 5);
+        var keys = ms.map(function (m) { return m.key; });
+        var list = D.transactions.filter(function (t) { return keys.indexOf(D.ym(t.date)) >= 0; });
+        var inc = sumPEN(list.filter(function (t) { return t.type === "ingreso"; })), exp = sumPEN(list.filter(isExp));
+        var cats = D.byCategory(list), total = cats.reduce(function (a, c) { return a + c.value; }, 0) || 1;
+        var top = cats[0] || { name: "N/A", value: 0 };
+        var hormiga = sumPEN(list.filter(function (t) { return isExp(t) && (t.subcategory === "Cafetería" || t.subcategory === "Bodega" || t.subcategory === "Taxi por app"); }));
+        var subs = sumPEN(list.filter(function (t) { return isExp(t) && t.category === "susc"; }));
+        var rest = sumPEN(list.filter(function (t) { return isExp(t) && t.category === "rest"; }));
+        var rate = inc > 0 ? (inc - exp) / inc * 100 : 0;
+        var nM = ms.length;
+        this.insights = [
+          { impact: "high", category: top.name, title: top.name + " concentra el " + (top.value / total * 100).toFixed(1) + "% de tus gastos",
+            description: "En los últimos 6 meses destinaste " + FZ.money(top.value) + " a " + top.name.toLowerCase() + ". Es tu categoría principal; revisa si hay margen para renegociar o reducir." },
+          { impact: "medium", category: "Gastos hormiga", title: "Gastos hormiga: " + FZ.money(hormiga / nM) + " al mes",
+            description: "Cafetería, bodega y taxis por app suman " + FZ.money(hormiga) + " en 6 meses. Reducirlos a la mitad liberaría unos " + FZ.money(hormiga / nM / 2 * 12) + " al año." },
+          { impact: "medium", category: "Restaurantes", title: "Restaurantes y delivery: " + FZ.money(rest / nM) + " al mes",
+            description: "Cocinar en casa dos veces más por semana podría ahorrarte cerca del 30% de este gasto." },
+          { impact: "low", category: "Ahorro", title: "Tu tasa de ahorro promedio es " + rate.toFixed(1) + "%",
+            description: rate >= 20 ? "Estás por encima del 20% recomendado. Mantén el aporte mensual a tus metas." : "Está por debajo del 20% recomendado. Automatiza un aporte a tu fondo de emergencia al recibir el sueldo." },
+          { impact: "low", category: "Suscripciones", title: "Suscripciones estables: " + FZ.money(subs / nM) + " al mes",
+            description: "Netflix y Spotify se cobran cada mes en tu Visa. Revisa si sigues usando ambos servicios." }
+        ];
+        this.summary = "Durante los últimos 6 meses registraste " + FZ.money(inc) + " de ingresos y " + FZ.money(exp) + " de gastos, con una tasa de ahorro de " + rate.toFixed(1) + "%.\n" +
+          "La mayor oportunidad está en los gastos variables (restaurantes, gastos hormiga y compras), que puedes ajustar sin tocar tus gastos fijos.";
+        // Predictions
+        var curT = D.monthTotals(D.transactions, D.monthKey(Y, now.getMonth()));
+        var monthEnd = curT.expenses / Math.max(now.getDate(), 1) * dim(Y, now.getMonth());
+        var fullExp = full.map(function (m) { return D.monthTotals(D.transactions, m.key).expenses; });
+        var last3 = fullExp.slice(-3);
+        var next = last3.reduce(function (a, b) { return a + b; }, 0) / (last3.length || 1);
+        var avg = fullExp.reduce(function (a, b) { return a + b; }, 0) / (fullExp.length || 1);
+        var sd = Math.sqrt(fullExp.reduce(function (a, b) { return a + (b - avg) * (b - avg); }, 0) / (fullExp.length || 1));
+        var conf = Math.round(Math.max(50, Math.min(95, 100 - (avg ? sd / avg : 1) * 150)));
+        this.pred = { monthEnd: monthEnd, next: next, savings: (rest + hormiga) / nM * 0.3, confidence: conf };
+      }
+    };
+  }
+</script>
+<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.9/dist/cdn.min.js"></script>
+</body>
+</html>

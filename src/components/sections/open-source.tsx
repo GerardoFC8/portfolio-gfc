@@ -2,7 +2,10 @@
 
 import { useLanguage } from "@/context/language-context"
 import { Card } from "@/components/ui/card"
-import { ExternalLink, Github } from "lucide-react"
+import { Download, ExternalLink, Github } from "lucide-react"
+
+// Same rule as the project cards: a releases page or an installer is a download.
+const DOWNLOAD_URL = /\/releases(\/|$)|\.(exe|msi|dmg|zip|apk)$/i
 
 export interface ToolData {
   id: string
@@ -49,6 +52,8 @@ export function OpenSourceTools({ toolsData }: { toolsData: ToolData[] }) {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {toolsData.map((tool) => {
             const { name, tagline } = splitTitle(tool.title)
+            const download = !!tool.live_url && DOWNLOAD_URL.test(tool.live_url)
+            const linkLabel = download ? t("project_download") : t("project_online")
             return (
               <Card key={tool.id} className="p-5 gap-0 bg-card/80 backdrop-blur-sm border-border flex flex-col">
                 <h3 className="text-base font-bold text-card-foreground">{name}</h3>
@@ -70,11 +75,11 @@ export function OpenSourceTools({ toolsData }: { toolsData: ToolData[] }) {
                         href={tool.live_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        aria-label={`${t("project_online")}: ${name}`}
-                        title={t("project_online")}
+                        aria-label={`${linkLabel}: ${name}`}
+                        title={linkLabel}
                         className={iconBtn}
                       >
-                        <ExternalLink className="w-4 h-4" />
+                        {download ? <Download className="w-4 h-4" /> : <ExternalLink className="w-4 h-4" />}
                       </a>
                     )}
                     {tool.github_url && (

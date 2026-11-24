@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Metas de Ahorro - Finanzentral (demo)</title>
+<meta name="description" content="Demo estática de Finanzentral con datos ficticios">
+<link rel="icon" href="./icon-finanzentral.webp">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Outfit:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="./styles.css">
+<script src="./app.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.1.11/dist/index.global.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.9/dist/chart.umd.min.js"></script>
+</head>
+<body class="font-sans antialiased">
+<div class="fz-banner" role="note">Demo con datos ficticios · No es la aplicación real</div>
+<aside id="fz-sidebar"></aside>
+<div class="fz-inset">
+  <div id="fz-header"></div>
+  <main class="flex flex-1 flex-col gap-4 p-4 pb-20 md:gap-6 md:p-6 md:pb-6" x-data="metas()" x-init="init()" @keydown.escape.window="closeAll()">
+    <div class="dash-dot-grid space-y-6 min-w-0">
+      <!-- app/dashboard/goals/page.tsx -->
+      <div class="dash-card-reveal dash-card-reveal-1 flex items-center gap-3">
+        <div class="h-8 w-1 rounded-full bg-gradient-to-b from-amber-500 to-emerald-500"></div>
+        <div>
+          <h1 class="font-display text-2xl font-bold tracking-tight md:text-3xl">Metas de Ahorro</h1>
+          <p class="text-[11px] uppercase tracking-wider text-muted-foreground mt-1">Define y alcanza tus objetivos financieros</p>
+        </div>
+      </div>
+
+      <!-- components/dashboard/goals/index.tsx -->
+      <div class="space-y-6">
+        <div class="dash-card-reveal dash-card-reveal-2 flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+          <div class="space-y-1">
+            <p class="text-[11px] text-muted-foreground" x-text="goals.length + (goals.length === 1 ? ' meta activa' : ' metas activas')"></p>
+          </div>
+          <div class="flex gap-2">
+            <button type="button" @click="openSuggest()" :disabled="loadingSuggestions" class="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium h-9 px-4 border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 disabled:opacity-50">
+              <span x-show="!loadingSuggestions" class="inline-flex items-center"><i data-icon="sparkles" class="mr-2 h-4 w-4"></i>Sugerencias IA</span>
+              <span x-show="loadingSuggestions" class="inline-flex items-center"><i data-icon="refresh-cw" class="mr-2 h-4 w-4 animate-spin"></i>Generando...</span>
+            </button>
+            <button type="button" @click="openNew()" class="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium h-9 px-4 bg-primary text-primary-foreground hover:bg-primary/90">
+              <i data-icon="plus" class="mr-2 h-4 w-4"></i>Nueva Meta
+            </button>
+          </div>
+        </div>
+
+        <div x-show="goals.length === 0" class="dash-card-glass rounded-xl">
+          <div class="flex flex-col items-center justify-center py-12 px-4">
+            <i data-icon="target" class="h-12 w-12 text-muted-foreground mb-4"></i>
+            <h3 class="font-display text-lg font-semibold mb-2">No tienes metas de ahorro</h3>
+            <p class="text-[11px] text-muted-foreground mb-4 text-center">Crea tu primera meta para comenzar a alcanzar tus objetivos financieros</p>
+          </div>
+        </div>
+
+        <div x-show="goals.length > 0" class="grid gap-6 md:grid-cols-2 lg:grid-cols-3 dash-card-reveal dash-card-reveal-3">
+          <template x-for="g in cardsView()" :key="g.id">
+            <!-- goal-card.tsx -->
+            <div class="dash-card-glass rounded-xl overflow-hidden min-w-0" :data-goal="g.id">
+              <div class="h-1.5" :style="'background-color:' + g.color"></div>
+              <div class="px-5 pt-4 pb-2">
+                <div class="flex items-start justify-between">
+                  <div class="flex items-center gap-3 min-w-0">
+                    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full" :style="'background-color:' + g.color + '15'">
+                      <span x-html="FZ.icon('target', 'h-5 w-5')" :style="'color:' + g.color"></span>
+                    </div>
+                    <div class="min-w-0">
+                      <p class="font-display text-lg font-semibold truncate" x-text="g.name"></p>
+                      <p x-show="g.description" class="text-[10px] text-muted-foreground mt-0.5" x-text="g.description"></p>
+                      <span x-show="g.linked" class="mt-1 inline-flex items-center gap-1 rounded-md border px-2 py-0 text-[9px] font-medium text-foreground">
+                        <span x-html="FZ.icon('link', 'h-2.5 w-2.5')"></span><span x-text="g.linked"></span>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="px-5 pb-5 space-y-4">
+                <div>
+                  <div class="flex justify-between text-[11px] mb-2">
+                    <span class="text-muted-foreground">Progreso</span>
+                    <span class="font-display font-medium" x-text="g.progress.toFixed(0) + '%'"></span>
+                  </div>
+                  <div class="dash-progress h-2 rounded-full overflow-hidden">
+                    <div class="h-full rounded-full transition-all duration-500" :style="'width:' + g.progress + '%;background-color:' + g.color"></div>
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                  <div class="space-y-1 min-w-0">
+                    <p class="dash-section-label text-[10px]">Ahorrado</p>
+                    <p class="font-display text-lg font-bold dash-text-income dash-number-roll truncate" x-text="FZ.money(g.current, 'PEN')"></p>
+                  </div>
+                  <div class="space-y-1 min-w-0">
+                    <p class="dash-section-label text-[10px]">Objetivo</p>
+                    <p class="font-display text-lg font-bold dash-number-roll truncate" x-text="FZ.money(g.target, 'PEN')"></p>
+                  </div>
+                </div>
+
+                <div x-show="g.projection" class="rounded-lg border border-border/40 dark:border-white/5 bg-muted/20 dark:bg-white/[0.02] p-3 space-y-2">
+                  <div class="flex items-center gap-2 text-sm" x-show="g.projection && g.projection.isOnTrack !== null">
+                    <template x-if="g.projection && g.projection.isOnTrack === false">
+                      <span class="inline-flex items-center gap-2"><span x-html="FZ.icon('alert-circle', 'h-4 w-4 text-amber-500')"></span><span class="text-amber-500 font-medium">Atencion</span></span>
+                    </template>
+                    <template x-if="g.projection && g.projection.isOnTrack === true">
+                      <span class="inline-flex items-center gap-2"><span x-html="FZ.icon('trending-up', 'h-4 w-4 text-emerald-500')"></span><span class="dash-text-income font-medium">En camino</span></span>
+                    </template>
+                  </div>
+                  <p class="text-[10px] text-muted-foreground" x-text="g.projection ? g.projection.recommendation : ''"></p>
+                  <p x-show="g.projection && g.projection.projectedDate" class="text-[10px] text-muted-foreground" x-text="g.projection && g.projection.projectedDate ? 'Proyeccion: ' + g.projection.projectedDate.toLocaleDateString('es-ES') : ''"></p>
+                </div>
+
+                <div class="rounded-lg bg-muted/30 dark:bg-white/[0.03] p-3 space-y-2">
+                  <div class="flex items-center justify-between text-sm">
+                    <span class="text-muted-foreground flex items-center gap-1 text-[11px]"><span x-html="FZ.icon('trending-up', 'h-3.5 w-3.5')"></span>Falta</span>
+                    <span class="font-display font-bold" :style="'color:' + g.color" x-text="FZ.money(g.remaining, 'PEN')"></span>
+                  </div>
+                  <div x-show="g.deadline" class="flex items-center justify-between text-sm">
+                    <span class="text-muted-foreground flex items-center gap-1 text-[11px]"><span x-html="FZ.icon('calendar', 'h-3.5 w-3.5')"></span><span x-text="g.days !== null && g.days >= 0 ? 'Quedan' : 'Vencio hace'"></span></span>
+                    <span :class="g.days !== null && g.days < 0 ? 'text-destructive' : ''" x-text="Math.abs(g.days || 0) + ' ' + (Math.abs(g.days || 0) === 1 ? 'dia' : 'dias')"></span>
+                  </div>
+                </div>
+
+                <div class="flex gap-2">
+                  <button type="button" @click="openEdit(g.id)" class="flex-1 inline-flex items-center justify-center gap-1.5 h-8 rounded-md px-3 text-sm font-medium border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50">
+                    <span x-html="FZ.icon('pencil', 'mr-2 h-4 w-4')"></span>Editar
+                  </button>
+                  <button type="button" @click="remove(g.id)" class="fz-icon-btn inline-flex items-center justify-center h-8 rounded-md px-3 border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50" :aria-label="'Eliminar meta ' + g.name">
+                    <span x-html="FZ.icon('trash', 'h-4 w-4')"></span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </template>
+        </div>
+      </div>
+    </div>
+
+    <!-- goal-form-dialog.tsx (ResponsiveDialog: bottom sheet on mobile, centered on desktop) -->
+    <div x-show="formOpen" x-cloak class="fixed inset-0 z-[70] flex items-end sm:items-center justify-center" role="dialog" aria-modal="true" aria-labelledby="goal-form-title">
+      <div class="absolute inset-0 bg-black/50" @click="formOpen = false"></div>
+      <div class="relative w-full sm:max-w-[500px] max-h-[90vh] overflow-y-auto rounded-t-xl sm:rounded-lg border bg-background shadow-lg">
+        <button type="button" @click="formOpen = false" class="fz-icon-btn absolute top-3 right-3 inline-flex items-center justify-center rounded-md p-1 opacity-70 hover:opacity-100" aria-label="Cerrar"><i data-icon="x" class="h-4 w-4"></i></button>
+        <div class="p-6 pb-2 pr-12">
+          <h2 id="goal-form-title" class="text-lg leading-none font-semibold" x-text="editingId ? 'Editar Meta' : 'Crear Nueva Meta'"></h2>
+        </div>
+        <form @submit.prevent="save()" id="goal-form">
+          <div class="space-y-4 px-6 py-4">
+            <div class="space-y-2">
+              <label for="g-name" class="text-sm font-medium leading-none">Nombre de la Meta *</label>
+              <input id="g-name" class="fz-input" placeholder="Ej: Viaje a Europa" x-model="form.name" required>
+            </div>
+            <div class="space-y-2">
+              <label for="g-desc" class="text-sm font-medium leading-none">Descripción</label>
+              <textarea id="g-desc" class="fz-input" rows="3" placeholder="Detalles sobre tu meta..." x-model="form.description"></textarea>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div class="space-y-2 min-w-0">
+                <label for="g-target" class="text-sm font-medium leading-none">Monto Objetivo *</label>
+                <input id="g-target" class="fz-input" type="number" step="0.01" min="0.01" placeholder="5000.00" x-model="form.target" required>
+              </div>
+              <div class="space-y-2 min-w-0" x-show="!form.source">
+                <label for="g-current" class="text-sm font-medium leading-none">Monto Actual</label>
+                <input id="g-current" class="fz-input" type="number" step="0.01" min="0" placeholder="0.00" x-model="form.current">
+              </div>
+            </div>
+            <div class="space-y-2">
+              <label for="g-source" class="text-sm font-medium leading-none">Vincular a fuente de dinero (opcional)</label>
+              <select id="g-source" class="fz-select" x-model="form.source">
+                <option value="">Sin vincular</option>
+                <template x-for="s in sources" :key="s.id"><option :value="s.name" x-text="s.name + ' · ' + s.typeLabel" :selected="s.name === form.source"></option></template>
+              </select>
+            </div>
+            <div x-show="form.source" class="flex items-start gap-2 rounded-lg bg-blue-500/5 border border-blue-500/10 p-3">
+              <i data-icon="info" class="h-4 w-4 text-blue-500 mt-0.5 shrink-0"></i>
+              <p class="text-[11px] text-muted-foreground">El progreso se calcula automáticamente desde el saldo de <span class="font-medium text-foreground" x-text="form.source"></span></p>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div class="space-y-2 min-w-0">
+                <label for="g-deadline" class="text-sm font-medium leading-none">Fecha Límite</label>
+                <input id="g-deadline" class="fz-input" type="date" x-model="form.deadline">
+              </div>
+              <div class="space-y-2 min-w-0">
+                <label for="g-color" class="text-sm font-medium leading-none">Color</label>
+                <input id="g-color" class="fz-input p-1" type="color" x-model="form.color">
+              </div>
+            </div>
+          </div>
+          <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 px-6 pb-6 pt-2">
+            <button type="button" @click="formOpen = false" class="inline-flex items-center justify-center rounded-md text-sm font-medium h-9 px-4 border bg-background shadow-xs hover:bg-accent dark:bg-input/30 dark:border-input">Cancelar</button>
+            <button type="submit" class="inline-flex items-center justify-center rounded-md text-sm font-medium h-9 px-4 bg-primary text-primary-foreground hover:bg-primary/90" x-text="(editingId ? 'Actualizar' : 'Crear') + ' Meta'"></button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- goal-suggestions-dialog.tsx (canned suggestions, no AI call) -->
+    <div x-show="suggestOpen" x-cloak class="fixed inset-0 z-[70] flex items-end sm:items-center justify-center" role="dialog" aria-modal="true" aria-labelledby="goal-sug-title">
+      <div class="absolute inset-0 bg-black/50" @click="suggestOpen = false"></div>
+      <div class="relative w-full sm:max-w-2xl max-h-[85vh] sm:max-h-[80vh] overflow-y-auto rounded-t-xl sm:rounded-lg border bg-background shadow-lg p-6">
+        <button type="button" @click="suggestOpen = false" class="fz-icon-btn absolute top-3 right-3 inline-flex items-center justify-center rounded-md p-1 opacity-70 hover:opacity-100" aria-label="Cerrar"><i data-icon="x" class="h-4 w-4"></i></button>
+        <div class="space-y-2 pr-8">
+          <h2 id="goal-sug-title" class="text-lg font-semibold">Sugerencias de Metas de Ahorro</h2>
+          <p class="text-sm text-muted-foreground">Basadas en tu situación financiera actual</p>
+        </div>
+        <div class="space-y-3 py-4">
+          <template x-for="(s, idx) in suggestions" :key="idx">
+            <button type="button" @click="pickSuggestion(s)" class="block w-full text-left bg-card text-card-foreground rounded-xl border shadow-sm cursor-pointer hover:bg-muted/50 transition-colors p-4">
+              <div class="flex items-start justify-between gap-3">
+                <div class="flex-1 min-w-0">
+                  <h4 class="font-semibold" x-text="s.name"></h4>
+                  <p class="text-sm text-muted-foreground mt-1" x-text="s.description"></p>
+                  <div class="flex flex-wrap items-center gap-x-4 gap-y-1 mt-3 text-sm">
+                    <span class="text-muted-foreground">Objetivo: <span class="font-semibold text-foreground" x-text="FZ.money(s.target, 'PEN')"></span></span>
+                    <span class="text-muted-foreground">Mensual: <span class="font-semibold text-foreground" x-text="FZ.money(s.monthly, 'PEN')"></span></span>
+                  </div>
+                  <p class="text-xs text-muted-foreground mt-2 italic" x-text="s.reasoning"></p>
+                </div>
+                <span class="inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium shrink-0" :class="s.priority === 'high' ? 'border-transparent bg-primary text-primary-foreground' : 'border-transparent bg-secondary text-secondary-foreground'" x-text="s.priority === 'high' ? 'Alta' : s.priority === 'medium' ? 'Media' : 'Baja'"></span>
+              </div>
+            </button>
+          </template>
+        </div>
+        <div class="flex justify-end">
+          <button type="button" @click="suggestOpen = false" class="inline-flex items-center justify-center rounded-md text-sm font-medium h-9 px-4 border bg-background shadow-xs hover:bg-accent dark:bg-input/30 dark:border-input w-full sm:w-auto">Cerrar</button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+<div id="fz-bottomnav"></div>
+
+<script src="./data.js"></script>
+<script>FZ.mountShell("metas");</script>
+<script>
+  function metas() {
+    var D = FZDATA;
+    var DAY = 86400000;
+    var seq = 100;
+    function addMonths(n) { var t = D.today; return D.iso(new Date(t.getFullYear(), t.getMonth() + n, Math.min(t.getDate(), 28))); }
+    /* lib/application/goals/ProjectGoalCompletion.ts formatDayDistance */
+    function formatDayDistance(days) {
+      var abs = Math.abs(Math.round(days));
+      if (abs < 60) return abs + " día" + (abs === 1 ? "" : "s");
+      var totalMonths = Math.round(abs / 30.44);
+      if (totalMonths < 12) return totalMonths + " meses";
+      var years = Math.floor(totalMonths / 12), months = totalMonths % 12;
+      var yl = years + " año" + (years === 1 ? "" : "s");
+      return months === 0 ? yl : yl + " y " + months + " mes" + (months === 1 ? "" : "es");
+    }
+    /* projectGoalCompletion + the projection route, using the goal's own monthly contribution as the savings rate */
+    function project(g) {
+      if (!g.deadline) return null;
+      var now = new Date();
+      var remaining = g.target - g.current;
+      if (remaining <= 0) return { isOnTrack: true, projectedDate: now, recommendation: "¡Meta completada! Felicidades." };
+      var deadline = FZ.parseDate(g.deadline);
+      var monthsToDeadline = Math.max(1, Math.ceil((deadline - now) / (DAY * 30)));
+      var neededPerMonth = remaining / monthsToDeadline;
+      var monthly = Number(g.monthly) || 0;
+      if (monthly <= 0) {
+        return { isOnTrack: null, projectedDate: null, recommendation: "Para llegar a tiempo necesitas ahorrar " + FZ.money(neededPerMonth, "PEN") + " por mes." };
+      }
+      var monthsNeeded = Math.ceil(remaining / monthly);
+      var projected = new Date(now.getFullYear(), now.getMonth() + monthsNeeded, 1);
+      var diff = Math.ceil((projected - deadline) / DAY);
+      var onTrack = diff <= 0, rec;
+      if (onTrack === false) rec = "A tu ritmo actual llegarías " + formatDayDistance(diff) + " después de tu fecha límite. Para llegar a tiempo necesitas ahorrar " + FZ.money(neededPerMonth, "PEN") + " por mes.";
+      else if (monthsNeeded > 12) rec = "Esta meta requiere más de un año de ahorro (" + monthsNeeded + " meses). Considera aumentar tus aportes mensuales.";
+      else rec = "Vas por buen camino. A este ritmo, completarás tu meta " + (diff === 0 ? "justo a tiempo" : formatDayDistance(diff) + " antes") + ".";
+      return { isOnTrack: onTrack, projectedDate: projected, recommendation: rec };
+    }
+    function blank() { return { name: "", description: "", target: "", current: "", deadline: "", color: "#3b82f6", source: "" }; }
+    return {
+      goals: [], sources: [], suggestions: [], formOpen: false, suggestOpen: false, loadingSuggestions: false, editingId: null, form: blank(),
+      init: function () {
+        this.goals = D.goals.map(function (g) { return Object.assign({}, g); });
+        this.sources = D.moneySources.map(function (s) { return { id: s.id, name: s.name, typeLabel: D.MONEY_SOURCE_TYPE_LABELS[s.type] || s.type }; });
+        this.suggestions = [
+          { name: "Fondo para mantenimiento del auto", description: "Reserva para revisiones, llantas y SOAT del próximo año", target: 3000, monthly: 250, deadline: addMonths(12), priority: "high",
+            reasoning: "Tus gastos de transporte son recurrentes; un fondo dedicado evita usar la tarjeta para imprevistos." },
+          { name: "Renovación de laptop", description: "Equipo nuevo cuando termines de pagar las cuotas actuales", target: 4500, monthly: 375, deadline: addMonths(12), priority: "medium",
+            reasoning: "Terminas de pagar la laptop actual en unos meses; ahorrar desde ya evita volver a financiar en cuotas." },
+          { name: "Regalos de fin de año", description: "Presupuesto para regalos y reuniones de diciembre", target: 1200, monthly: 100, deadline: addMonths(12), priority: "low",
+            reasoning: "Tus gastos de entretenimiento suben a fin de año; repartirlos en el año reduce el impacto." }
+        ];
+      },
+      cardsView: function () {
+        return this.goals.map(function (g) {
+          var target = Number(g.target) || 0, current = Number(g.current) || 0;
+          var days = g.deadline ? Math.ceil((FZ.parseDate(g.deadline) - new Date()) / DAY) : null;
+          return Object.assign({}, g, {
+            progress: target > 0 ? Math.min(current / target * 100, 100) : 0,
+            remaining: Math.max(target - current, 0), days: days,
+            projection: project({ target: target, current: current, deadline: g.deadline, monthly: g.monthly })
+          });
+        });
+      },
+      closeAll: function () { this.formOpen = false; this.suggestOpen = false; },
+      openNew: function () { this.editingId = null; this.form = blank(); this.formOpen = true; this.focusName(); },
+      openEdit: function (id) {
+        var g = this.goals.filter(function (x) { return x.id === id; })[0];
+        this.editingId = id;
+        this.form = { name: g.name, description: g.description || "", target: String(g.target), current: String(g.current), deadline: g.deadline || "", color: g.color, source: g.linked || "" };
+        this.formOpen = true; this.focusName();
+      },
+      focusName: function () { this.$nextTick(function () { var el = document.getElementById("g-name"); if (el && window.innerWidth >= 768) el.focus(); }); },
+      save: function () {
+        var f = this.form, target = parseFloat(f.target), current = parseFloat(f.current) || 0;
+        if (!f.name.trim() || !(target > 0)) { FZ.toast("Error", "Ingresa un nombre y un monto objetivo mayor a cero"); return; }
+        if (f.source) {
+          var src = D.moneySources.filter(function (s) { return s.name === f.source; })[0];
+          if (src) current = src.currency === "USD" ? src.balance * D.USD_RATE : src.balance;
+        }
+        var patch = { name: f.name.trim(), description: f.description.trim(), target: target, current: current, deadline: f.deadline || null, color: f.color, linked: f.source || undefined };
+        if (this.editingId) {
+          var id = this.editingId;
+          this.goals = this.goals.map(function (g) { return g.id === id ? Object.assign({}, g, patch) : g; });
+          FZ.toast("Meta actualizada", "Tu meta ha sido actualizada exitosamente");
+        } else {
+          this.goals = this.goals.concat([Object.assign({ id: "new" + (seq++), monthly: 0 }, patch)]);
+          FZ.toast("Meta creada", "Tu meta ha sido creada exitosamente");
+        }
+        this.formOpen = false; this.editingId = null;
+      },
+      remove: function (id) {
+        if (!confirm("¿Estás seguro de que deseas eliminar esta meta?")) return;
+        this.goals = this.goals.filter(function (g) { return g.id !== id; });
+        FZ.toast("Meta eliminada", "La meta ha sido eliminada exitosamente");
+      },
+      openSuggest: function () {
+        var self = this;
+        this.loadingSuggestions = true;
+        setTimeout(function () { self.loadingSuggestions = false; self.suggestOpen = true; }, 600);
+      },
+      pickSuggestion: function (s) {
+        this.goals = this.goals.concat([{ id: "new" + (seq++), name: s.name, description: s.description, target: s.target, current: 0, deadline: s.deadline, color: "#3b82f6", monthly: s.monthly }]);
+        this.suggestOpen = false;
+        FZ.toast("Meta creada", "\"" + s.name + "\" se agregó a tus metas");
+      }
+    };
+  }
+</script>
+<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.9/dist/cdn.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Planificación - Finanzentral (demo)</title>
+<meta name="description" content="Demo estática de Finanzentral con datos ficticios">
+<link rel="icon" href="./icon-finanzentral.webp">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Outfit:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="./styles.css">
+<script src="./app.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.1.11/dist/index.global.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.9/dist/chart.umd.min.js"></script>
+</head>
+<body class="font-sans antialiased">
+<div class="fz-banner" role="note">Demo con datos ficticios · No es la aplicación real</div>
+<aside id="fz-sidebar"></aside>
+<div class="fz-inset">
+  <div id="fz-header"></div>
+  <main class="flex flex-1 flex-col gap-4 p-4 pb-20 md:gap-6 md:p-6 md:pb-6" x-data="planning()" x-init="init()">
+    <div class="dash-dot-grid space-y-6 min-w-0">
+      <!-- app/dashboard/planning/page.tsx -->
+      <div class="dash-card-reveal dash-card-reveal-1 flex items-center gap-3">
+        <div class="h-8 w-1 rounded-full bg-gradient-to-b from-indigo-500 to-violet-500"></div>
+        <div>
+          <h1 class="font-display text-2xl font-bold tracking-tight md:text-3xl">Planificación Financiera</h1>
+          <p class="text-[11px] uppercase tracking-wider text-muted-foreground mt-1">Planes y escenarios financieros</p>
+        </div>
+      </div>
+
+      <div class="w-full flex flex-col gap-2 min-w-0">
+        <div role="tablist" class="bg-muted text-muted-foreground inline-flex h-9 max-md:h-auto w-fit items-center justify-center rounded-lg p-[3px] mb-4">
+          <button type="button" role="tab" id="tab-btn-planning" :aria-selected="tab === 'planning'" :data-state="tab === 'planning' ? 'active' : 'inactive'" @click="setTab('planning')" class="hover:bg-background/50 dark:hover:bg-background/20 not-data-[state=active]:hover:text-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:border-border/60 data-[state=active]:shadow-md dark:data-[state=active]:border-primary/30 dark:data-[state=active]:bg-primary/15 text-foreground dark:text-muted-foreground inline-flex h-[calc(100%-1px)] flex-1 items-center justify-center gap-1.5 rounded-md border border-transparent px-2 py-1 text-sm font-medium whitespace-nowrap transition-all duration-200">Planificación</button>
+          <button type="button" role="tab" id="tab-btn-comparator" :aria-selected="tab === 'comparator'" :data-state="tab === 'comparator' ? 'active' : 'inactive'" @click="setTab('comparator')" class="hover:bg-background/50 dark:hover:bg-background/20 not-data-[state=active]:hover:text-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:border-border/60 data-[state=active]:shadow-md dark:data-[state=active]:border-primary/30 dark:data-[state=active]:bg-primary/15 text-foreground dark:text-muted-foreground inline-flex h-[calc(100%-1px)] flex-1 items-center justify-center gap-1.5 rounded-md border border-transparent px-2 py-1 text-sm font-medium whitespace-nowrap transition-all duration-200">Comparador</button>
+        </div>
+
+        <!-- ===== Planificación (components/dashboard/planning-manager.tsx, canned plans) ===== -->
+        <div x-show="tab === 'planning'" class="space-y-6 min-w-0" id="panel-planning">
+          <div class="flex items-center justify-between gap-3">
+            <div class="min-w-0">
+              <h2 class="dash-section-label">Planes Financieros</h2>
+              <p class="text-sm text-muted-foreground">Planifica tu futuro financiero</p>
+            </div>
+            <button type="button" @click="FZ.notInDemo()" class="shrink-0 inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium h-9 px-3 bg-primary text-primary-foreground hover:bg-primary/90">
+              <i data-icon="plus" class="h-4 w-4"></i>Nuevo Plan
+            </button>
+          </div>
+
+          <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <template x-for="p in plans" :key="p.name">
+              <div class="dash-card-glass rounded-xl flex flex-col gap-6 py-6 min-w-0">
+                <div class="px-6 space-y-1.5">
+                  <p class="text-base leading-none font-semibold" x-text="p.name"></p>
+                  <p class="text-muted-foreground text-sm" x-text="p.typeLabel + ' • ' + FZ.money(p.target, 'PEN')"></p>
+                </div>
+                <div class="px-6 space-y-4">
+                  <p class="text-sm text-muted-foreground" x-text="p.description"></p>
+                  <div class="flex items-center gap-2 text-sm">
+                    <span x-html="FZ.icon('calendar', 'h-4 w-4 text-muted-foreground')"></span>
+                    <span x-text="'Fecha objetivo: ' + FZ.parseDate(p.targetDate).toLocaleDateString('es-ES')"></span>
+                  </div>
+                  <div class="space-y-2">
+                    <div class="flex items-center justify-between text-sm">
+                      <span class="text-muted-foreground">Aporte mensual</span>
+                      <span class="font-semibold" x-text="FZ.money(p.monthly, 'PEN')"></span>
+                    </div>
+                    <div class="text-xs text-muted-foreground" x-text="'Proyección: ' + p.monthsNeeded + ' meses (' + p.projected.toLocaleDateString('es-ES') + ')'"></div>
+                  </div>
+                </div>
+              </div>
+            </template>
+          </div>
+
+          <div>
+            <div class="flex items-center gap-3 mb-4">
+              <div class="h-6 w-1 rounded-full bg-gradient-to-b from-emerald-500 to-teal-500"></div>
+              <div>
+                <h2 class="dash-section-label">Presupuestos Inteligentes</h2>
+                <p class="text-sm text-muted-foreground">Sugerencias de presupuesto basadas en tu historial</p>
+              </div>
+            </div>
+            <div class="dash-card-glass rounded-xl p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div class="flex items-start gap-3 min-w-0">
+                <div class="rounded-lg p-2 bg-emerald-500/10 shrink-0"><i data-icon="sparkles" class="h-5 w-5 text-emerald-600 dark:text-emerald-400"></i></div>
+                <div class="min-w-0">
+                  <p class="text-sm font-semibold">Ajusta tus presupuestos con IA</p>
+                  <p class="text-xs text-muted-foreground mt-1">Analiza tus últimos meses de gasto y propone montos por categoría.</p>
+                </div>
+              </div>
+              <button type="button" @click="FZ.notInDemo()" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium h-9 px-4 border bg-background shadow-xs hover:bg-accent dark:bg-input/30 dark:border-input">
+                <i data-icon="sparkles" class="h-4 w-4"></i>Generar sugerencias
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== Comparador (components/dashboard/budgets/budget-comparator.tsx) ===== -->
+        <div x-show="tab === 'comparator'" class="space-y-4 min-w-0" id="panel-comparator">
+          <div class="grid gap-3 grid-cols-2 md:grid-cols-4">
+            <div class="dash-card-glass rounded-xl p-3 flex flex-col justify-between min-w-0">
+              <span class="text-[10px] uppercase tracking-wider text-muted-foreground">Total Presupuestado</span>
+              <div class="flex items-center gap-2 mt-1 min-w-0 text-foreground">
+                <i data-icon="wallet" class="h-4 w-4 shrink-0"></i>
+                <span class="font-mono text-sm font-bold truncate" x-text="'S/' + num(summary.budgeted)"></span>
+              </div>
+            </div>
+            <div class="dash-card-glass rounded-xl p-3 flex flex-col justify-between min-w-0">
+              <span class="text-[10px] uppercase tracking-wider text-muted-foreground">Total Gastado</span>
+              <div class="flex items-center gap-2 mt-1 min-w-0" :class="summary.spent > summary.budgeted ? 'text-red-500' : 'text-emerald-600 dark:text-emerald-400'">
+                <span class="shrink-0" x-html="FZ.icon(summary.spent > summary.budgeted ? 'trending-up' : 'trending-down', 'h-4 w-4')"></span>
+                <span class="font-mono text-sm font-bold truncate" x-text="'S/' + num(summary.spent)"></span>
+              </div>
+            </div>
+            <div class="dash-card-glass rounded-xl p-3 flex flex-col justify-between min-w-0">
+              <span class="text-[10px] uppercase tracking-wider text-muted-foreground">Diferencia</span>
+              <div class="flex items-center gap-2 mt-1 min-w-0" :class="summary.variance >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500'">
+                <span class="shrink-0" x-html="FZ.icon(summary.variance >= 0 ? 'check-circle' : 'alert-triangle', 'h-4 w-4')"></span>
+                <span class="font-mono text-sm font-bold truncate" x-text="(summary.variance >= 0 ? '+' : '-') + 'S/' + num(Math.abs(summary.variance))"></span>
+              </div>
+            </div>
+            <div class="dash-card-glass rounded-xl p-3 flex flex-col justify-between min-w-0">
+              <span class="text-[10px] uppercase tracking-wider text-muted-foreground">Estado</span>
+              <div class="flex flex-wrap items-center gap-2 mt-1">
+                <span x-show="summary.over > 0" class="inline-flex items-center rounded-md border border-transparent bg-destructive text-white dark:bg-destructive/60 px-2 py-0.5 text-[10px] font-medium" x-text="summary.over + ' excedido' + (summary.over > 1 ? 's' : '')"></span>
+                <span x-show="summary.over === 0" class="inline-flex items-center rounded-md border px-2 py-0.5 text-[10px] font-medium border-emerald-500 text-emerald-600 dark:text-emerald-400">Todo en orden</span>
+                <span x-show="summary.near > 0" class="inline-flex items-center rounded-md border px-2 py-0.5 text-[10px] font-medium border-amber-500 text-amber-600 dark:text-amber-400" x-text="summary.near + ' cerca'"></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="dash-card-glass rounded-xl flex flex-col gap-4 py-6 min-w-0">
+            <div class="px-6 flex items-center justify-between gap-3">
+              <div class="min-w-0">
+                <p class="text-base leading-none font-semibold">Presupuesto vs Gasto Real</p>
+                <p class="text-muted-foreground text-xs mt-1.5" x-text="monthLabel"></p>
+              </div>
+              <button type="button" @click="refresh()" :disabled="refreshing" class="shrink-0 inline-flex items-center justify-center rounded-md text-sm font-medium h-8 px-3 hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50 disabled:opacity-50">
+                <span class="mr-1.5" :class="refreshing ? 'animate-spin' : ''" x-html="FZ.icon('refresh-cw', 'h-3.5 w-3.5')"></span>Actualizar
+              </button>
+            </div>
+            <div class="px-6 min-w-0">
+              <div class="relative h-[300px] sm:h-[350px] w-full min-w-0"><canvas id="cmpChart" role="img" aria-label="Gráfico de presupuesto vs gasto real por categoría"></canvas></div>
+              <div class="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 pt-3 text-xs text-muted-foreground">
+                <span class="flex items-center gap-1.5"><span class="h-2 w-2 rounded-[2px]" :style="'background:' + legendColors.budgeted"></span>Presupuestado</span>
+                <span class="flex items-center gap-1.5"><span class="h-2 w-2 rounded-[2px] bg-[#22c55e]"></span>Gastado</span>
+                <span class="flex items-center gap-1.5"><span class="h-2 w-2 rounded-[2px] bg-[#ef4444]"></span>Gastado (excedido)</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="dash-card-glass rounded-xl flex flex-col gap-4 py-6 min-w-0">
+            <div class="px-6"><p class="text-base leading-none font-semibold">Detalle por Categoria</p></div>
+            <div class="px-6">
+              <div class="space-y-3">
+                <template x-for="c in comparisons" :key="c.id">
+                  <div class="flex items-center justify-between gap-3 py-2 border-b border-border/50 last:border-0">
+                    <div class="min-w-0 flex-1">
+                      <div class="flex items-center gap-2 min-w-0">
+                        <p class="font-medium text-sm truncate" x-text="c.name"></p>
+                        <span x-show="c.over" class="inline-flex items-center rounded-md border border-transparent bg-destructive text-white dark:bg-destructive/60 text-[9px] px-1.5 py-0 font-medium shrink-0">Excedido</span>
+                        <span x-show="!c.over && c.pct >= c.alert" class="inline-flex items-center rounded-md border text-[9px] px-1.5 py-0 font-medium border-amber-500 text-amber-600 dark:text-amber-400 shrink-0">Cerca</span>
+                      </div>
+                      <div class="flex flex-wrap items-center gap-x-3 mt-1">
+                        <span class="text-[10px] text-muted-foreground" x-text="'Presupuesto: S/' + num(c.budgeted)"></span>
+                        <span class="text-[10px] text-muted-foreground" x-text="'Gastado: S/' + num(c.spent)"></span>
+                      </div>
+                      <div class="mt-1.5 h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                        <div class="h-full rounded-full transition-all" :class="c.over ? 'bg-red-500' : c.pct >= c.alert ? 'bg-amber-500' : 'bg-emerald-500'" :style="'width:' + Math.min(c.pct, 100) + '%'"></div>
+                      </div>
+                    </div>
+                    <div class="text-right shrink-0">
+                      <p class="font-mono text-sm font-semibold" :class="c.variance >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500'" x-text="(c.variance >= 0 ? '+' : '-') + 'S/' + num(Math.abs(c.variance))"></p>
+                      <p class="text-[10px] text-muted-foreground" x-text="c.pct.toFixed(1) + '% usado'"></p>
+                    </div>
+                  </div>
+                </template>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+<div id="fz-bottomnav"></div>
+
+<script src="./data.js"></script>
+<script>FZ.mountShell("presupuestos");</script>
+<script>
+  var cmpChart = null;
+  function planning() {
+    var D = FZDATA;
+    var today = D.today;
+    var SPENT_OK = "#22c55e", SPENT_OVER = "#ef4444";
+    function inMonths(n) { return new Date(today.getFullYear(), today.getMonth() + n, 1); }
+    function plan(name, typeLabel, description, target, monthly, months) {
+      var monthsNeeded = Math.ceil(target / monthly);
+      var projected = new Date(today.getFullYear(), today.getMonth() + monthsNeeded, today.getDate());
+      return { name: name, typeLabel: typeLabel, description: description, target: target, monthly: monthly, monthsNeeded: monthsNeeded, projected: projected, targetDate: D.iso(inMonths(months)) };
+    }
+    return {
+      tab: "comparator", refreshing: false, comparisons: [], summary: {}, monthLabel: "", legendColors: { budgeted: "#2563eb" },
+      plans: [
+        plan("Ahorro mensual para emergencias", "Fondo de Emergencia", "Completar 6 meses de gastos fijos apartando una parte de cada quincena.", 6600, 850, 9),
+        plan("Salir de deudas de tarjeta", "Personalizado", "Cancelar el saldo de las tarjetas y las cuotas pendientes sin generar intereses.", 12600, 1400, 10),
+        plan("Inicial del departamento", "Casa", "Juntar la cuota inicial del 10% para un crédito hipotecario.", 41500, 1100, 36)
+      ],
+      init: function () {
+        var self = this;
+        this.compute();
+        this.$nextTick(function () { self.draw(); });
+        window.addEventListener("fz-theme", function () { self.draw(); });
+      },
+      num: function (v) { return Number(v).toLocaleString("es-PE", { maximumFractionDigits: 2 }); },
+      setTab: function (t) {
+        var self = this;
+        this.tab = t;
+        if (t === "comparator") this.$nextTick(function () { self.draw(); });
+      },
+      /* /api/planning/budgets/compare: current month spending per budgeted category */
+      compute: function () {
+        var key = D.monthKey(today.getFullYear(), today.getMonth());
+        var spentBy = {};
+        D.transactions.forEach(function (t) { if (t.type === "gasto" && D.ym(t.date) === key) spentBy[t.category] = (spentBy[t.category] || 0) + D.toPEN(t); });
+        this.comparisons = D.budgets.map(function (b) {
+          var cat = D.catById(b.category);
+          var spent = Math.round((spentBy[b.category] || 0) * 100) / 100;
+          var pct = b.amount > 0 ? spent / b.amount * 100 : 0;
+          return { id: b.category, name: cat.name, color: cat.color, budgeted: b.amount, spent: spent, variance: Math.round((b.amount - spent) * 100) / 100, pct: pct, over: spent > b.amount, alert: b.alert };
+        });
+        var s = { budgeted: 0, spent: 0, over: 0, near: 0 };
+        this.comparisons.forEach(function (c) { s.budgeted += c.budgeted; s.spent += c.spent; if (c.over) s.over++; else if (c.pct >= c.alert) s.near++; });
+        s.spent = Math.round(s.spent * 100) / 100;
+        s.variance = Math.round((s.budgeted - s.spent) * 100) / 100;
+        this.summary = s;
+        this.monthLabel = FZ.MONTHS[today.getMonth()] + " " + today.getFullYear();
+      },
+      refresh: function () {
+        var self = this;
+        this.refreshing = true;
+        setTimeout(function () { self.compute(); self.draw(); self.refreshing = false; }, 500);
+      },
+      draw: function () {
+        if (this.tab !== "comparator") return;
+        var el = document.getElementById("cmpChart"); if (!el || !window.Chart || !el.offsetParent) return;
+        if (cmpChart) { cmpChart.destroy(); cmpChart = null; }
+        var th = FZ.chartTheme();
+        this.legendColors = { budgeted: th.primary };
+        var rows = this.comparisons;
+        var labels = rows.map(function (c) { return c.name.length > 12 ? c.name.slice(0, 12) + "..." : c.name; });
+        var opts = FZ.baseChartOptions(function (o, t) {
+          o.scales.x.ticks.maxRotation = 25; o.scales.x.ticks.minRotation = 25; o.scales.x.ticks.autoSkip = false; o.scales.x.ticks.font = { size: 10 };
+          o.scales.y.ticks.font = { size: 10 };
+          o.scales.y.ticks.callback = function (v) { return v >= 1000 ? (v / 1000).toFixed(1) + "k" : Number(v).toFixed(0); };
+          o.scales.y.grid = { color: t.grid };
+          o.scales.y.border = { display: false, dash: [3, 3] };
+          o.plugins.tooltip.callbacks = {
+            title: function (items) { return rows[items[0].dataIndex].name; },
+            label: function (c) { return " " + (c.datasetIndex === 0 ? "Presupuestado" : "Gastado") + ": S/" + Number(c.parsed.y).toLocaleString("es-PE", { maximumFractionDigits: 2 }); }
+          };
+        });
+        cmpChart = new Chart(el, {
+          type: "bar",
+          data: { labels: labels, datasets: [
+            { label: "Presupuestado", data: rows.map(function (c) { return c.budgeted; }), backgroundColor: th.primary, borderRadius: { topLeft: 4, topRight: 4 }, borderSkipped: "bottom", categoryPercentage: 0.8, barPercentage: 0.9 },
+            { label: "Gastado", data: rows.map(function (c) { return c.spent; }), backgroundColor: rows.map(function (c) { return c.over ? SPENT_OVER : SPENT_OK; }), borderRadius: { topLeft: 4, topRight: 4 }, borderSkipped: "bottom", categoryPercentage: 0.8, barPercentage: 0.9 }
+          ] },
+          options: opts
+        });
+      }
+    };
+  }
+</script>
+<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.9/dist/cdn.min.js"></script>
+</body>
+</html>
