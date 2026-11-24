@@ -38,7 +38,7 @@ export function AISkills({
     return (
       <section
         id="ai-skills"
-        className="py-20 px-4 sm:px-6 lg:px-8 bg-muted/30"
+        className="py-14 px-4 sm:px-6 lg:px-8 bg-muted/30"
       >
         <div className="max-w-7xl mx-auto text-center">
           <p className="text-muted-foreground">Cargando habilidades de IA...</p>
@@ -54,19 +54,20 @@ export function AISkills({
   return (
     <section
       id="ai-skills"
-      className="py-20 px-4 sm:px-6 lg:px-8 bg-background/60"
+      className="py-14 px-4 sm:px-6 lg:px-8 bg-background/60"
     >
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-12">
           <h2 className="text-4xl sm:text-5xl font-bold text-foreground mb-4">
             {t("ai_skills_title") || "Habilidades con agentes de IA"}
           </h2>
-          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            {t("ai_skills_subtitle") || "Agentes y herramientas que uso a diario"}
+          {/* What the client gets, in one sentence; the logos show the tools. */}
+          <p className="text-foreground/90 text-lg sm:text-xl leading-relaxed max-w-3xl mx-auto text-pretty">
+            {t("ai_benefit")}
           </p>
         </div>
 
-        <div className="flex flex-wrap justify-center gap-4 sm:gap-8 mb-12">
+        <div className="flex flex-wrap justify-center gap-4 sm:gap-8">
           {aiSkillsData.map((skill) => (
             <SkillItem
               key={skill.id}
@@ -74,13 +75,6 @@ export function AISkills({
               logoUrl={skill.logo_url}
             />
           ))}
-        </div>
-
-        <div className="max-w-3xl mx-auto text-center">
-          <p className="text-muted-foreground text-base sm:text-lg leading-relaxed whitespace-pre-line">
-            {t("ai_skills_description") ||
-              "Texto descriptivo sobre tu workflow con agentes de IA — editalo desde el admin."}
-          </p>
         </div>
       </div>
     </section>

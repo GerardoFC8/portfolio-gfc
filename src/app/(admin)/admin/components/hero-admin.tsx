@@ -127,6 +127,24 @@ export const HeroAdmin = () => {
             </div>
           </div>
           <div className="space-y-2">
+            <Label htmlFor="headline_es">Titular (ES)</Label>
+            <Textarea
+              id="headline_es"
+              name="headline_es"
+              value={heroData.headline_es ?? ""}
+              onChange={handleChange}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="headline_en">Titular (EN)</Label>
+            <Textarea
+              id="headline_en"
+              name="headline_en"
+              value={heroData.headline_en ?? ""}
+              onChange={handleChange}
+            />
+          </div>
+          <div className="space-y-2">
             <Label htmlFor="subtitle_es">Subtítulo (ES)</Label>
             <Textarea
               id="subtitle_es"

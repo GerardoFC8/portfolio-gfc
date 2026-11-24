@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Image from "next/image"
 import { useLanguage } from "@/context/language-context"
 import { Card } from "@/components/ui/card"
 import {
@@ -26,6 +27,8 @@ interface ProjectCardProps {
     gallery: string[]
   }
   onGalleryClick: () => void
+  // First row: on wide screens it is above the fold and is the LCP image.
+  eager?: boolean
 }
 
 const formatDescription = (text: string) =>
@@ -57,9 +60,17 @@ const formatDescription = (text: string) =>
     )
   })
 
+// First plain paragraph of the long description, shown as the card's summary.
+const firstParagraph = (text: string) =>
+  text
+    .split("\n")
+    .map((line) => line.trim())
+    .find((line) => line && !line.startsWith("> ") && !/^\d+\.\s/.test(line)) ?? ""
+
 export default function ProjectCard({
   project,
   onGalleryClick,
+  eager = false,
 }: ProjectCardProps) {
   const { t } = useLanguage()
   const [isDescriptionOpen, setIsDescriptionOpen] = useState(false)
@@ -67,30 +78,46 @@ export default function ProjectCard({
 
   const displayedTech = isTechExpanded ? project.tech : project.tech.slice(0, 3)
   const hasMoreTech = project.tech.length > 3
+  const hiddenTech = project.tech.slice(3).join(", ")
   const isDownload = !!project.liveUrl && DOWNLOAD_URL.test(project.liveUrl)
+  const summary = firstParagraph(project.description)
+  const hasGallery = project.gallery.length > 0
+
+  // The live link is the main action; without one, the gallery takes its place.
+  const solid = "bg-primary hover:bg-primary/90 text-primary-foreground"
+  const outline = "border border-border hover:bg-muted"
+  const btn = "flex-1 min-w-0 min-h-11 flex items-center justify-center gap-1.5 px-2 sm:px-3 py-2 rounded-lg whitespace-nowrap transition-colors duration-200 text-sm font-medium"
 
   return (
     <>
-      <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-300 bg-card border-border flex flex-col h-full dark:hover:shadow-blue-950">
-        <div className="relative overflow-hidden h-48 bg-muted">
-          {/* Project card image: dynamic Supabase URL, dimensions vary per project. */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+      <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-300 bg-card border-border flex flex-col h-full gap-0 py-0 dark:hover:shadow-blue-950">
+        <div className="relative overflow-hidden aspect-[16/10] bg-muted">
+          {/* next/image serves WebP/AVIF at the card's real width instead of the full PNG. */}
+          <Image
             src={project.image || "/placeholder.svg"}
             alt={project.title}
-            className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+            fill
+            loading={eager ? "eager" : "lazy"}
+            sizes="(min-width: 1024px) 400px, (min-width: 768px) 50vw, 100vw"
+            className="object-cover object-top hover:scale-105 transition-transform duration-300"
           />
         </div>
 
-        <div className="flex flex-col grow p-6 space-y-4">
+        <div className="flex flex-col grow p-6 space-y-3">
           <h3 className="text-xl font-bold text-card-foreground">
             {project.title}
           </h3>
 
+          {summary && (
+            <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2">
+              {summary}
+            </p>
+          )}
+
           {project.description && (
             <button
               onClick={() => setIsDescriptionOpen(true)}
-              className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline self-start"
+              className="hit-44 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline self-start"
             >
               <FileText className="w-4 h-4" />
               {t("project_view_description") || "Ver descripción"}
@@ -101,7 +128,7 @@ export default function ProjectCard({
             {displayedTech.map((tech) => (
               <span
                 key={tech}
-                className="px-3 py-1 bg-primary/10 text-primary text-xs rounded-full font-medium"
+                className="px-3 py-1 bg-primary/10 text-primary dark:text-blue-300 text-xs rounded-full font-medium"
               >
                 {tech}
               </span>
@@ -109,8 +136,10 @@ export default function ProjectCard({
             {hasMoreTech && (
               <button
                 onClick={() => setIsTechExpanded(!isTechExpanded)}
-                className="px-3 py-1 bg-muted text-muted-foreground text-xs rounded-full font-medium cursor-pointer hover:bg-muted/80 transition-colors"
+                className="hit-44 px-3 py-1 bg-muted text-foreground/75 text-xs rounded-full font-medium cursor-pointer hover:bg-muted/80 transition-colors"
                 aria-expanded={isTechExpanded}
+                title={isTechExpanded ? undefined : hiddenTech}
+                aria-label={isTechExpanded ? undefined : hiddenTech}
               >
                 {isTechExpanded
                   ? t("project_tech_less")
@@ -119,39 +148,40 @@ export default function ProjectCard({
             )}
           </div>
 
-          <div className="flex flex-col gap-2 mt-auto pt-4">
-            <button
-              onClick={onGalleryClick}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition-colors duration-200 font-medium text-sm"
-            >
-              <ImageIcon className="w-4 h-4" />
-              {t("project_gallery")}
-            </button>
-
-            <div className="flex gap-2">
-              {project.liveUrl && (
-                <a
-                  href={project.liveUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex-1 flex items-center justify-center gap-2 px-3 py-2 border border-border hover:bg-muted rounded-lg transition-colors duration-200 text-sm font-medium"
-                >
-                  {isDownload ? <Download className="w-4 h-4" /> : <ExternalLink className="w-4 h-4" />}
-                  {isDownload ? t("project_download") || "Descargar" : t("project_online")}
-                </a>
-              )}
-              {project.githubUrl && (
-                <a
-                  href={project.githubUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex-1 flex items-center justify-center gap-2 px-3 py-2 border border-border hover:bg-muted rounded-lg transition-colors duration-200 text-sm font-medium"
-                >
-                  <Github className="w-4 h-4" />
-                  {t("project_github")}
-                </a>
-              )}
-            </div>
+          {/* Footer pinned to the bottom so cards in a row line up. */}
+          <div className="flex gap-2 mt-auto pt-4">
+            {project.liveUrl && (
+              <a
+                href={project.liveUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`${btn} ${solid}`}
+              >
+                {isDownload ? <Download className="w-4 h-4" /> : <ExternalLink className="w-4 h-4" />}
+                {isDownload ? t("project_download") || "Descargar" : t("project_online")}
+              </a>
+            )}
+            {hasGallery && (
+              <button
+                onClick={onGalleryClick}
+                className={`${btn} ${project.liveUrl ? outline : solid}`}
+              >
+                <ImageIcon className="w-4 h-4" />
+                {t("project_gallery")}
+              </button>
+            )}
+            {project.githubUrl && (
+              <a
+                href={project.githubUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={t("project_github")}
+                title={t("project_github")}
+                className={`shrink-0 w-11 min-h-11 flex items-center justify-center rounded-lg transition-colors duration-200 ${outline}`}
+              >
+                <Github className="w-4 h-4" />
+              </a>
+            )}
           </div>
         </div>
       </Card>

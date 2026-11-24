@@ -72,6 +72,7 @@ export const TechnologiesAdmin = () => {
             name: "",
             logo_url: "",
             category: "knowledge",
+            featured: false,
           }
     );
     setIsModalOpen(true);
@@ -172,6 +173,7 @@ export const TechnologiesAdmin = () => {
                 <th className="p-2 text-left">Logo</th>
                 <th className="p-2 text-left">Nombre</th>
                 <th className="p-2 text-left">Categoría</th>
+                <th className="p-2 text-left">Destacada</th>
                 <th className="p-2 text-right">Acciones</th>
               </tr>
             </thead>
@@ -207,6 +209,7 @@ export const TechnologiesAdmin = () => {
                   </td>
                   <td className="p-2">{item.name}</td>
                   <td className="p-2">{item.category}</td>
+                  <td className="p-2">{item.featured ? "Sí" : "No"}</td>
                   <td className="p-2 flex justify-end gap-2">
                     <Button
                       variant="outline"
@@ -270,6 +273,19 @@ export const TechnologiesAdmin = () => {
                 <option value="knowledge">Conocimiento</option>
               </select>
             </div>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                name="featured"
+                checked={!!editingItem?.featured}
+                onChange={(e) =>
+                  editingItem &&
+                  setEditingItem({ ...editingItem, featured: e.target.checked })
+                }
+                className="h-4 w-4 accent-primary"
+              />
+              Destacada (se muestra arriba; el resto va en &quot;Otras tecnologías&quot;)
+            </label>
             <ImageUploader
               label="Logo"
               bucketName="technologies" // Asegúrate de que este bucket exista

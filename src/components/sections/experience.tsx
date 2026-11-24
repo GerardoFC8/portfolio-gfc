@@ -32,7 +32,7 @@ export function Experience({
 
   if (!experienceData) {
     return (
-      <section id="experience" className="py-20 px-4 sm:px-6 lg:px-8 bg-background">
+      <section id="experience" className="py-14 px-4 sm:px-6 lg:px-8 bg-background">
         <div className="max-w-4xl mx-auto text-center">
           <p className="text-muted-foreground">Cargando experiencia...</p>
         </div>
@@ -69,7 +69,7 @@ export function Experience({
   }
 
   return (
-    <section id="experience" className="py-20 px-4 sm:px-6 lg:px-8 bg-background/60">
+    <section id="experience" className="py-14 px-4 sm:px-6 lg:px-8 bg-background/60">
       <div className="max-w-5xl mx-auto">
         <div className="text-center mb-12">
           <h2 className="text-4xl sm:text-5xl font-bold text-foreground mb-4">
