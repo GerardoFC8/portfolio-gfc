@@ -80,7 +80,8 @@ export function Experience({
           </p>
         </div>
 
-        <BlurFade delay={0.2} inView>
+        {/* A light blur: a strong one reads like a loading glitch. */}
+        <BlurFade delay={0.1} blur="2px" inView>
           <div className="rounded-2xl border border-border bg-card/80 backdrop-blur-sm shadow-sm overflow-hidden md:grid md:grid-cols-[15rem_1fr]">
             {/* Company tabs: a scrollable row on phones, a column from md up. */}
             <div

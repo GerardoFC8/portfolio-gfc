@@ -45,3 +45,12 @@ body.has-demo-banner { padding-top: 1.75rem; } /* alto del aviso fijo (h-7) */
   .demo-banner { position: static !important; box-shadow: none !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .no-print { display: none !important; }
 }
+
+/* Barra de demo: volver al portafolio, aviso y contacto. En móvil se acortan los textos. */
+.demo-banner { justify-content: space-between; gap: 12px; padding: 0 12px; }
+.demo-banner a { color: inherit; text-decoration: underline; text-underline-offset: 2px; white-space: nowrap; }
+.demo-banner .db-cta { font-weight: 700; }
+.demo-banner .db-note { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.demo-banner .db-short { display: none; }
+@media (max-width: 640px) { .demo-banner .db-long { display: none; } .demo-banner .db-short { display: inline; } }
+@media print { .demo-banner { justify-content: center; } .demo-banner .db-back, .demo-banner .db-cta { display: none; } }

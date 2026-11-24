@@ -10,7 +10,8 @@ type SlowVsFastProps = {
 /*
  * Loop of 6 s. Real ratio 2.2 s : 0.14 s (about 16:1):
  * slow bar fills in 4.4 s (73.3 %), fast bar in 0.275 s (4.6 %).
- * Badge pops at 4.4 s, holds about 1 s, then everything fades and restarts.
+ * Badge pops at 4.4 s, holds about 1 s. Soft reset 5.64-5.94 s: only the
+ * animated content (bars, times, badge) fades out; labels and tracks stay.
  */
 const css = `
 .svf-text { font-family: inherit; fill: var(--foreground); }
@@ -29,7 +30,6 @@ const css = `
 .svf-badge-text { font-family: inherit; font-size: 13px; font-weight: 700; fill: var(--primary-foreground); }
 .svf-loading { opacity: 0; }
 
-.svf-scene { animation: svf-scene 6s linear infinite; }
 .svf-bar-slow { animation: svf-slow 6s linear infinite; }
 .svf-bar-fast { animation: svf-fast 6s ease-out infinite; }
 .svf-time-slow { animation: svf-show-slow 6s linear infinite; }
@@ -38,25 +38,25 @@ const css = `
 .svf-dot { animation: svf-pulse 0.8s ease-in-out infinite; }
 .svf-badge { animation: svf-badge 6s ease-out infinite; }
 
-@keyframes svf-scene {
-  0%, 92% { opacity: 1; }
-  98%, 100% { opacity: 0; }
-}
 @keyframes svf-slow {
-  0% { transform: scaleX(0); }
-  73.3%, 100% { transform: scaleX(1); }
+  0% { transform: scaleX(0); opacity: 1; }
+  73.3%, 94% { transform: scaleX(1); opacity: 1; }
+  99%, 100% { transform: scaleX(1); opacity: 0; }
 }
 @keyframes svf-fast {
-  0% { transform: scaleX(0); }
-  4.6%, 100% { transform: scaleX(1); }
+  0% { transform: scaleX(0); opacity: 1; }
+  4.6%, 94% { transform: scaleX(1); opacity: 1; }
+  99%, 100% { transform: scaleX(1); opacity: 0; }
 }
 @keyframes svf-show-slow {
   0%, 73.3% { opacity: 0; }
-  75%, 100% { opacity: 1; }
+  75%, 94% { opacity: 1; }
+  99%, 100% { opacity: 0; }
 }
 @keyframes svf-show-fast {
   0%, 4.6% { opacity: 0; }
-  6.5%, 100% { opacity: 1; }
+  6.5%, 94% { opacity: 1; }
+  99%, 100% { opacity: 0; }
 }
 @keyframes svf-loading {
   0%, 72% { opacity: 1; }
@@ -69,11 +69,12 @@ const css = `
 @keyframes svf-badge {
   0%, 73.3% { opacity: 0; transform: scale(0.6); }
   76.5% { opacity: 1; transform: scale(1.08); }
-  79%, 100% { opacity: 1; transform: scale(1); }
+  79%, 94% { opacity: 1; transform: scale(1); }
+  99%, 100% { opacity: 0; transform: scale(1); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .svf-scene, .svf-bar-slow, .svf-bar-fast, .svf-time-slow, .svf-done-fast,
+  .svf-bar-slow, .svf-bar-fast, .svf-time-slow, .svf-done-fast,
   .svf-loading, .svf-dot, .svf-badge { animation: none; }
   .svf-loading { opacity: 0; }
 }

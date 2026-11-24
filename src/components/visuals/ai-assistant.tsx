@@ -11,7 +11,9 @@ type AiAssistantProps = {
 
 /*
  * Tiempos (s): pregunta 0.2, tipeo 0.4-1.5, pensando 1.7-2.9 (la base late),
- * respuesta 3.0, cabecera 3.5, filas 3.9 / 4.3 / 4.7, fundido 6.3-6.7.
+ * respuesta 3.0, cabecera 3.5, filas 3.9 / 4.3 / 4.7. Reinicio suave 6.6-6.9:
+ * solo se desvanecen la pregunta y la respuesta; la ventana, la cabecera, el
+ * avatar y la barra de escritura quedan siempre visibles (también en 0 ms).
  * Los estilos base son el estado final, así reduced-motion lo muestra completo.
  */
 const css = `
@@ -36,9 +38,10 @@ const css = `
 .ai-td { fill: var(--foreground); font-size: 10px; font-family: inherit; }
 .ai-num { fill: var(--primary); font-size: 10px; font-weight: 700; font-family: inherit; font-variant-numeric: tabular-nums; }
 .ai-think { opacity: 0; }
+.ai-input { fill: var(--background); stroke: var(--border); stroke-width: 1; }
+.ai-send { fill: var(--muted-foreground); opacity: 0.6; }
 .ai-bounce { fill: var(--muted-foreground); transform-box: fill-box; transform-origin: center; }
 
-.ai-scene { animation: ai-scene 7s linear infinite; }
 .ai-q { animation: ai-q 7s ease-out infinite; }
 .ai-cover { animation: ai-type 7s linear infinite; }
 .ai-think { animation: ai-think 7s linear infinite; }
@@ -52,11 +55,11 @@ const css = `
 .ai-r2 { animation: ai-r2 7s ease-out infinite; }
 .ai-r3 { animation: ai-r3 7s ease-out infinite; }
 
-@keyframes ai-scene { 0%, 90% { opacity: 1; } 96%, 100% { opacity: 0; } }
 @keyframes ai-q {
-  0%, 2% { opacity: 0; transform: scale(0.7); }
-  5% { opacity: 1; transform: scale(1.04); }
-  7%, 100% { opacity: 1; transform: scale(1); }
+  0% { opacity: 0; transform: scale(0.7); }
+  2.9% { opacity: 1; transform: scale(1.04); }
+  5%, 94.5% { opacity: 1; transform: scale(1); }
+  99%, 100% { opacity: 0; transform: scale(1); }
 }
 @keyframes ai-type {
   0%, 6% { transform: scaleX(1); animation-timing-function: steps(16, end); }
@@ -73,7 +76,8 @@ const css = `
 @keyframes ai-a {
   0%, 42% { opacity: 0; transform: scale(0.85); }
   45% { opacity: 1; transform: scale(1.02); }
-  47%, 100% { opacity: 1; transform: scale(1); }
+  47%, 94.5% { opacity: 1; transform: scale(1); }
+  99%, 100% { opacity: 0; transform: scale(1); }
 }
 @keyframes ai-r0 { 0%, 49% { opacity: 0; transform: translateY(4px); } 52%, 100% { opacity: 1; transform: translateY(0); } }
 @keyframes ai-r1 { 0%, 55% { opacity: 0; transform: translateY(4px); } 58%, 100% { opacity: 1; transform: translateY(0); } }
@@ -81,7 +85,7 @@ const css = `
 @keyframes ai-r3 { 0%, 67% { opacity: 0; transform: translateY(4px); } 70%, 100% { opacity: 1; transform: translateY(0); } }
 
 @media (prefers-reduced-motion: reduce) {
-  .ai-scene, .ai-q, .ai-cover, .ai-think, .ai-bounce, .ai-db, .ai-a,
+  .ai-q, .ai-cover, .ai-think, .ai-bounce, .ai-db, .ai-a,
   .ai-r0, .ai-r1, .ai-r2, .ai-r3 { animation: none; }
 }
 `
@@ -115,6 +119,11 @@ export function AiAssistant({ label, question, answer, col1, col2 }: AiAssistant
         <circle className="ai-dot" cx={292} cy={18} r={1.6} />
         <circle className="ai-dot" cx={298} cy={18} r={1.6} />
         <line className="ai-line" x1={10} y1={28} x2={310} y2={28} />
+
+        {/* Barra de escritura (marcador, siempre visible) */}
+        <rect className="ai-input" x={20} y={156} width={280} height={11} rx={5.5} />
+        <rect className="ai-bar" x={28} y={159.5} width={64} height={4} rx={2} />
+        <path className="ai-send" d="M287 158.5 L294 161.5 L287 164.5 Z" />
 
         {/* Pregunta del usuario */}
         <g className="ai-q">
