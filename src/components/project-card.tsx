@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Image from "next/image"
 import { useLanguage } from "@/context/language-context"
 import { Card } from "@/components/ui/card"
 import {
@@ -26,6 +27,8 @@ interface ProjectCardProps {
     gallery: string[]
   }
   onGalleryClick: () => void
+  // First row: on wide screens it is above the fold and is the LCP image.
+  eager?: boolean
 }
 
 const formatDescription = (text: string) =>
@@ -67,6 +70,7 @@ const firstParagraph = (text: string) =>
 export default function ProjectCard({
   project,
   onGalleryClick,
+  eager = false,
 }: ProjectCardProps) {
   const { t } = useLanguage()
   const [isDescriptionOpen, setIsDescriptionOpen] = useState(false)
@@ -88,13 +92,14 @@ export default function ProjectCard({
     <>
       <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-300 bg-card border-border flex flex-col h-full gap-0 py-0 dark:hover:shadow-blue-950">
         <div className="relative overflow-hidden aspect-[16/10] bg-muted">
-          {/* Project card image: dynamic Supabase URL, dimensions vary per project. */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          {/* next/image serves WebP/AVIF at the card's real width instead of the full PNG. */}
+          <Image
             src={project.image || "/placeholder.svg"}
             alt={project.title}
-            loading="lazy"
-            className="w-full h-full object-cover object-top hover:scale-105 transition-transform duration-300"
+            fill
+            loading={eager ? "eager" : "lazy"}
+            sizes="(min-width: 1024px) 400px, (min-width: 768px) 50vw, 100vw"
+            className="object-cover object-top hover:scale-105 transition-transform duration-300"
           />
         </div>
 
@@ -112,7 +117,7 @@ export default function ProjectCard({
           {project.description && (
             <button
               onClick={() => setIsDescriptionOpen(true)}
-              className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline self-start"
+              className="hit-44 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline self-start"
             >
               <FileText className="w-4 h-4" />
               {t("project_view_description") || "Ver descripción"}
@@ -123,7 +128,7 @@ export default function ProjectCard({
             {displayedTech.map((tech) => (
               <span
                 key={tech}
-                className="px-3 py-1 bg-primary/10 text-primary text-xs rounded-full font-medium"
+                className="px-3 py-1 bg-primary/10 text-primary dark:text-blue-300 text-xs rounded-full font-medium"
               >
                 {tech}
               </span>
@@ -131,7 +136,7 @@ export default function ProjectCard({
             {hasMoreTech && (
               <button
                 onClick={() => setIsTechExpanded(!isTechExpanded)}
-                className="px-3 py-1 bg-muted text-muted-foreground text-xs rounded-full font-medium cursor-pointer hover:bg-muted/80 transition-colors"
+                className="hit-44 px-3 py-1 bg-muted text-foreground/75 text-xs rounded-full font-medium cursor-pointer hover:bg-muted/80 transition-colors"
                 aria-expanded={isTechExpanded}
                 title={isTechExpanded ? undefined : hiddenTech}
                 aria-label={isTechExpanded ? undefined : hiddenTech}

@@ -29,12 +29,21 @@ export function Footer({ footerData }: { footerData: FooterData[] | null }) {
   const { t } = useLanguage()
   const currentYear = new Date().getFullYear()
 
+  const links = [
+    { name: t("nav_projects"), href: "#projects" },
+    { name: t("nav_services"), href: "#services" },
+    { name: t("nav_exp"), href: "#experience" },
+    { name: t("nav_ai_skills"), href: "#ai-skills" },
+    { name: t("nav_tech"), href: "#technologies" },
+    { name: t("nav_contact"), href: "#contact" },
+  ]
+
   return (
     <footer className="bg-card border-t border-border">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Contact CTA, repeated from the Contact section */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 rounded-xl border border-border bg-muted/40 p-6 mb-10 text-center sm:text-left">
-          <p className="text-lg font-semibold text-card-foreground">{t("footer_cta")}</p>
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 rounded-xl border border-border bg-muted/40 px-5 py-4 mb-8 text-center sm:text-left">
+          <p className="text-base font-semibold text-card-foreground">{t("footer_cta")}</p>
           <a
             href="#contact"
             className="inline-flex min-h-11 items-center justify-center rounded-lg bg-primary px-5 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors duration-200"
@@ -43,96 +52,55 @@ export function Footer({ footerData }: { footerData: FooterData[] | null }) {
           </a>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
-          {/* Brand Section */}
-          <div>
-            <h3 className="text-lg font-bold text-card-foreground mb-2">
-              {t("footer_title")}
-            </h3>
-            <p className="text-sm text-muted-foreground">
-              {t("footer_description")}
-            </p>
+        {/* One row: brand, section links and social icons */}
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 lg:gap-8 text-center lg:text-left">
+          <div className="shrink-0">
+            <p className="text-base font-bold text-card-foreground">{t("footer_title")}</p>
+            <p className="text-sm text-muted-foreground">{t("footer_description")}</p>
           </div>
 
-          {/* Quick Links */}
-          <div>
-            <h4 className="text-sm font-semibold text-card-foreground mb-4">
-              {t("footer_quick_links")}
-            </h4>
-            <ul className="space-y-2">
-              {[
-                { name: t("nav_projects"), href: "#projects" },
-                { name: t("nav_services"), href: "#services" },
-                { name: t("nav_exp"), href: "#experience" },
-                { name: t("nav_ai_skills"), href: "#ai-skills" },
-                { name: t("nav_tech"), href: "#technologies" },
-                { name: t("nav_contact"), href: "#contact" },
-              ].map((link) => (
+          <nav aria-label={t("footer_quick_links")}>
+            <ul className="flex flex-wrap justify-center lg:justify-start gap-x-5">
+              {links.map((link) => (
                 <li key={link.href}>
                   <a
                     href={link.href}
-                    className="text-sm text-muted-foreground hover:text-primary transition-colors duration-200"
+                    className="inline-flex min-h-11 items-center text-sm text-muted-foreground hover:text-primary transition-colors duration-200"
                   >
                     {link.name}
                   </a>
                 </li>
               ))}
             </ul>
-          </div>
+          </nav>
 
-          {/* Social Links */}
-          <div>
-            <h4 className="text-sm font-semibold text-card-foreground mb-4">
-              {t("footer_follow_me")}
-            </h4>
-            <div className="grid grid-cols-4 gap-4 justify-items-center">
-              {/* 1. Verificamos que footerData exista y sea un array con items.
-                2. Buscamos el componente de ícono en nuestro iconMap.
-                3. Ponemos .toLowerCase() por seguridad, para que "GitHub" o "github" funcionen.
-              */}
-              {footerData &&
-                footerData.length > 0 &&
-                footerData.map((link) => {
-                  const Icon = iconMap[link.icon.toLowerCase()]
-
-                  // Si no encontramos el ícono en el mapa, no renderizamos nada
-                  if (!Icon) {
-                    console.warn(`Icono no encontrado: ${link.icon}`)
-                    return null
-                  }
-
-                  return (
-                    <a
-                      key={link.name}
-                      href={link.href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="p-2 rounded-lg hover:bg-muted transition-colors duration-200"
-                      aria-label={link.name}
-                    >
-                      <Icon className="w-5 h-5" />
-                    </a>
-                  )
-                })}
-            </div>
+          <div className="flex justify-center gap-1 shrink-0">
+            {(footerData ?? []).map((link) => {
+              const Icon = iconMap[link.icon.toLowerCase()]
+              if (!Icon) return null
+              return (
+                <a
+                  key={link.name}
+                  href={link.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex h-11 w-11 items-center justify-center rounded-lg hover:bg-muted transition-colors duration-200"
+                  aria-label={link.name}
+                >
+                  <Icon className="w-5 h-5" />
+                </a>
+              )
+            })}
           </div>
         </div>
 
-        {/* Divider */}
-        <div className="border-t border-border my-8"></div>
-
-        {/* Bottom Section */}
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="text-sm text-muted-foreground text-center md:text-left">
-            © {currentYear} Gerardo Franco
-          </p>
-          <p className="text-sm text-muted-foreground flex items-center gap-1">
-            {t("made_with")}{" "}
-            <Heart className="w-4 h-4 text-red-500 fill-red-500" />{" "}
+        {/* Bottom line */}
+        <div className="mt-6 pt-6 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-muted-foreground">
+          <p>© {currentYear} Gerardo Franco · {t("footer_disclaimer")}</p>
+          <p className="flex items-center gap-1">
+            {t("made_with")}
+            <Heart className="w-3.5 h-3.5 text-red-500 fill-red-500" aria-hidden="true" />
             {t("by_author")}
-          </p>
-          <p className="text-xs text-muted-foreground text-center md:text-right">
-            {t("footer_disclaimer")}
           </p>
         </div>
       </div>

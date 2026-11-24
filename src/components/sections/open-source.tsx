@@ -59,7 +59,7 @@ export function OpenSourceTools({ toolsData }: { toolsData: ToolData[] }) {
                 <div className="mt-auto flex items-end justify-between gap-3">
                   <div className="flex flex-wrap gap-1.5">
                     {tool.tech.slice(0, 3).map((tech) => (
-                      <span key={tech} className="px-2 py-0.5 bg-primary/10 text-primary text-xs rounded-full font-medium">
+                      <span key={tech} className="px-2 py-0.5 bg-primary/10 text-primary dark:text-blue-300 text-xs rounded-full font-medium">
                         {tech}
                       </span>
                     ))}

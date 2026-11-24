@@ -56,9 +56,10 @@ export function Projects({
 
         {/* Projects Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {projects.map((project) => (
+          {projects.map((project, index) => (
             <ProjectCard
               key={project.id}
+              eager={index < 3}
               project={{
                 id: project.id,
                 title: project.title,

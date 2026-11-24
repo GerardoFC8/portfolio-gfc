@@ -59,20 +59,20 @@ export function Navbar() {
             <div className="flex gap-2">
               <button
                 onClick={() => setLang("es")}
-                className={`px-3 py-1 rounded text-xs font-medium transition-colors duration-200 ${
+                className={`hit-44 px-3 py-1 rounded text-xs font-medium transition-colors duration-200 ${
                   lang === "es"
                     ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-muted-foreground hover:bg-muted/80"
+                    : "bg-muted text-foreground/75 hover:bg-muted/80"
                 }`}
               >
                 ES
               </button>
               <button
                 onClick={() => setLang("en")}
-                className={`px-3 py-1 rounded text-xs font-medium transition-colors duration-200 ${
+                className={`hit-44 px-3 py-1 rounded text-xs font-medium transition-colors duration-200 ${
                   lang === "en"
                     ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-muted-foreground hover:bg-muted/80"
+                    : "bg-muted text-foreground/75 hover:bg-muted/80"
                 }`}
               >
                 EN
@@ -80,12 +80,12 @@ export function Navbar() {
             </div>
 
             {/* Theme Toggle */}
-            <AnimatedThemeToggler />
+            <AnimatedThemeToggler className="inline-flex h-11 w-11 items-center justify-center rounded-lg hover:bg-muted transition-colors duration-200" />
 
             {/* Mobile Menu Button */}
             <button
               onClick={() => setIsOpen(!isOpen)}
-              className="lg:hidden p-2 rounded-lg hover:bg-muted transition-colors duration-200"
+              className="lg:hidden inline-flex h-11 w-11 items-center justify-center rounded-lg hover:bg-muted transition-colors duration-200"
               aria-label="Toggle menu"
             >
               {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}

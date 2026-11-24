@@ -50,8 +50,7 @@ const TechItem = ({ tech }: { tech: TechnologyData }) => {
   return (
     <li
       className={
-        "relative flex flex-col items-center gap-1.5 rounded-lg p-2 transition-colors hover:bg-muted/60 " +
-        (dominant ? "" : "opacity-80")
+        "relative flex flex-col items-center gap-1.5 rounded-lg p-2 transition-colors hover:bg-muted/60"
       }
       title={tech.name}
     >
@@ -60,7 +59,8 @@ const TechItem = ({ tech }: { tech: TechnologyData }) => {
         alt=""
         width={40}
         height={40}
-        className="h-8 w-8 sm:h-9 sm:w-9 object-contain"
+        // Only the logo is dimmed, so the name keeps its text contrast.
+        className={"h-8 w-8 sm:h-9 sm:w-9 object-contain " + (dominant ? "" : "opacity-80")}
         onError={(e) => {
           e.currentTarget.src = "https://placehold.co/48x48/e0e0e0/a0a0a0?text=?"
         }}

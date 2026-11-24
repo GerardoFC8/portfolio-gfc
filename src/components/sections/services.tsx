@@ -62,15 +62,9 @@ export function Services({ servicesData }: { servicesData: ServiceData[] }) {
                     : "")
                 }
               >
-                <div className="flex items-start justify-between gap-3 mb-4">
-                  <div className="p-3 bg-primary/10 rounded-lg">
-                    <Icon className="w-6 h-6 text-primary" aria-hidden="true" />
-                  </div>
-                  {service.featured && (
-                    <span className="rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground">
-                      {t("services_featured")}
-                    </span>
-                  )}
+                {/* Featured cards are marked only by the accent border above. */}
+                <div className="mb-4 self-start p-3 bg-primary/10 rounded-lg">
+                  <Icon className="w-6 h-6 text-primary" aria-hidden="true" />
                 </div>
                 <h3 className="text-lg font-bold text-card-foreground mb-2">
                   {service.title}
@@ -81,7 +75,7 @@ export function Services({ servicesData }: { servicesData: ServiceData[] }) {
                   </p>
                 )}
                 {service.items.length > 0 && (
-                  <ul className="mt-auto space-y-2">
+                  <ul className="space-y-2">
                     {service.items.map((item) => (
                       <li key={item} className="flex gap-2 text-sm text-foreground/90">
                         <Check className="w-4 h-4 mt-0.5 shrink-0 text-primary" aria-hidden="true" />
