@@ -32,6 +32,8 @@ import {
   LayoutDashboard,
   Globe,
   Monitor,
+  Plug,
+  Sparkles,
   Wrench,
   type LucideIcon,
 } from "lucide-react";
@@ -51,6 +53,8 @@ const iconOptions: { value: string; label: string; Icon: LucideIcon }[] = [
     label: "Sistemas a medida",
     Icon: LayoutDashboard,
   },
+  { value: "plug", label: "Integraciones", Icon: Plug },
+  { value: "sparkles", label: "IA", Icon: Sparkles },
   { value: "globe", label: "Webs", Icon: Globe },
   { value: "monitor", label: "Escritorio", Icon: Monitor },
   { value: "wrench", label: "Genérico", Icon: Wrench },
@@ -73,6 +77,10 @@ function ServiceIcon({
       return <Gauge size={size} />;
     case "layout-dashboard":
       return <LayoutDashboard size={size} />;
+    case "plug":
+      return <Plug size={size} />;
+    case "sparkles":
+      return <Sparkles size={size} />;
     case "globe":
       return <Globe size={size} />;
     case "monitor":

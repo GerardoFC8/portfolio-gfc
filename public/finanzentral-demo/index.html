@@ -1,0 +1,394 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Dashboard - Finanzentral (demo)</title>
+<meta name="description" content="Demo estática de Finanzentral con datos ficticios">
+<link rel="icon" href="./icon-finanzentral.webp">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Outfit:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="./styles.css">
+<script src="./app.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.1.11/dist/index.global.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.9/dist/chart.umd.min.js"></script>
+</head>
+<body class="font-sans antialiased">
+<div class="fz-banner" role="note">Demo con datos ficticios · No es la aplicación real</div>
+<aside id="fz-sidebar"></aside>
+<div class="fz-inset">
+  <div id="fz-header"></div>
+  <main class="flex flex-1 flex-col gap-4 p-4 pb-20 md:gap-6 md:p-6 md:pb-6" x-data="dashboard()" x-init="init()">
+    <div class="dash-dot-grid space-y-5">
+
+      <!-- Daily briefing (components/dashboard/daily-briefing.tsx) -->
+      <div x-show="!briefingClosed" class="relative overflow-hidden rounded-xl border border-border/50 bg-gradient-to-br from-card via-card to-primary/[0.03] dark:to-primary/[0.06] shadow-sm">
+        <button type="button" @click="briefingClosed = true" class="fz-icon-btn absolute top-2 right-2 inline-flex items-center justify-center p-1 rounded-md text-muted-foreground/60 hover:text-muted-foreground hover:bg-muted/50" aria-label="Cerrar resumen diario"><i data-icon="x" class="h-3.5 w-3.5"></i></button>
+        <div class="py-4 px-5">
+          <div class="flex items-center gap-2 mb-2 pr-8">
+            <span x-html="FZ.icon(greetIcon.name, greetIcon.cls)"></span>
+            <h3 class="font-display text-sm font-semibold tracking-tight" x-text="greeting"></h3>
+            <span class="inline-flex items-center gap-0.5 rounded-md bg-secondary text-secondary-foreground text-[10px] px-1.5 h-4 font-medium"><i data-icon="sparkles" class="h-2.5 w-2.5"></i>IA</span>
+          </div>
+          <p class="text-sm text-muted-foreground leading-relaxed mb-3 pr-6" x-text="briefingSummary"></p>
+          <div class="space-y-1.5">
+            <template x-for="h in highlights" :key="h.text">
+              <div class="flex items-start gap-2">
+                <span class="mt-1.5 h-1.5 w-1.5 rounded-full shrink-0" :class="h.dot"></span>
+                <span class="text-xs leading-relaxed text-foreground/80" x-text="h.text"></span>
+              </div>
+            </template>
+          </div>
+        </div>
+      </div>
+
+      <!-- KPI cards (components/dashboard/kpi-cards.tsx) -->
+      <div class="space-y-5">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div class="dash-card-reveal dash-card-reveal-1">
+            <h2 class="font-display text-2xl sm:text-3xl font-bold tracking-tight">Resumen Financiero</h2>
+            <p class="text-xs text-muted-foreground mt-1 tracking-wide uppercase font-medium">Vista general de tus finanzas</p>
+          </div>
+          <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto dash-card-reveal dash-card-reveal-2">
+            <label class="sr-only" for="kpi-month">Mes</label>
+            <select id="kpi-month" class="fz-select w-full sm:w-[160px] h-9 text-xs rounded-lg border-border/40 bg-card/60" x-model="month" @change="refresh()">
+              <option value="all">Todos</option>
+              <template x-for="(m, i) in FZ.MONTHS" :key="i"><option :value="String(i)" x-text="m" :selected="String(i) === month"></option></template>
+            </select>
+            <label class="sr-only" for="kpi-year">Año</label>
+            <select id="kpi-year" class="fz-select w-full sm:w-[100px] h-9 text-xs rounded-lg border-border/40 bg-card/60" x-model.number="year" @change="refresh()">
+              <template x-for="y in years" :key="y"><option :value="y" x-text="y" :selected="y === year"></option></template>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <template x-for="(k, idx) in kpis" :key="k.key">
+            <div class="dash-card-glass dash-hover rounded-xl p-5 relative overflow-hidden dash-card-reveal" :class="[k.glow, 'dash-card-reveal-' + (idx + 1)]">
+              <div class="flex items-center justify-between mb-3">
+                <span class="text-[11px] font-medium text-muted-foreground tracking-wide uppercase leading-tight" x-text="k.title"></span>
+                <div class="rounded-lg p-1.5" :class="k.iconBg"><span x-html="FZ.icon(k.icon, 'h-4 w-4 shrink-0 ' + k.iconColor)"></span></div>
+              </div>
+              <div class="font-display text-2xl sm:text-3xl font-bold tracking-tight dash-number-roll" :class="k.text" x-text="k.value"></div>
+              <div class="flex items-center gap-1.5 mt-2.5" x-show="k.change">
+                <div class="flex items-center gap-1 text-[11px] font-semibold px-1.5 py-0.5 rounded-md" :class="k.up ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-rose-500/10 text-rose-600 dark:text-rose-400'">
+                  <span x-html="FZ.icon(k.up ? 'trending-up' : 'trending-down', 'h-3 w-3')"></span><span x-text="k.change"></span>
+                </div>
+                <span class="text-[10px] text-muted-foreground/70">vs mes anterior</span>
+              </div>
+              <p class="text-[10px] text-muted-foreground/60 mt-3 pt-2.5 border-t border-border/30 leading-relaxed" x-text="k.subtitle"></p>
+            </div>
+          </template>
+        </div>
+
+        <div class="dash-card-reveal dash-card-reveal-5">
+          <p class="dash-section-label mb-3">Metricas adicionales</p>
+          <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <template x-for="k in extraKpis" :key="k.title">
+              <div class="dash-card-glass dash-hover rounded-xl p-4 relative overflow-hidden">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-[11px] font-medium text-muted-foreground tracking-wide uppercase" x-text="k.title"></span>
+                  <div class="rounded-lg p-1.5 bg-muted/50"><span x-html="FZ.icon(k.icon, 'h-3.5 w-3.5 text-muted-foreground shrink-0')"></span></div>
+                </div>
+                <div class="font-display text-xl sm:text-2xl font-bold tracking-tight" x-text="k.value"></div>
+                <p class="text-[10px] text-muted-foreground/60 mt-2 leading-relaxed" x-text="k.subtitle"></p>
+              </div>
+            </template>
+          </div>
+        </div>
+      </div>
+
+      <!-- Financial flow chart (components/dashboard/revenue-chart.tsx) -->
+      <div class="dash-card-glass rounded-xl overflow-hidden dash-card-reveal dash-card-reveal-3">
+        <div class="px-5 pt-5 pb-3 flex flex-wrap gap-3 items-center justify-between">
+          <div>
+            <div class="flex items-center gap-2">
+              <div class="h-5 w-1 rounded-full bg-primary"></div>
+              <h3 class="font-display text-lg font-bold tracking-tight">Flujo Financiero</h3>
+            </div>
+            <p class="text-[11px] text-muted-foreground mt-1 ml-3 tracking-wide">Ingresos vs gastos, últimos 6 meses</p>
+          </div>
+          <div class="flex items-center gap-4 text-[11px]">
+            <div class="flex items-center gap-1.5"><div class="h-2 w-2 rounded-full bg-emerald-500"></div><span class="text-muted-foreground">Ingresos</span></div>
+            <div class="flex items-center gap-1.5"><div class="h-2 w-2 rounded-full bg-rose-500"></div><span class="text-muted-foreground">Gastos</span></div>
+          </div>
+        </div>
+        <div class="px-3 pb-4"><div class="h-[250px] md:h-[300px] w-full relative"><canvas id="flowChart" aria-label="Gráfico de ingresos y gastos" role="img"></canvas></div></div>
+      </div>
+
+      <!-- Content grid -->
+      <div class="grid gap-4 grid-cols-1 lg:grid-cols-5">
+        <div class="lg:col-span-3">
+          <!-- Recent transactions (components/dashboard/recent-transactions.tsx) -->
+          <div class="dash-card-glass rounded-xl overflow-hidden dash-card-reveal dash-card-reveal-4">
+            <div class="px-5 pt-5 pb-3 flex items-center justify-between">
+              <div>
+                <div class="flex items-center gap-2"><div class="h-5 w-1 rounded-full bg-accent"></div><h3 class="font-display text-lg font-bold tracking-tight">Movimientos Recientes</h3></div>
+                <p class="text-[11px] text-muted-foreground mt-1 ml-3 tracking-wide">Ultimas transacciones registradas</p>
+              </div>
+              <a href="transacciones.html" class="fz-touch flex items-center gap-1 text-[11px] text-muted-foreground hover:text-primary transition-colors font-medium">Ver todas <i data-icon="arrow-right" class="h-3 w-3"></i></a>
+            </div>
+            <div class="px-5 pb-5 space-y-0.5">
+              <template x-for="t in recent" :key="t.id">
+                <div class="dash-tx-row flex items-center justify-between gap-3">
+                  <div class="flex items-center gap-3 flex-1 min-w-0">
+                    <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full" :class="t.type === 'ingreso' ? 'bg-emerald-500/10 dark:bg-emerald-400/10' : 'bg-rose-500/10 dark:bg-rose-400/10'">
+                      <span x-html="FZ.icon(t.type === 'ingreso' ? 'arrow-down-left' : 'arrow-up-right', 'h-4 w-4 ' + (t.type === 'ingreso' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'))"></span>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <p class="text-sm font-medium truncate leading-tight" x-text="t.description"></p>
+                      <div class="flex items-center gap-1.5 mt-0.5">
+                        <p class="text-[11px] text-muted-foreground/70" x-text="FZ.relDate(t.date)"></p>
+                        <span class="text-[11px] text-muted-foreground/40">/</span>
+                        <span class="text-[11px] text-muted-foreground/60 truncate max-w-[120px]" x-text="sourceName(t)"></span>
+                      </div>
+                    </div>
+                  </div>
+                  <span class="text-sm font-semibold whitespace-nowrap font-display tabular-nums" :class="t.type === 'ingreso' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'" x-text="(t.type === 'ingreso' ? '+' : '-') + FZ.money(t.amount, t.currency)"></span>
+                </div>
+              </template>
+            </div>
+          </div>
+        </div>
+        <div class="lg:col-span-2 space-y-4">
+          <!-- Money sources (components/dashboard/money-distribution-card.tsx) -->
+          <div class="dash-card-glass rounded-xl overflow-hidden dash-card-reveal dash-card-reveal-5">
+            <div class="px-5 pt-5 pb-3">
+              <div class="flex items-center gap-2"><div class="h-5 w-1 rounded-full bg-zen"></div><h3 class="font-display text-lg font-bold tracking-tight">Fuentes de Dinero</h3></div>
+              <p class="text-[11px] text-muted-foreground mt-1 ml-3 tracking-wide">Balance por fuente</p>
+            </div>
+            <div class="mx-5 mb-4 p-4 rounded-lg bg-gradient-to-br from-primary/5 via-transparent to-accent/5 border border-border/30">
+              <p class="text-[11px] text-muted-foreground/70 uppercase tracking-wider font-medium mb-1">Balance total</p>
+              <p class="font-display text-2xl font-bold dash-text-primary dash-number-roll" x-text="FZ.money(totalBalance)"></p>
+              <p class="text-[10px] text-muted-foreground/50 mt-1"><span x-text="sources.length"></span> fuentes activas · USD a S/ <span x-text="FZDATA.USD_RATE.toFixed(2)"></span></p>
+            </div>
+            <div class="px-5 pb-5 space-y-3">
+              <template x-for="s in sources" :key="s.id">
+                <div class="space-y-1.5">
+                  <div class="flex items-center justify-between gap-2">
+                    <div class="flex items-center gap-2.5 min-w-0">
+                      <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg" :style="'background-color:' + s.color + '26'"><span x-html="FZ.icon(s.icon, 'h-4 w-4')" :style="'color:' + s.color"></span></div>
+                      <div class="min-w-0"><h4 class="font-medium text-sm leading-tight truncate" x-text="s.name"></h4><p class="text-[10px] text-muted-foreground/60" x-text="s.typeLabel"></p></div>
+                    </div>
+                    <div class="text-right"><p class="text-sm font-semibold font-display tabular-nums" x-text="FZ.money(s.balance, s.currency)"></p><p class="text-[10px] text-muted-foreground/50 tabular-nums" x-text="s.pct.toFixed(1) + '%'"></p></div>
+                  </div>
+                  <div class="h-1.5 w-full rounded-full overflow-hidden dash-progress"><div class="h-full rounded-full" :style="'width:' + s.pct + '%;background-color:' + s.color + ';opacity:.7'"></div></div>
+                </div>
+              </template>
+            </div>
+          </div>
+
+          <!-- Spending by category (added for the demo, same card style) -->
+          <div class="dash-card-glass rounded-xl overflow-hidden dash-card-reveal dash-card-reveal-6">
+            <div class="px-5 pt-5 pb-3 flex items-center justify-between">
+              <div>
+                <div class="flex items-center gap-2"><div class="h-5 w-1 rounded-full bg-chart-3"></div><h3 class="font-display text-lg font-bold tracking-tight">Gastos por Categoría</h3></div>
+                <p class="text-[11px] text-muted-foreground mt-1 ml-3 tracking-wide" x-text="'Distribución ' + periodLabel()"></p>
+              </div>
+              <a href="reportes.html" class="fz-touch flex items-center gap-1 text-[11px] text-muted-foreground hover:text-primary transition-colors font-medium">Reportes <i data-icon="arrow-right" class="h-3 w-3"></i></a>
+            </div>
+            <div class="px-5 pb-5 flex items-center gap-4">
+              <div class="relative h-32 w-32 shrink-0"><canvas id="catChart" aria-label="Gráfico de gastos por categoría" role="img"></canvas></div>
+              <div class="flex-1 min-w-0 space-y-1.5">
+                <template x-for="c in catTop" :key="c.id">
+                  <div class="flex items-center justify-between gap-2 text-xs">
+                    <span class="flex items-center gap-1.5 min-w-0"><span class="h-2 w-2 rounded-full shrink-0" :style="'background:' + c.color"></span><span class="truncate" x-text="c.name"></span></span>
+                    <span class="tabular-nums text-muted-foreground" x-text="c.pct.toFixed(0) + '%'"></span>
+                  </div>
+                </template>
+                <p x-show="catTop.length === 0" class="text-xs text-muted-foreground">Sin gastos en el periodo</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Goals (components/dashboard/goals-summary-card.tsx) -->
+      <div class="dash-card-glass rounded-xl overflow-hidden dash-card-reveal dash-card-reveal-6">
+        <div class="px-5 pt-5 pb-3 flex items-center justify-between">
+          <div>
+            <div class="flex items-center gap-2"><div class="h-5 w-1 rounded-full" style="background: linear-gradient(180deg, oklch(0.65 0.2 155), oklch(0.6 0.24 290))"></div><h3 class="font-display text-lg font-bold tracking-tight">Metas de Ahorro</h3></div>
+            <p class="text-[11px] text-muted-foreground mt-1 ml-3 tracking-wide">Progreso de tus objetivos financieros</p>
+          </div>
+          <a href="metas.html" class="fz-touch flex items-center gap-1 text-[11px] text-muted-foreground hover:text-primary transition-colors font-medium">Ver todas <i data-icon="arrow-right" class="h-3 w-3"></i></a>
+        </div>
+        <div class="mx-5 mb-4 grid grid-cols-2 gap-3">
+          <div class="p-3.5 rounded-lg bg-emerald-500/5 border border-emerald-500/10 dark:bg-emerald-400/5 dark:border-emerald-400/10">
+            <p class="text-[10px] text-muted-foreground/70 uppercase tracking-wider font-medium mb-1 flex items-center gap-1"><i data-icon="trending-up" class="h-3 w-3"></i>Total Ahorrado</p>
+            <p class="font-display text-lg sm:text-xl font-bold dash-text-income" x-text="FZ.money(goalsSaved)"></p>
+            <p class="text-[10px] text-muted-foreground/50 mt-0.5" x-text="'En ' + goals.length + ' metas'"></p>
+          </div>
+          <div class="p-3.5 rounded-lg bg-primary/5 border border-primary/10">
+            <p class="text-[10px] text-muted-foreground/70 uppercase tracking-wider font-medium mb-1 flex items-center gap-1"><i data-icon="target" class="h-3 w-3"></i>Por Alcanzar</p>
+            <p class="font-display text-lg sm:text-xl font-bold dash-text-primary" x-text="FZ.money(goalsRemaining)"></p>
+            <p class="text-[10px] text-muted-foreground/50 mt-0.5">Para completar todas</p>
+          </div>
+        </div>
+        <div class="px-5 pb-5 grid gap-3 md:grid-cols-3">
+          <template x-for="g in goals" :key="g.id">
+            <div class="p-3.5 rounded-lg bg-muted/20 border border-border/20 space-y-2.5">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2.5 min-w-0">
+                  <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg" :style="'background-color:' + g.color + '26'"><span x-html="FZ.icon('target', 'h-4 w-4')" :style="'color:' + g.color"></span></div>
+                  <div class="min-w-0">
+                    <h4 class="font-medium text-sm leading-tight truncate" x-text="g.name"></h4>
+                    <p class="text-[10px] text-muted-foreground/60 flex items-center gap-1 mt-0.5"><i data-icon="calendar" class="h-2.5 w-2.5"></i><span x-text="FZ.fmtDate(g.deadline)"></span></p>
+                  </div>
+                </div>
+                <p class="text-sm font-bold font-display tabular-nums" :style="'color:' + g.color" x-text="g.pct.toFixed(0) + '%'"></p>
+              </div>
+              <div class="h-1.5 w-full rounded-full overflow-hidden dash-progress"><div class="h-full rounded-full" :style="'width:' + g.pct + '%;background-color:' + g.color + ';opacity:.8'"></div></div>
+              <div class="flex justify-between gap-2 text-[10px]">
+                <span class="text-muted-foreground/60 tabular-nums" x-text="FZ.money(g.current) + ' / ' + FZ.money(g.target)"></span>
+                <span class="font-medium tabular-nums" :style="'color:' + g.color + ';opacity:.8'" x-text="'Faltan ' + FZ.money(Math.max(g.target - g.current, 0))"></span>
+              </div>
+            </div>
+          </template>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+<div id="fz-bottomnav"></div>
+
+<script src="./data.js"></script>
+<script>FZ.mountShell("index");</script>
+<script>
+  var flowChart = null, catChart = null;
+  function dashboard() {
+    var D = FZDATA;
+    var now = D.today;
+    return {
+      month: String(now.getMonth()), year: now.getFullYear(),
+      years: [now.getFullYear() - 1, now.getFullYear()],
+      kpis: [], extraKpis: [], recent: [], sources: [], totalBalance: 0, catTop: [],
+      goals: [], goalsSaved: 0, goalsRemaining: 0, briefingClosed: false,
+      greeting: "", greetIcon: { name: "sun", cls: "h-4 w-4 text-orange-500" }, briefingSummary: "", highlights: [],
+      init: function () {
+        var self = this;
+        var h = new Date().getHours();
+        if (h >= 5 && h < 12) { this.greeting = "Buenos días, " + D.user.firstName; this.greetIcon = { name: "sunrise", cls: "h-4 w-4 text-amber-500" }; }
+        else if (h >= 12 && h < 19) { this.greeting = "Buenas tardes, " + D.user.firstName; this.greetIcon = { name: "sun", cls: "h-4 w-4 text-orange-500" }; }
+        else { this.greeting = "Buenas noches, " + D.user.firstName; this.greetIcon = { name: "moon", cls: "h-4 w-4 text-indigo-400" }; }
+        this.recent = D.transactions.slice(0, 5);
+        this.totalBalance = D.totalBalancePEN();
+        var tot = this.totalBalance;
+        this.sources = D.moneySources.map(function (s) {
+          var pen = s.currency === "USD" ? s.balance * D.USD_RATE : s.balance;
+          return Object.assign({}, s, { pct: pen / tot * 100, typeLabel: D.MONEY_SOURCE_TYPE_LABELS[s.type], icon: { bank_account: "landmark", cash: "banknote", digital_wallet: "wallet" }[s.type] || "wallet", pen: pen });
+        }).sort(function (a, b) { return b.pen - a.pen; });
+        this.goals = D.goals.slice(0, 3).map(function (g) { return Object.assign({}, g, { pct: Math.min(g.current / g.target * 100, 100) }); });
+        this.goalsSaved = this.goals.reduce(function (s, g) { return s + g.current; }, 0);
+        this.goalsRemaining = this.goals.reduce(function (s, g) { return s + Math.max(g.target - g.current, 0); }, 0);
+        this.buildBriefing();
+        this.refresh();
+        this.$nextTick(function () { self.drawFlow(); });
+        window.addEventListener("fz-theme", function () { self.drawFlow(); self.drawCat(); });
+      },
+      periodLabel: function () { return this.month === "all" ? "del " + this.year : "de " + FZ.MONTHS[+this.month] + " " + this.year; },
+      txInPeriod: function () {
+        var self = this;
+        return D.transactions.filter(function (t) {
+          var d = FZ.parseDate(t.date);
+          return d.getFullYear() === self.year && (self.month === "all" || d.getMonth() === +self.month);
+        });
+      },
+      sum: function (list, type) { return list.reduce(function (s, t) { return t.type === type ? s + D.toPEN(t) : s; }, 0); },
+      refresh: function () {
+        var list = this.txInPeriod();
+        var inc = this.sum(list, "ingreso"), exp = this.sum(list, "gasto");
+        var prevInc = 0, prevExp = 0, prevCount = 0;
+        if (this.month !== "all") {
+          var pd = new Date(this.year, +this.month - 1, 1);
+          var key = D.monthKey(pd.getFullYear(), pd.getMonth());
+          var pt = D.monthTotals(D.transactions, key); prevInc = pt.income; prevExp = pt.expenses; prevCount = pt.count;
+        }
+        function pct(a, b) { return b > 0 ? (a - b) / b * 100 : 0; }
+        var isCurrent = this.month === String(now.getMonth()) && this.year === now.getFullYear();
+        var allInc = this.sum(D.transactions, "ingreso"), allExp = this.sum(D.transactions, "gasto");
+        var ti = pct(inc, prevInc), te = pct(exp, prevExp), tc = list.length - prevCount;
+        var bal = inc - exp, tb = pct(bal, prevInc - prevExp);
+        var hasPrev = this.month !== "all" && prevCount > 0;
+        this.kpis = [
+          { key: "i", title: "Ingresos " + this.periodLabel(), value: FZ.money(inc), change: hasPrev ? (ti >= 0 ? "+" : "") + ti.toFixed(1) + "%" : "", up: ti >= 0, icon: "dollar-sign",
+            subtitle: this.month === "all" ? "Total del año hasta el mes actual" : (isCurrent ? "Total histórico: " + FZ.money(allInc) : "Total del mes seleccionado"),
+            glow: "dash-glow-income", text: "dash-text-income", iconBg: "bg-emerald-500/10 dark:bg-emerald-400/10", iconColor: "text-emerald-600 dark:text-emerald-400" },
+          { key: "g", title: "Gastos " + this.periodLabel(), value: FZ.money(exp), change: hasPrev ? (te >= 0 ? "+" : "-") + Math.abs(te).toFixed(1) + "%" : "", up: te >= 0, icon: "credit-card",
+            subtitle: this.month === "all" ? "Total del año hasta el mes actual" : (isCurrent ? "Total histórico: " + FZ.money(allExp) : "Total del mes seleccionado"),
+            glow: "dash-glow-expense", text: "dash-text-expense", iconBg: "bg-rose-500/10 dark:bg-rose-400/10", iconColor: "text-rose-600 dark:text-rose-400" },
+          { key: "b", title: "Balance Actual", value: FZ.money(isCurrent ? this.totalBalance : bal), change: hasPrev ? (tb >= 0 ? "+" : "") + tb.toFixed(1) + "%" : "", up: tb >= 0, icon: "wallet",
+            subtitle: isCurrent ? "Saldo acumulado total" : (this.month === "all" ? "Balance del año" : "Balance del mes seleccionado"),
+            glow: "dash-glow-balance", text: "dash-text-primary", iconBg: "bg-blue-500/10 dark:bg-blue-400/10", iconColor: "text-blue-600 dark:text-blue-400" },
+          { key: "c", title: "Transacciones", value: String(list.length), change: hasPrev ? (tc >= 0 ? "+" : "") + tc : "", up: tc >= 0, icon: "receipt",
+            subtitle: "En " + this.periodLabel().replace(/^(de|del) /, ""),
+            glow: "dash-glow-count", text: "dash-text-accent", iconBg: "bg-violet-500/10 dark:bg-violet-400/10", iconColor: "text-violet-600 dark:text-violet-400" }
+        ];
+        var days = isCurrent ? now.getDate() : (this.month === "all" ? 365 : new Date(this.year, +this.month + 1, 0).getDate());
+        var cats = D.byCategory(list);
+        var top = cats[0];
+        var monthDays = this.month === "all" ? 365 : new Date(this.year, +this.month + 1, 0).getDate();
+        this.extraKpis = [
+          { title: "Promedio Diario", value: FZ.money(exp / Math.max(days, 1)), icon: "calendar", subtitle: "Gasto promedio por día" },
+          { title: "Tasa de Ahorro", value: (inc > 0 ? (inc - exp) / inc * 100 : 0).toFixed(1) + "%", icon: "target", subtitle: "Porcentaje de ingresos ahorrado" },
+          { title: "Categoría Top", value: top ? FZ.money(top.value) : "N/A", icon: "bar-chart-3", subtitle: top ? top.name : "Sin categorías" },
+          { title: "Proyección Mensual", value: FZ.money(isCurrent ? exp / Math.max(days, 1) * monthDays : exp), icon: "trending-down", subtitle: "Gasto estimado del mes" }
+        ];
+        var totalCat = cats.reduce(function (s, c) { return s + c.value; }, 0);
+        this.catTop = cats.slice(0, 6).map(function (c) { return Object.assign({}, c, { pct: totalCat ? c.value / totalCat * 100 : 0 }); });
+        this._cats = cats;
+        var self = this;
+        this.$nextTick(function () { self.drawCat(); });
+      },
+      buildBriefing: function () {
+        var key = D.monthKey(now.getFullYear(), now.getMonth());
+        var cur = D.monthTotals(D.transactions, key);
+        var pd = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        var prev = D.monthTotals(D.transactions, D.monthKey(pd.getFullYear(), pd.getMonth()));
+        var cats = D.byCategory(D.transactions, function (t) { return D.ym(t.date) === key; });
+        this.briefingSummary = "En lo que va del mes registraste " + FZ.money(cur.income) + " de ingresos y " + FZ.money(cur.expenses) + " de gastos. Tu mayor gasto está en " + (cats[0] ? cats[0].name : "Vivienda") + ".";
+        var hormiga = D.transactions.filter(function (t) { return D.ym(t.date) === key && (t.subcategory === "Cafetería" || t.subcategory === "Bodega"); }).reduce(function (s, t) { return s + t.amount; }, 0);
+        this.highlights = [
+          { dot: "bg-emerald-500", text: "Tu fondo de emergencia va en " + Math.round(D.goals[0].current / D.goals[0].target * 100) + "%. Sigue así." },
+          { dot: "bg-amber-500", text: "Gastos hormiga del mes (cafetería y bodega): " + FZ.money(hormiga) + "." },
+          { dot: cur.expenses > prev.expenses ? "bg-red-500" : "bg-emerald-500", text: "El mes anterior gastaste " + FZ.money(prev.expenses) + "." }
+        ];
+      },
+      sourceName: function (t) { if (t.card) return D.cardById(t.card).name; var s = D.srcById(t.source); return s ? s.name : ""; },
+      drawFlow: function () {
+        var el = document.getElementById("flowChart"); if (!el || !window.Chart) return;
+        if (flowChart) flowChart.destroy();
+        var months = D.lastMonths(6);
+        var inc = [], exp = [], labels = [];
+        months.forEach(function (m) { var t = D.monthTotals(D.transactions, m.key); labels.push(FZ.MONTHS_SHORT[m.m]); inc.push(Math.round(t.income)); exp.push(Math.round(t.expenses)); });
+        var ctx = el.getContext("2d");
+        function grad(c) { var g = ctx.createLinearGradient(0, 0, 0, 300); g.addColorStop(0, c + "59"); g.addColorStop(1, c + "05"); return g; }
+        var th = FZ.chartTheme();
+        flowChart = new Chart(el, {
+          type: "line",
+          data: { labels: labels, datasets: [
+            { label: "Ingresos", data: inc, borderColor: th.income, backgroundColor: grad(th.income), fill: true, tension: 0.4, borderWidth: 2.5, pointRadius: 0, pointHoverRadius: 5, pointHoverBackgroundColor: "#fff", pointHoverBorderWidth: 2 },
+            { label: "Gastos", data: exp, borderColor: th.expense, backgroundColor: grad(th.expense), fill: true, tension: 0.4, borderWidth: 2.5, pointRadius: 0, pointHoverRadius: 5, pointHoverBackgroundColor: "#fff", pointHoverBorderWidth: 2 }
+          ] },
+          options: FZ.baseChartOptions()
+        });
+      },
+      drawCat: function () {
+        var el = document.getElementById("catChart"); if (!el || !window.Chart) return;
+        if (catChart) catChart.destroy();
+        var cats = (this._cats || []).slice(0, 6);
+        var th = FZ.chartTheme();
+        catChart = new Chart(el, {
+          type: "doughnut",
+          data: { labels: cats.map(function (c) { return c.name; }), datasets: [{ data: cats.map(function (c) { return c.value; }), backgroundColor: cats.map(function (c) { return c.color; }), borderWidth: 2, borderColor: th.dark ? "#141414" : "#fafafa" }] },
+          options: { responsive: true, maintainAspectRatio: false, cutout: "68%", plugins: { legend: { display: false }, tooltip: { backgroundColor: th.tooltipBg, titleColor: th.tooltipFg, bodyColor: th.tooltipFg, borderColor: th.tooltipBorder, borderWidth: 1, callbacks: { label: function (c) { return " " + c.label + ": " + FZ.money(c.parsed); } } } } }
+        });
+      }
+    };
+  }
+</script>
+<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.9/dist/cdn.min.js"></script>
+</body>
+</html>

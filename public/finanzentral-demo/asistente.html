@@ -1,0 +1,415 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Asistente Virtual - Finanzentral (demo)</title>
+<meta name="description" content="Demo estática de Finanzentral con datos ficticios">
+<link rel="icon" href="./icon-finanzentral.webp">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Outfit:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="./styles.css">
+<script src="./app.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.1.11/dist/index.global.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.9/dist/chart.umd.min.js"></script>
+</head>
+<body class="font-sans antialiased">
+<div class="fz-banner" role="note">Demo con datos ficticios · No es la aplicación real</div>
+<aside id="fz-sidebar"></aside>
+<div class="fz-inset">
+  <div id="fz-header"></div>
+  <main class="flex flex-1 flex-col gap-4 p-4 pb-20 md:gap-6 md:p-6 md:pb-6" x-data="assistant()" x-init="init()">
+    <!-- app/dashboard/assistant/page.tsx -->
+    <div class="dash-dot-grid space-y-6 min-w-0">
+      <div class="dash-card-reveal dash-card-reveal-1 flex items-center gap-3">
+        <div class="h-8 w-1 shrink-0 rounded-full bg-gradient-to-b from-violet-500 to-blue-500"></div>
+        <div class="min-w-0">
+          <h1 class="font-display text-2xl font-bold tracking-tight md:text-3xl">Asistente Virtual</h1>
+          <p class="text-[11px] uppercase tracking-wider text-muted-foreground mt-1">Tu asesor financiero con IA</p>
+          <p class="text-[11px] text-amber-700 dark:text-amber-400 mt-1 flex items-start gap-1"><i data-icon="info" class="h-3.5 w-3.5 shrink-0 mt-px"></i><span>Conversación de ejemplo · Las respuestas son guionizadas, sin IA real</span></p>
+        </div>
+      </div>
+
+      <!-- components/dashboard/assistant/index.tsx (no reveal animation on this wrapper: a filter would trap the fixed drawer) -->
+      <div class="relative flex flex-col md:flex-row gap-4 h-[calc(100dvh-300px)] md:h-[calc(100dvh-250px)] min-h-[380px] md:min-h-[480px]">
+        <!-- Mobile overlay -->
+        <div :class="showHistory && isMobile ? 'block' : 'hidden'" x-cloak @click="showHistory = false" class="fixed inset-x-0 bottom-0 top-8 bg-black/50 z-[60] md:hidden!"></div>
+
+        <!-- conversation-sidebar.tsx -->
+        <div x-cloak :class="showHistory ? 'translate-x-0' : '-translate-x-full md:hidden!'"
+          class="dash-card-glass rounded-xl flex flex-col overflow-hidden transition-all duration-300 fixed md:relative top-8 bottom-0 left-0 md:top-auto md:bottom-auto z-[70] md:z-auto w-[85vw] max-w-[320px] md:w-80 md:shrink-0 bg-background md:bg-transparent"
+          role="complementary" aria-label="Historial de conversaciones">
+          <div class="p-3 md:p-4 flex flex-col h-full min-h-0 overflow-hidden">
+            <div class="flex items-center justify-between mb-3 md:mb-4 shrink-0">
+              <h3 class="font-semibold text-sm">Conversaciones</h3>
+              <div class="flex gap-1 md:gap-2">
+                <button type="button" @click="newConversation()" class="fz-icon-btn inline-flex items-center justify-center rounded-md h-8 w-8 p-0 hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50" aria-label="Nueva conversación"><i data-icon="plus" class="h-4 w-4"></i></button>
+                <button type="button" @click="showHistory = false" class="fz-icon-btn inline-flex items-center justify-center rounded-md h-8 w-8 p-0 hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50" aria-label="Cerrar historial"><i data-icon="x" class="h-4 w-4"></i></button>
+              </div>
+            </div>
+            <div class="flex-1 min-h-0 overflow-y-auto fz-scroll">
+              <div class="space-y-1.5 md:space-y-2 pb-2">
+                <div x-show="pinned().length" class="mb-3 md:mb-4 space-y-1.5 md:space-y-2">
+                  <p class="text-xs text-muted-foreground mb-2 px-2">Fijadas</p>
+                  <template x-for="c in pinned()" :key="c.id">
+                    <div x-html="itemHTML(c)" @click="onItemClick($event, c)"></div>
+                  </template>
+                </div>
+                <div x-show="recent().length" class="space-y-1.5 md:space-y-2">
+                  <p x-show="pinned().length" class="text-xs text-muted-foreground mb-2 px-2">Recientes</p>
+                  <template x-for="c in recent()" :key="c.id">
+                    <div x-html="itemHTML(c)" @click="onItemClick($event, c)"></div>
+                  </template>
+                </div>
+                <div x-show="!conversations.length" class="text-center text-sm text-muted-foreground py-6 md:py-8">
+                  <i data-icon="message-square" class="h-6 w-6 md:h-8 md:w-8 mx-auto mb-2 opacity-50"></i>
+                  <p>No hay conversaciones</p>
+                  <p class="text-xs mt-1">Comienza una nueva conversación</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chat card -->
+        <div class="dash-card-glass dash-card-reveal dash-card-reveal-2 flex-1 flex flex-col overflow-hidden min-w-0 min-h-0 w-full rounded-xl">
+          <div class="flex flex-col h-full p-0 min-h-0">
+            <div class="flex items-center gap-2 p-3 md:p-4 border-b shrink-0">
+              <button type="button" @click="showHistory = true" class="inline-flex items-center justify-center rounded-md text-sm font-medium h-9 px-3 border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50">
+                <i data-icon="message-square" class="h-4 w-4 mr-2"></i><span class="text-xs">Historial</span>
+              </button>
+              <button type="button" @click="newConversation()" class="inline-flex items-center justify-center rounded-md text-sm font-medium h-9 px-3 border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50">
+                <i data-icon="plus" class="h-4 w-4 mr-2"></i><span class="text-xs">Nueva</span>
+              </button>
+              <div class="flex-1"></div>
+              <span class="text-xs text-muted-foreground hidden sm:inline" x-text="conversationId ? 'Conversación activa' : 'Nueva conversación'"></span>
+            </div>
+
+            <!-- chat-message-list.tsx -->
+            <div x-ref="scroller" class="flex-1 min-h-0 overflow-y-auto fz-scroll bg-background/30" aria-live="polite">
+              <div class="p-4 md:p-6 space-y-3 md:space-y-4">
+                <div x-show="!messages.length" class="flex flex-col items-center justify-center h-full min-h-[200px] md:min-h-[300px] text-center px-4">
+                  <div class="rounded-full bg-primary/10 p-3 md:p-4 mb-3 md:mb-4"><i data-icon="bot" class="h-6 w-6 md:h-8 md:w-8 text-primary"></i></div>
+                  <h3 class="text-base md:text-lg font-semibold mb-2">Zenfi - Asistente Financiero</h3>
+                  <p class="text-xs md:text-sm text-muted-foreground max-w-md mb-6">Pregúntame sobre tus finanzas. Puedo consultar tus transacciones, balances, metas y más en tiempo real.</p>
+                </div>
+
+                <template x-for="m in messages" :key="m.id">
+                  <div class="flex gap-2 md:gap-3" :class="m.role === 'user' ? 'justify-end' : 'justify-start'">
+                    <template x-if="m.role === 'assistant'">
+                      <div class="rounded-full bg-primary/10 p-1.5 md:p-2 h-fit shrink-0"><i data-icon="bot" class="h-3.5 w-3.5 md:h-4 md:w-4 text-primary"></i></div>
+                    </template>
+                    <div class="rounded-lg px-3 md:px-4 py-2 max-w-[85%] md:max-w-[80%] min-w-0 break-words" :class="m.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'">
+                      <template x-if="m.role === 'user'">
+                        <p class="text-xs md:text-sm whitespace-pre-wrap break-words" x-text="m.text"></p>
+                      </template>
+                      <template x-if="m.role === 'assistant'">
+                        <div>
+                          <template x-for="tc in m.tools" :key="tc.name">
+                            <div class="flex items-center gap-2 text-xs py-1.5 px-2 rounded-md mb-2 transition-opacity" :class="tc.done ? 'bg-primary/5 text-muted-foreground opacity-60' : 'bg-primary/10 text-primary'">
+                              <span x-html="tc.done ? xic(TOOL_ICONS[tc.name] || 'search', 'h-3 w-3') : xic('loader', 'h-3 w-3 animate-spin')"></span>
+                              <span x-text="TOOL_NAMES[tc.name] || 'Procesando...'"></span>
+                            </div>
+                          </template>
+                          <div x-show="m.html" class="text-xs md:text-sm max-w-none" x-html="m.html"></div>
+                          <span x-show="!m.html" class="inline-block w-2 h-4 bg-primary/60 animate-pulse rounded-sm"></span>
+                        </div>
+                      </template>
+                    </div>
+                    <template x-if="m.role === 'user'">
+                      <div class="rounded-full bg-muted p-1.5 md:p-2 h-fit shrink-0"><i data-icon="user" class="h-3.5 w-3.5 md:h-4 md:w-4"></i></div>
+                    </template>
+                  </div>
+                </template>
+
+                <div x-show="thinking" class="flex gap-2 md:gap-3 justify-start">
+                  <div class="rounded-full bg-primary/10 p-1.5 md:p-2 h-fit shrink-0"><i data-icon="bot" class="h-3.5 w-3.5 md:h-4 md:w-4 text-primary"></i></div>
+                  <div class="rounded-lg px-3 md:px-4 py-2 bg-muted flex items-center gap-2">
+                    <span class="flex items-center gap-1 text-primary" aria-hidden="true"><span class="fz-dot"></span><span class="fz-dot"></span><span class="fz-dot"></span></span>
+                    <span class="text-xs text-muted-foreground">Pensando...</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- chat-input.tsx -->
+            <div class="border-t shrink-0 bg-background/60 backdrop-blur-sm">
+              <div class="px-3 md:px-4 pt-3 pb-1">
+                <p class="text-xs text-muted-foreground mb-2">Prueba preguntar:</p>
+                <div class="flex gap-1.5 overflow-x-auto fz-scroll pb-1 md:flex-wrap md:overflow-visible">
+                  <template x-for="p in SUGGESTED" :key="p">
+                    <button type="button" @click="send(p)" :disabled="loading" class="shrink-0 whitespace-nowrap text-xs px-3 py-1.5 rounded-full border border-border hover:bg-muted/80 hover:border-primary/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" x-text="p"></button>
+                  </template>
+                </div>
+              </div>
+              <form class="flex gap-2 p-3 md:p-4" @submit.prevent="send(input)">
+                <label for="chat-input" class="sr-only">Escribe tu pregunta</label>
+                <input id="chat-input" type="text" autocomplete="off" x-model="input" :disabled="loading" placeholder="Escribe tu pregunta..." class="fz-input flex-1 min-w-0 text-sm disabled:opacity-50" style="height:2.75rem">
+                <button x-show="loading" type="button" @click="stop()" title="Detener respuesta" class="fz-icon-btn shrink-0 inline-flex items-center justify-center rounded-md text-sm font-medium w-11 md:w-auto md:px-4 bg-destructive text-white hover:bg-destructive/90 dark:bg-destructive/60" style="height:2.75rem">
+                  <span x-html="xic('square', 'h-4 w-4 md:mr-2')"></span><span class="hidden md:inline">Detener</span>
+                </button>
+                <button x-show="!loading" type="submit" :disabled="!input.trim()" aria-label="Enviar" class="fz-icon-btn shrink-0 inline-flex items-center justify-center rounded-md text-sm font-medium w-11 md:w-auto md:px-4 bg-primary text-primary-foreground hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50" style="height:2.75rem">
+                  <i data-icon="send" class="h-4 w-4 md:mr-2"></i><span class="hidden md:inline">Enviar</span>
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+<div id="fz-bottomnav"></div>
+
+<script src="./data.js"></script>
+<script>FZ.mountShell("asistente");</script>
+<script>
+  /* Lucide icons that are not in the shared FZ map */
+  var XI = {
+    "pin": '<path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/>',
+    "pin-off": '<path d="M12 17v5"/><path d="M15 9.34V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H7.89"/><path d="m2 2 20 20"/><path d="M9 9v1.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h11"/>',
+    "square": '<rect width="18" height="18" x="3" y="3" rx="2"/>',
+    "loader": '<path d="M21 12a9 9 0 1 1-6.219-8.56"/>',
+    "calculator": '<rect width="16" height="20" x="4" y="2" rx="2"/><line x1="8" x2="16" y1="6" y2="6"/><line x1="16" x2="16" y1="14" y2="18"/><path d="M16 10h.01"/><path d="M12 10h.01"/><path d="M8 10h.01"/><path d="M12 14h.01"/><path d="M8 14h.01"/><path d="M12 18h.01"/><path d="M8 18h.01"/>'
+  };
+  function xic(name, cls) {
+    if (!XI[name]) return FZ.icon(name, cls);
+    return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="' + (cls || "h-4 w-4") + '">' + XI[name] + "</svg>";
+  }
+
+  /* components/dashboard/assistant/types.ts */
+  var TOOL_NAMES = {
+    lookupTransactions: "Buscando transacciones...",
+    getFinancialSummary: "Calculando resumen financiero...",
+    getCategoryBreakdown: "Analizando categorías...",
+    getGoals: "Consultando metas de ahorro...",
+    getMoneySourceBalances: "Revisando fuentes de dinero...",
+    getCreditCards: "Consultando tarjetas de crédito...",
+    runCalculator: "Ejecutando cálculos..."
+  };
+  var TOOL_ICONS = { lookupTransactions: "search", getFinancialSummary: "bar-chart-3", getCategoryBreakdown: "bar-chart-3", getGoals: "target", getMoneySourceBalances: "wallet", getCreditCards: "credit-card", runCalculator: "calculator" };
+  var SUGGESTED = ["¿Cuánto gasté este mes?", "¿Cuál es mi tasa de ahorro?", "Muestra mis fuentes de dinero", "Analiza mis gastos por categoría"];
+
+  /* ---------- Scripted answers (computed from FZDATA, no AI) ---------- */
+  var ZENFI = (function () {
+    var D = FZDATA, now = D.today, Y = now.getFullYear(), M = now.getMonth();
+    var money = FZ.money;
+    function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+    function P(s) { return '<p class="mb-2 last:mb-0">' + s + "</p>"; }
+    function B(s) { return '<strong class="font-semibold">' + s + "</strong>"; }
+    function H(s) { return '<h4 class="text-xs md:text-sm font-semibold mb-1">' + s + "</h4>"; }
+    function UL(items) { return '<ul class="list-disc pl-4 mb-2 space-y-1">' + items.map(function (i) { return '<li class="text-xs md:text-sm">' + i + "</li>"; }).join("") + "</ul>"; }
+    function TABLE(head, rows) {
+      return '<div class="overflow-x-auto my-2"><table class="min-w-full text-xs border-collapse"><thead><tr>' +
+        head.map(function (h) { return '<th class="border border-border px-2 py-1 bg-muted/50 text-left font-semibold whitespace-nowrap">' + h + "</th>"; }).join("") + "</tr></thead><tbody>" +
+        rows.map(function (r) { return "<tr>" + r.map(function (c) { return '<td class="border border-border px-2 py-1 whitespace-nowrap">' + c + "</td>"; }).join("") + "</tr>"; }).join("") + "</tbody></table></div>";
+    }
+    function pct(a, b) { return b > 0 ? a / b * 100 : 0; }
+    var curKey = D.monthKey(Y, M), prevD = new Date(Y, M - 1, 1), prevKey = D.monthKey(prevD.getFullYear(), prevD.getMonth());
+    var monthName = FZ.MONTHS[M].toLowerCase(), prevName = FZ.MONTHS[prevD.getMonth()].toLowerCase();
+
+    function spent() {
+      var c = D.monthTotals(D.transactions, curKey), p = D.monthTotals(D.transactions, prevKey);
+      var cats = D.byCategory(D.transactions, function (t) { return D.ym(t.date) === curKey; });
+      var n = D.transactions.filter(function (t) { return t.type === "gasto" && D.ym(t.date) === curKey; }).length;
+      var diff = pct(c.expenses - p.expenses, p.expenses);
+      return { tools: ["getFinancialSummary", "lookupTransactions"], html:
+        P("En " + monthName + " (hasta hoy, día " + now.getDate() + ") llevas gastado " + B(money(c.expenses)) + " en " + n + " transacciones.") +
+        UL(["Promedio diario: " + B(money(c.expenses / now.getDate())),
+            "Ingresos del mes: " + B(money(c.income)),
+            "Mes anterior (" + prevName + " completo): " + money(p.expenses) + " (" + (diff >= 0 ? "+" : "") + diff.toFixed(1) + "%)"]) +
+        H("Donde se fue más dinero") +
+        UL(cats.slice(0, 3).map(function (k) { return k.name + ": " + B(money(k.value)); })) +
+        P("Si mantienes este ritmo cerrarías el mes cerca de " + B(money(c.expenses / now.getDate() * new Date(Y, M + 1, 0).getDate())) + ".") };
+    }
+    function savings() {
+      var rows = D.lastMonths(6).map(function (m) {
+        var t = D.monthTotals(D.transactions, m.key);
+        return [FZ.MONTHS[m.m] + (m.key === curKey ? " *" : ""), money(t.income), money(t.expenses), pct(t.income - t.expenses, t.income).toFixed(1) + "%"];
+      });
+      var all = D.lastMonths(6).reduce(function (a, m) { var t = D.monthTotals(D.transactions, m.key); a.i += t.income; a.e += t.expenses; return a; }, { i: 0, e: 0 });
+      var rate = pct(all.i - all.e, all.i);
+      return { tools: ["getFinancialSummary", "runCalculator"], html:
+        P("Tu tasa de ahorro de los últimos 6 meses es " + B(rate.toFixed(1) + "%") + ": ahorraste " + money(all.i - all.e) + " de " + money(all.i) + " en ingresos.") +
+        TABLE(["Mes", "Ingresos", "Gastos", "Tasa"], rows) +
+        P('<span class="text-muted-foreground">* Mes en curso.</span>') +
+        P(rate >= 20 ? "Estás por encima del 20% recomendado. Buen trabajo." : "Está por debajo del 20% recomendado; revisa tus gastos variables para mejorarla.") };
+    }
+    function sources() {
+      var tot = D.totalBalancePEN();
+      var rows = D.moneySources.map(function (s) { return [esc(s.name), D.MONEY_SOURCE_TYPE_LABELS[s.type], money(s.balance, s.currency)]; });
+      return { tools: ["getMoneySourceBalances"], html:
+        P("Tienes " + D.moneySources.length + " fuentes de dinero activas:") +
+        TABLE(["Fuente", "Tipo", "Saldo"], rows) +
+        P("Saldo total equivalente: " + B(money(tot)) + " (dólares convertidos a S/ " + D.USD_RATE.toFixed(2) + ").") };
+    }
+    function categories() {
+      var cats = D.byCategory(D.transactions, function (t) { return D.ym(t.date) === curKey; });
+      var tot = cats.reduce(function (a, c) { return a + c.value; }, 0);
+      var prev = {}; D.byCategory(D.transactions, function (t) { return D.ym(t.date) === prevKey; }).forEach(function (c) { prev[c.id] = c.value; });
+      var rows = cats.slice(0, 6).map(function (c) {
+        var p = prev[c.id] || 0, d = p ? pct(c.value - p, p) : 0;
+        return [c.name, money(c.value), pct(c.value, tot).toFixed(1) + "%", p ? (d >= 0 ? "+" : "") + d.toFixed(0) + "%" : "Nuevo"];
+      });
+      var up = cats.filter(function (c) { return prev[c.id] && c.value > prev[c.id]; }).sort(function (a, b) { return (b.value - prev[b.id]) - (a.value - prev[a.id]); })[0];
+      return { tools: ["getCategoryBreakdown"], html:
+        P("Así se reparten tus gastos de " + monthName + " (" + money(tot) + " en total):") +
+        TABLE(["Categoría", "Monto", "%", "vs " + prevName.slice(0, 3)], rows) +
+        P(cats[0] ? B(cats[0].name) + " es tu categoría principal con el " + pct(cats[0].value, tot).toFixed(1) + "% del gasto." : "") +
+        (up ? P("La que más subió frente al mes pasado es " + B(up.name) + " (+" + money(up.value - prev[up.id]) + ").") : "") };
+    }
+    function goals() {
+      return { tools: ["getGoals"], html:
+        P("Estas son tus metas de ahorro:") +
+        UL(D.goals.map(function (g) { return B(esc(g.name)) + ": " + money(g.current) + " de " + money(g.target) + " (" + pct(g.current, g.target).toFixed(0) + "%), aporte sugerido " + money(g.monthly) + "/mes"; })) +
+        P("La más cercana a cumplirse es " + B("Curso de inglés") + "; con dos aportes más la completas.") };
+    }
+    function cards() {
+      return { tools: ["getCreditCards"], html:
+        P("Resumen de tus tarjetas de crédito:") +
+        TABLE(["Tarjeta", "Deuda", "Uso de línea"], D.creditCards.map(function (c) {
+          var debt = c.debtLocal + c.debtUsd * D.USD_RATE;
+          return [esc(c.name) + " *" + c.last4, money(c.debtLocal) + (c.debtUsd ? " + " + money(c.debtUsd, "USD") : ""), pct(debt, c.limit).toFixed(0) + "%"];
+        })) +
+        P("Recuerda pagar el total del estado de cuenta para evitar intereses.") };
+    }
+    function generic(text) {
+      return { tools: [], html:
+        P("Gracias por tu pregunta. " + B("Esta es una demo sin IA real") + ": Zenfi solo tiene respuestas guionizadas y no puede interpretar \"" + esc(text.length > 80 ? text.slice(0, 80) + "..." : text) + "\".") +
+        P("En la aplicación real el asistente consulta tus datos con herramientas y responde en lenguaje natural. Aquí puedes probar:") +
+        UL(SUGGESTED.concat(["¿Cómo voy con mis metas?", "¿Cuánto debo en mis tarjetas?"]).map(esc)) };
+    }
+    function norm(s) { return s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, ""); }
+    function answer(text) {
+      var t = norm(text);
+      if (/tasa|ahorr/.test(t) && !/meta/.test(t)) return savings();
+      if (/fuente|saldo|cuenta|balance/.test(t)) return sources();
+      if (/categor/.test(t)) return categories();
+      if (/meta/.test(t)) return goals();
+      if (/tarjeta|credito|deuda/.test(t)) return cards();
+      if (/gast|cuanto/.test(t)) return spent();
+      return generic(text);
+    }
+    return { answer: answer, spent: spent, savings: savings, sources: sources, categories: categories, goals: goals, cards: cards };
+  })();
+
+  function assistant() {
+    var D = FZDATA, now = D.today, seq = 0;
+    function ago(days) { var d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - days); return D.iso(d); }
+    function a(fn) { var r = fn(); return { id: "m" + (++seq), role: "assistant", tools: r.tools.map(function (n) { return { name: n, done: true }; }), html: r.html }; }
+    function u(text) { return { id: "m" + (++seq), role: "user", text: text }; }
+    var convs = [
+      { id: "c1", title: "Resumen de gastos del mes", pinned: true, last: ago(0), messages: [
+        u("¿Cuánto gasté este mes?"), a(ZENFI.spent),
+        u("¿Y en qué categoría gasté más?"), a(ZENFI.categories),
+        u("¿Cómo voy con mis metas de ahorro?"), a(ZENFI.goals)] },
+      { id: "c2", title: "Revisión de fuentes de dinero", pinned: true, last: ago(3), messages: [u("Muestra mis fuentes de dinero"), a(ZENFI.sources)] },
+      { id: "c3", title: "Tasa de ahorro de los últimos meses", pinned: false, last: ago(6), messages: [u("¿Cuál es mi tasa de ahorro?"), a(ZENFI.savings)] },
+      { id: "c4", title: "Deuda de tarjetas de crédito", pinned: false, last: ago(12), messages: [u("¿Cuánto debo en mis tarjetas de crédito?"), a(ZENFI.cards)] }
+    ];
+    var timers = [];
+
+    return {
+      SUGGESTED: SUGGESTED, TOOL_NAMES: TOOL_NAMES, TOOL_ICONS: TOOL_ICONS,
+      conversations: convs, conversationId: "c1", messages: [], input: "", loading: false, thinking: false,
+      showHistory: false, isMobile: false,
+
+      init: function () {
+        var self = this;
+        this.isMobile = window.innerWidth < 768;
+        this.showHistory = !this.isMobile;
+        this.messages = convs[0].messages.slice();
+        window.addEventListener("resize", function () { self.isMobile = window.innerWidth < 768; });
+        document.addEventListener("keydown", function (e) { if (e.key === "Escape" && self.isMobile) self.showHistory = false; });
+        this.scroll();
+      },
+      pinned: function () { return this.conversations.filter(function (c) { return c.pinned; }); },
+      recent: function () { return this.conversations.filter(function (c) { return !c.pinned; }); },
+      current: function () { var id = this.conversationId; return this.conversations.filter(function (c) { return c.id === id; })[0] || null; },
+      formatDate: function (iso) { var r = FZ.relDate(iso); return r === "hoy" ? "hace unos minutos" : r; },
+
+      /* conversation-item.tsx rendered as HTML so the icon buttons can use local SVGs */
+      itemHTML: function (c) {
+        var act = c.id === this.conversationId;
+        var btn = "fz-icon-btn inline-flex items-center justify-center h-7 w-7 md:h-8 md:w-8 p-0 rounded-md border-0 " + (act ? "text-primary-foreground hover:bg-primary-foreground/20" : "text-foreground/70 hover:text-foreground hover:bg-muted/60 dark:hover:bg-muted/40");
+        var del = "fz-icon-btn inline-flex items-center justify-center h-7 w-7 md:h-8 md:w-8 p-0 rounded-md border-0 " + (act ? "text-primary-foreground hover:bg-primary-foreground/20" : "text-foreground/70 hover:text-destructive hover:bg-destructive/10");
+        var title = String(c.title || "Nueva conversación").replace(/[&<>"]/g, function (ch) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[ch]; });
+        return '<div role="button" tabindex="0" class="group relative p-2.5 md:p-3 rounded-lg cursor-pointer transition-all duration-200 active:scale-[0.98] ' + (act ? "bg-primary text-primary-foreground shadow-sm" : "hover:bg-muted/60") + '">' +
+          '<div class="grid grid-cols-[70%_30%] items-center gap-1"><div class="min-w-0 pr-2"><div class="flex items-center gap-2 mb-1">' +
+          (c.pinned ? xic("pin", "h-3 w-3 md:h-3.5 md:w-3.5 shrink-0 " + (act ? "text-primary-foreground/90" : "text-primary")) : "") +
+          '<p class="text-xs md:text-sm font-medium truncate">' + title + "</p></div>" +
+          '<p class="text-xs ' + (act ? "text-primary-foreground/70" : "text-muted-foreground") + '">' + this.formatDate(c.last) + "</p></div>" +
+          '<div class="flex justify-end gap-1 shrink-0 items-center">' +
+          '<button type="button" data-act="pin" class="' + btn + '" title="' + (c.pinned ? "Desfijar conversación" : "Fijar conversación") + '" aria-label="' + (c.pinned ? "Desfijar conversación" : "Fijar conversación") + '">' + xic(c.pinned ? "pin" : "pin-off", "h-3.5 w-3.5 md:h-4 md:w-4") + "</button>" +
+          '<button type="button" data-act="del" class="' + del + '" title="Eliminar conversación" aria-label="Eliminar conversación">' + xic("trash", "h-3.5 w-3.5 md:h-4 md:w-4") + "</button>" +
+          "</div></div></div>";
+      },
+      onItemClick: function (e, c) {
+        var b = e.target.closest("[data-act]");
+        if (b && b.getAttribute("data-act") === "pin") { c.pinned = !c.pinned; FZ.toast(c.pinned ? "Conversación fijada" : "Conversación desfijada"); return; }
+        if (b && b.getAttribute("data-act") === "del") { FZ.notInDemo(); return; }
+        this.selectConversation(c);
+      },
+      cancel: function () { timers.forEach(clearTimeout); timers = []; this.loading = false; this.thinking = false; },
+      selectConversation: function (c) {
+        this.cancel();
+        this.conversationId = c.id;
+        this.messages = c.messages.slice();
+        if (this.isMobile) this.showHistory = false;
+        this.scroll();
+      },
+      newConversation: function () {
+        this.cancel();
+        this.conversationId = null;
+        this.messages = [];
+        this.input = "";
+        if (this.isMobile) this.showHistory = false;
+      },
+      scroll: function () {
+        var self = this;
+        function go() { var el = self.$refs.scroller; if (el) el.scrollTop = el.scrollHeight; }
+        this.$nextTick(go); setTimeout(go, 60);
+      },
+      send: function (text) {
+        text = String(text || "").trim();
+        if (!text || this.loading) return;
+        var self = this;
+        var conv = this.current();
+        if (!conv) {
+          conv = { id: "c" + Date.now(), title: text.length > 40 ? text.slice(0, 40) + "..." : text, pinned: false, last: D.iso(now), messages: [] };
+          this.conversations.unshift(conv);
+          this.conversationId = conv.id;
+          conv = this.current();
+        }
+        var userMsg = u(text);
+        this.messages.push(userMsg); conv.messages.push(userMsg); conv.last = D.iso(now);
+        this.input = ""; this.loading = true; this.thinking = true; this.scroll();
+        var r = ZENFI.answer(text);
+        timers.push(setTimeout(function () {
+          self.thinking = false;
+          var msg = { id: "m" + (++seq), role: "assistant", tools: r.tools.map(function (n) { return { name: n, done: false }; }), html: "" };
+          self.messages.push(msg);
+          var live = self.messages[self.messages.length - 1];
+          self.scroll();
+          timers.push(setTimeout(function () {
+            live.tools.forEach(function (tc) { tc.done = true; });
+            live.html = r.html;
+            conv.messages.push(live);
+            self.loading = false; timers = [];
+            self.scroll();
+          }, r.tools.length ? 800 : 400));
+        }, 900));
+      },
+      stop: function () {
+        var last = this.messages[this.messages.length - 1];
+        if (last && last.role === "assistant" && !last.html) this.messages.pop();
+        this.cancel();
+      }
+    };
+  }
+</script>
+<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.9/dist/cdn.min.js"></script>
+</body>
+</html>

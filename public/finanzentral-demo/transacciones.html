@@ -1,0 +1,420 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Transacciones - Finanzentral (demo)</title>
+<meta name="description" content="Demo estática de Finanzentral con datos ficticios">
+<link rel="icon" href="./icon-finanzentral.webp">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Outfit:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="./styles.css">
+<script src="./app.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.1.11/dist/index.global.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.9/dist/chart.umd.min.js"></script>
+</head>
+<body class="font-sans antialiased">
+<div class="fz-banner" role="note">Demo con datos ficticios · No es la aplicación real</div>
+<aside id="fz-sidebar"></aside>
+<div class="fz-inset">
+  <div id="fz-header"></div>
+  <main class="flex flex-1 flex-col gap-4 p-4 pb-20 md:gap-6 md:p-6 md:pb-6" x-data="txPage()" x-init="init()" @keydown.escape.window="closeAll()" @scroll.window="menu = null" @resize.window="menu = null">
+    <div class="dash-dot-grid space-y-6">
+      <div class="dash-card-reveal dash-card-reveal-1 flex items-center gap-3">
+        <div class="h-8 w-1 rounded-full bg-gradient-to-b from-blue-500 to-violet-500"></div>
+        <div>
+          <h1 class="font-display text-2xl font-bold tracking-tight md:text-3xl">Transacciones</h1>
+          <p class="text-[11px] uppercase tracking-wider text-muted-foreground mt-1">Gestiona y visualiza todas tus transacciones financieras</p>
+        </div>
+      </div>
+
+      <div class="space-y-4">
+        <!-- Search + actions (transaction-filters.tsx) -->
+        <div class="dash-card-glass rounded-xl px-4 py-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div class="relative flex-1 max-w-full sm:max-w-sm">
+            <i data-icon="search" class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"></i>
+            <label for="tx-search" class="sr-only">Buscar transacciones</label>
+            <input id="tx-search" type="search" class="fz-input pl-9" placeholder="Buscar transacciones..." x-model.debounce.250ms="q" @input="page = 1">
+          </div>
+          <div class="flex gap-2">
+            <button type="button" @click="openCreate()" class="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 h-9 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground shadow-xs hover:bg-primary/90"><i data-icon="plus" class="h-4 w-4"></i>Nueva Transaccion</button>
+            <button type="button" @click="FZ.notInDemo()" class="fz-icon-btn flex-1 sm:flex-none inline-flex items-center justify-center gap-2 h-9 rounded-md border border-border bg-background/50 px-3 text-sm font-medium hover:bg-muted/60" aria-label="Exportar"><i data-icon="download" class="h-4 w-4"></i><span class="hidden sm:inline">Exportar</span></button>
+            <button type="button" @click="FZ.notInDemo()" class="fz-icon-btn flex-1 sm:flex-none inline-flex items-center justify-center gap-2 h-9 rounded-md border border-border bg-background/50 px-3 text-sm font-medium hover:bg-muted/60" aria-label="Importar"><i data-icon="upload" class="h-4 w-4"></i><span class="hidden sm:inline">Importar</span></button>
+            <button type="button" @click="FZ.notInDemo()" class="fz-icon-btn flex-1 sm:flex-none inline-flex items-center justify-center gap-2 h-9 rounded-md border border-border bg-background/50 px-3 text-sm font-medium hover:bg-muted/60" aria-label="Escanear recibo"><i data-icon="camera" class="h-4 w-4"></i><span class="hidden sm:inline">Escanear</span></button>
+          </div>
+        </div>
+
+        <!-- Basic filters (transactions/basic-filters.tsx) -->
+        <div class="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+          <label class="sr-only" for="f-type">Tipo</label>
+          <select id="f-type" class="fz-select sm:w-[140px]" x-model="f.type" @change="page = 1">
+            <option value="all">Todos</option><option value="ingreso">Ingresos</option><option value="gasto">Gastos</option>
+          </select>
+          <label class="sr-only" for="f-period">Periodo</label>
+          <select id="f-period" class="fz-select sm:w-[160px]" x-model="f.period" @change="page = 1; f.month = ''; f.from = ''; f.to = ''">
+            <option value="7">Ultimos 7 dias</option><option value="30">Ultimos 30 dias</option><option value="90">Ultimos 90 dias</option><option value="365">Ultimo ano</option><option value="all">Todo el tiempo</option>
+          </select>
+          <label class="sr-only" for="f-limit">Por pagina</label>
+          <select id="f-limit" class="fz-select sm:w-[140px]" x-model="f.limit" @change="page = 1">
+            <option value="15">15 por pagina</option><option value="30">30 por pagina</option><option value="100">100 por pagina</option><option value="all">Todos</option>
+          </select>
+          <label class="sr-only" for="f-cc">Tarjetas</label>
+          <select id="f-cc" class="fz-select sm:w-[180px]" x-model="f.cc" @change="page = 1">
+            <option value="include">Incluir tarjetas</option><option value="exclude">Solo fuentes</option><option value="only">Solo tarjetas</option>
+          </select>
+        </div>
+
+        <!-- Advanced filters (transactions/advanced-filters.tsx) -->
+        <div>
+          <button type="button" @click="adv = !adv" :aria-expanded="adv" class="w-full sm:w-auto inline-flex items-center justify-between gap-6 h-8 rounded-md px-3 text-sm font-medium hover:bg-muted/60">
+            <span class="flex items-center gap-2"><i data-icon="filter" class="h-4 w-4"></i>Filtros avanzados<span x-show="advCount > 0" class="ml-1 rounded-full bg-primary/15 text-primary text-[10px] px-1.5" x-text="advCount"></span></span>
+            <span x-html="FZ.icon(adv ? 'chevron-up' : 'chevron-down', 'h-4 w-4')"></span>
+          </button>
+          <div x-show="adv" x-cloak class="pt-2 grid gap-2 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+            <div><label class="text-[11px] text-muted-foreground" for="f-month">Mes</label>
+              <select id="f-month" class="fz-select" x-model="f.month" @change="if (f.month) f.period = 'all'; page = 1">
+                <option value="">Todos los meses</option>
+                <template x-for="(m, i) in FZ.MONTHS" :key="i"><option :value="String(i)" x-text="m"></option></template>
+              </select></div>
+            <div><label class="text-[11px] text-muted-foreground" for="f-cat">Categoria</label>
+              <select id="f-cat" class="fz-select" x-model="f.cat" @change="page = 1">
+                <option value="">Todas las categorias</option>
+                <template x-for="c in D.categories" :key="c.id"><option :value="c.id" x-text="c.name"></option></template>
+              </select></div>
+            <div><label class="text-[11px] text-muted-foreground" for="f-src">Fuente de dinero</label>
+              <select id="f-src" class="fz-select" x-model="f.src" @change="page = 1">
+                <option value="">Todas las fuentes</option>
+                <template x-for="s in D.moneySources" :key="s.id"><option :value="s.id" x-text="s.name"></option></template>
+                <template x-for="c in D.creditCards" :key="c.id"><option :value="c.id" x-text="c.name + ' (TC)'"></option></template>
+              </select></div>
+            <div><label class="text-[11px] text-muted-foreground" for="f-from">Desde</label>
+              <input id="f-from" type="date" class="fz-input" x-model="f.from" @change="f.period = 'all'; page = 1"></div>
+            <div><label class="text-[11px] text-muted-foreground" for="f-to">Hasta</label>
+              <input id="f-to" type="date" class="fz-input" x-model="f.to" @change="f.period = 'all'; page = 1"></div>
+            <div class="flex items-end"><button type="button" @click="resetFilters()" class="w-full inline-flex items-center justify-center gap-2 h-9 rounded-md border border-border px-3 text-sm hover:bg-muted/60"><i data-icon="x" class="h-4 w-4"></i>Limpiar filtros</button></div>
+          </div>
+        </div>
+
+        <!-- Summary of the filtered set -->
+        <div class="grid grid-cols-3 gap-2 sm:gap-3">
+          <div class="dash-card-glass rounded-xl px-3 py-2.5 min-w-0"><p class="text-[10px] uppercase tracking-wider text-muted-foreground">Ingresos</p><p class="font-display text-sm sm:text-lg font-bold dash-text-income truncate" x-text="FZ.money(sumIncome)"></p></div>
+          <div class="dash-card-glass rounded-xl px-3 py-2.5 min-w-0"><p class="text-[10px] uppercase tracking-wider text-muted-foreground">Gastos</p><p class="font-display text-sm sm:text-lg font-bold dash-text-expense truncate" x-text="FZ.money(sumExpense)"></p></div>
+          <div class="dash-card-glass rounded-xl px-3 py-2.5 min-w-0"><p class="text-[10px] uppercase tracking-wider text-muted-foreground">Neto</p><p class="font-display text-sm sm:text-lg font-bold dash-text-primary truncate" x-text="FZ.money(sumIncome - sumExpense)"></p></div>
+        </div>
+
+        <!-- Table (transaction-table.tsx + transactions/transaction-row.tsx) -->
+        <div x-show="filtered.length === 0" class="dash-card-glass rounded-xl p-12 text-center text-muted-foreground">
+          <p class="font-display text-lg font-medium">No hay transacciones</p>
+          <p class="text-[11px] mt-1">Prueba con otros filtros o crea una nueva transaccion</p>
+        </div>
+        <div x-show="filtered.length > 0" class="dash-card-glass rounded-xl overflow-hidden">
+          <div x-show="selected.length > 0" x-cloak class="flex items-center justify-between gap-2 border-b border-border/50 bg-primary/5 px-4 py-2 text-sm">
+            <span><span x-text="selected.length"></span> seleccionada(s)</span>
+            <div class="flex gap-2">
+              <button type="button" @click="deleteSelected()" class="inline-flex items-center gap-1.5 h-8 rounded-md px-3 text-xs font-medium text-destructive hover:bg-destructive/10"><i data-icon="trash" class="h-3.5 w-3.5"></i>Eliminar</button>
+              <button type="button" @click="selected = []" class="inline-flex items-center h-8 rounded-md px-3 text-xs hover:bg-muted/60">Cancelar</button>
+            </div>
+          </div>
+          <div class="overflow-x-auto fz-scroll">
+            <table class="w-full caption-bottom text-sm">
+              <thead class="[&_tr]:border-b">
+                <tr class="border-b">
+                  <th class="h-10 px-2 text-left w-10"><input type="checkbox" class="h-4 w-4 accent-[var(--primary)] align-middle" :checked="allPageSelected" @change="togglePage()" aria-label="Seleccionar todas las transacciones"></th>
+                  <th class="h-10 px-2 text-left font-medium text-foreground min-w-[100px]">Fecha</th>
+                  <th class="h-10 px-2 text-left font-medium text-foreground min-w-[200px]">Descripcion</th>
+                  <th class="h-10 px-2 text-left font-medium text-foreground hidden lg:table-cell">Categoria</th>
+                  <th class="h-10 px-2 text-left font-medium text-foreground hidden xl:table-cell">Fuente de Dinero</th>
+                  <th class="h-10 px-2 text-left font-medium text-foreground min-w-20">Tipo</th>
+                  <th class="h-10 px-2 text-right font-medium text-foreground min-w-[100px]">Monto</th>
+                  <th class="h-10 px-2 text-left font-medium text-foreground hidden sm:table-cell">Estado</th>
+                  <th class="h-10 px-2 w-[50px]"><span class="sr-only">Acciones</span></th>
+                </tr>
+              </thead>
+              <tbody class="[&_tr:last-child]:border-0">
+                <template x-for="t in pageRows" :key="t.id">
+                  <tr class="border-b transition-colors" :class="t.card ? 'bg-blue-50/50 dark:bg-blue-950/20 hover:bg-blue-100/60 dark:hover:bg-blue-950/30' : 'hover:bg-muted/50'">
+                    <td class="p-2 w-10"><input type="checkbox" class="h-4 w-4 accent-[var(--primary)] align-middle" :checked="selected.includes(t.id)" @change="toggle(t.id)" :aria-label="'Seleccionar transacción ' + t.description"></td>
+                    <td class="p-2 text-sm whitespace-nowrap" x-text="FZ.fmtDate(t.date)"></td>
+                    <td class="p-2">
+                      <div class="flex items-center gap-3">
+                        <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full" :class="t.card ? 'bg-blue-100 dark:bg-blue-950' : (t.type === 'ingreso' ? 'bg-green-100 dark:bg-green-950' : 'bg-red-100 dark:bg-red-950')">
+                          <span x-html="t.card ? FZ.icon('credit-card', 'h-4 w-4 text-blue-600 dark:text-blue-400') : FZ.icon(t.type === 'ingreso' ? 'arrow-down-left' : 'arrow-up-right', 'h-4 w-4 ' + (t.type === 'ingreso' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'))"></span>
+                        </div>
+                        <div class="min-w-0">
+                          <div class="flex items-center gap-2">
+                            <span class="text-sm font-medium block truncate" x-text="t.description"></span>
+                            <span x-show="t.card" class="inline-flex items-center rounded-md border text-[10px] px-1.5 h-5 bg-blue-100 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300"><i data-icon="credit-card" class="h-3 w-3 mr-1"></i>TC</span>
+                            <span x-show="t.installments > 1" class="text-[10px] text-muted-foreground whitespace-nowrap" x-text="t.installments + ' cuotas'"></span>
+                          </div>
+                          <p class="text-xs text-muted-foreground truncate" x-text="t.card ? D.cardById(t.card).name : t.subcategory"></p>
+                          <div x-show="t.via === 'whatsapp'" class="flex items-center gap-1 text-xs text-muted-foreground mt-0.5"><i data-icon="message-circle" class="h-3 w-3 text-green-600 dark:text-green-400"></i><span>Via WhatsApp</span></div>
+                        </div>
+                      </div>
+                    </td>
+                    <td class="p-2 hidden lg:table-cell"><span class="inline-flex items-center rounded-md border border-border px-2 py-0.5 text-xs font-medium whitespace-nowrap" x-text="catName(t)"></span></td>
+                    <td class="p-2 hidden xl:table-cell">
+                      <div class="flex flex-col"><span class="text-sm font-medium" x-text="srcName(t)"></span><span class="text-xs text-muted-foreground" x-text="srcType(t)"></span></div>
+                    </td>
+                    <td class="p-2"><span class="inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium whitespace-nowrap" :class="t.type === 'ingreso' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground'" x-text="t.type === 'ingreso' ? 'Ingreso' : 'Gasto'"></span></td>
+                    <td class="p-2 text-right font-semibold whitespace-nowrap" :class="t.type === 'ingreso' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'">
+                      <span x-text="(t.type === 'ingreso' ? '+' : '-') + FZ.money(t.amount, t.currency)"></span>
+                      <span x-show="t.currency === 'USD'" class="block text-[10px] font-normal text-muted-foreground" x-text="'≈ ' + FZ.money(D.toPEN(t))"></span>
+                    </td>
+                    <td class="p-2 hidden sm:table-cell"><span class="inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium" :class="t.status === 'completado' ? 'bg-primary text-primary-foreground' : 'border border-border'" x-text="t.status"></span></td>
+                    <td class="p-2">
+                      <button type="button" class="fz-icon-btn inline-flex size-9 items-center justify-center rounded-md hover:bg-muted/70" @click.stop="openMenu(t, $event)" aria-label="Abrir menu" :aria-expanded="menu && menu.id === t.id"><i data-icon="more-horizontal" class="h-4 w-4"></i></button>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+          <!-- Pagination (transactions/pagination-controls.tsx) -->
+          <div class="border-t px-4 py-3">
+            <div class="flex flex-col sm:flex-row items-center justify-end gap-4">
+              <span class="text-sm text-muted-foreground order-2 sm:order-1" x-text="showingText" data-testid="showing"></span>
+              <div x-show="totalPages > 1" class="flex items-center gap-2 order-1 sm:order-2">
+                <button type="button" @click="page--" :disabled="page <= 1" class="inline-flex items-center gap-1.5 h-8 rounded-md border border-border px-2.5 text-sm hover:bg-muted/60 disabled:opacity-50 disabled:pointer-events-none" aria-label="Página anterior"><i data-icon="chevron-left" class="h-4 w-4"></i><span class="hidden sm:inline">Anterior</span></button>
+                <div class="flex items-center gap-1">
+                  <template x-for="n in pageNumbers" :key="n">
+                    <button type="button" @click="page = n" class="w-8 h-8 md:w-8 min-w-[2rem] rounded-md text-sm" :class="page === n ? 'bg-primary text-primary-foreground' : 'border border-border hover:bg-muted/60'" x-text="n" :aria-current="page === n ? 'page' : null"></button>
+                  </template>
+                </div>
+                <button type="button" @click="page++" :disabled="page >= totalPages" class="inline-flex items-center gap-1.5 h-8 rounded-md border border-border px-2.5 text-sm hover:bg-muted/60 disabled:opacity-50 disabled:pointer-events-none" aria-label="Página siguiente"><span class="hidden sm:inline">Siguiente</span><i data-icon="chevron-right" class="h-4 w-4"></i></button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- Row actions menu (fixed, so the table scroll box does not clip it) -->
+    <div x-show="menu" x-cloak @click.outside="menu = null" class="fixed z-[60] w-44 rounded-md border border-border bg-popover text-popover-foreground p-1 shadow-md text-sm" :style="menu ? 'top:' + menu.top + 'px;left:' + menu.left + 'px' : ''" role="menu">
+      <p class="px-2 py-1.5 text-sm font-semibold">Acciones</p>
+      <div class="-mx-1 my-1 h-px bg-border"></div>
+      <button type="button" role="menuitem" @click="view(menu.t)" class="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 hover:bg-muted"><i data-icon="eye" class="h-4 w-4"></i>Ver detalles</button>
+      <button type="button" role="menuitem" @click="menu = null; FZ.notInDemo()" class="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 hover:bg-muted"><i data-icon="pencil" class="h-4 w-4"></i>Editar</button>
+      <div class="-mx-1 my-1 h-px bg-border"></div>
+      <button type="button" role="menuitem" @click="remove(menu.t.id)" class="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-destructive hover:bg-destructive/10"><i data-icon="trash" class="h-4 w-4"></i>Eliminar</button>
+    </div>
+
+    <!-- Create dialog (transactions/create-transaction-dialog.tsx) -->
+    <div x-show="createOpen" x-cloak class="fixed inset-0 z-[85] flex items-end sm:items-center justify-center" role="dialog" aria-modal="true" aria-labelledby="create-title">
+      <div class="absolute inset-0 bg-black/50" @click="createOpen = false"></div>
+      <form @submit.prevent="submit()" class="relative w-full sm:max-w-lg max-h-[90vh] overflow-y-auto rounded-t-xl sm:rounded-lg border border-border bg-background p-6 shadow-lg">
+        <button type="button" @click="createOpen = false" class="fz-icon-btn absolute right-3 top-3 inline-flex items-center justify-center rounded-sm p-1 opacity-70 hover:opacity-100" aria-label="Cerrar"><i data-icon="x" class="h-4 w-4"></i></button>
+        <div class="mb-4 pr-8">
+          <h2 id="create-title" class="text-lg font-semibold leading-none">Nueva Transaccion</h2>
+          <p class="text-sm text-muted-foreground mt-1.5">Registra una nueva transaccion financiera</p>
+        </div>
+        <div class="grid gap-4">
+          <div class="grid grid-cols-2 gap-4">
+            <div class="grid gap-2"><label class="text-sm font-medium" for="n-type">Tipo *</label>
+              <select id="n-type" class="fz-select" x-model="form.type" @change="form.category = ''; form.subcategory = ''">
+                <option value="gasto">Gasto</option><option value="ingreso">Ingreso</option>
+              </select></div>
+            <div class="grid gap-2"><label class="text-sm font-medium" for="n-amount">Monto *</label>
+              <input id="n-amount" type="number" step="0.01" min="0.01" class="fz-input" placeholder="0.00" x-model="form.amount" required></div>
+          </div>
+          <div class="grid gap-2"><label class="text-sm font-medium" for="n-desc">Descripcion *</label>
+            <textarea id="n-desc" rows="2" class="fz-input" placeholder="Describe la transaccion..." x-model="form.description" required></textarea></div>
+          <div class="grid grid-cols-2 gap-4">
+            <div class="grid gap-2"><label class="text-sm font-medium" for="n-cat">Categoria *</label>
+              <select id="n-cat" class="fz-select" x-model="form.category" @change="form.subcategory = ''" required>
+                <option value="">Seleccionar</option>
+                <template x-for="c in D.categories.filter(c => c.type === form.type)" :key="c.id"><option :value="c.id" x-text="c.name"></option></template>
+              </select></div>
+            <div class="grid gap-2"><label class="text-sm font-medium" for="n-sub">Subcategoria</label>
+              <select id="n-sub" class="fz-select" x-model="form.subcategory">
+                <option value="">Seleccionar</option>
+                <template x-for="s in (form.category ? D.catById(form.category).subs : [])" :key="s"><option :value="s" x-text="s"></option></template>
+              </select></div>
+          </div>
+          <div class="grid gap-2"><label class="text-sm font-medium" for="n-date">Fecha *</label>
+            <input id="n-date" type="date" class="fz-input" x-model="form.date" required></div>
+          <div class="grid gap-2" x-show="form.type === 'gasto'">
+            <span class="text-sm font-medium">Metodo de pago *</span>
+            <div class="grid grid-cols-2 gap-2" role="radiogroup">
+              <button type="button" role="radio" :aria-checked="form.method === 'source'" @click="form.method = 'source'" class="inline-flex items-center justify-center gap-2 h-9 rounded-md border text-sm" :class="form.method === 'source' ? 'border-primary bg-primary/10 text-primary' : 'border-border hover:bg-muted/60'"><i data-icon="wallet" class="h-4 w-4"></i>Fuente de dinero</button>
+              <button type="button" role="radio" :aria-checked="form.method === 'card'" @click="form.method = 'card'" class="inline-flex items-center justify-center gap-2 h-9 rounded-md border text-sm" :class="form.method === 'card' ? 'border-primary bg-primary/10 text-primary' : 'border-border hover:bg-muted/60'"><i data-icon="credit-card" class="h-4 w-4"></i>Tarjeta de credito</button>
+            </div>
+          </div>
+          <div class="grid gap-2" x-show="form.type === 'ingreso' || form.method === 'source'"><label class="text-sm font-medium" for="n-src">Fuente de Dinero *</label>
+            <select id="n-src" class="fz-select" x-model="form.source">
+              <option value="">Selecciona una fuente</option>
+              <template x-for="s in D.moneySources" :key="s.id"><option :value="s.id" x-text="s.name"></option></template>
+            </select></div>
+          <div x-show="form.type === 'gasto' && form.method === 'card'" class="grid gap-3 rounded-lg border border-blue-200 dark:border-blue-900 bg-blue-50/50 dark:bg-blue-950/20 p-3">
+            <div class="grid gap-2"><label class="text-sm" for="n-card">Tarjeta de Credito *</label>
+              <select id="n-card" class="fz-select" x-model="form.card">
+                <option value="">Selecciona una tarjeta</option>
+                <template x-for="c in D.creditCards" :key="c.id"><option :value="c.id" x-text="c.name + ' •••• ' + c.last4"></option></template>
+              </select></div>
+            <div class="grid grid-cols-2 gap-3">
+              <div class="grid gap-2"><label class="text-sm" for="n-cur">Moneda *</label>
+                <select id="n-cur" class="fz-select" x-model="form.currency"><option value="PEN">PEN</option><option value="USD">USD</option></select></div>
+              <div class="grid gap-2"><label class="text-sm" for="n-inst">Cuotas</label>
+                <select id="n-inst" class="fz-select" x-model.number="form.installments">
+                  <template x-for="n in [1,2,3,6,9,12,18,24]" :key="n"><option :value="n" x-text="n === 1 ? 'Sin cuotas' : n + ' cuotas'"></option></template>
+                </select></div>
+            </div>
+          </div>
+          <p x-show="error" x-text="error" class="text-sm text-destructive"></p>
+        </div>
+        <div class="mt-6 flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
+          <button type="button" @click="createOpen = false" class="inline-flex items-center justify-center h-9 rounded-md border border-border px-4 text-sm font-medium hover:bg-muted/60">Cancelar</button>
+          <button type="submit" class="inline-flex items-center justify-center h-9 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90">Crear Transaccion</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- View dialog (transactions/view-transaction-dialog.tsx) -->
+    <div x-show="viewing" x-cloak class="fixed inset-0 z-[85] flex items-end sm:items-center justify-center" role="dialog" aria-modal="true" aria-labelledby="view-title">
+      <div class="absolute inset-0 bg-black/50" @click="viewing = null"></div>
+      <div class="relative w-full sm:max-w-md max-h-[90vh] overflow-y-auto rounded-t-xl sm:rounded-lg border border-border bg-background p-6 shadow-lg" x-show="viewing">
+        <button type="button" @click="viewing = null" class="fz-icon-btn absolute right-3 top-3 inline-flex items-center justify-center rounded-sm p-1 opacity-70 hover:opacity-100" aria-label="Cerrar"><i data-icon="x" class="h-4 w-4"></i></button>
+        <template x-if="viewing">
+          <div>
+            <h2 id="view-title" class="text-lg font-semibold pr-8">Detalles de la Transaccion</h2>
+            <p class="text-sm text-muted-foreground mt-1.5 mb-5" x-text="viewing.description"></p>
+            <div class="rounded-lg p-4 mb-4 text-center" :class="viewing.type === 'ingreso' ? 'bg-emerald-500/10' : 'bg-rose-500/10'">
+              <p class="text-xs text-muted-foreground">Monto</p>
+              <p class="font-display text-3xl font-bold" :class="viewing.type === 'ingreso' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'" x-text="(viewing.type === 'ingreso' ? '+' : '-') + FZ.money(viewing.amount, viewing.currency)"></p>
+            </div>
+            <dl class="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
+              <div><dt class="text-xs text-muted-foreground">Fecha</dt><dd x-text="FZ.fmtDateLong(viewing.date) + ', ' + viewing.time"></dd></div>
+              <div><dt class="text-xs text-muted-foreground">Tipo</dt><dd x-text="viewing.type === 'ingreso' ? 'Ingreso' : 'Gasto'"></dd></div>
+              <div><dt class="text-xs text-muted-foreground">Categoria</dt><dd x-text="catName(viewing)"></dd></div>
+              <div><dt class="text-xs text-muted-foreground">Subcategoria</dt><dd x-text="viewing.subcategory || 'N/A'"></dd></div>
+              <div><dt class="text-xs text-muted-foreground">Fuente</dt><dd x-text="srcName(viewing)"></dd></div>
+              <div><dt class="text-xs text-muted-foreground">Estado</dt><dd class="capitalize" x-text="viewing.status"></dd></div>
+              <div x-show="viewing.installments > 1"><dt class="text-xs text-muted-foreground">Cuotas</dt><dd x-text="viewing.installments"></dd></div>
+              <div x-show="viewing.via"><dt class="text-xs text-muted-foreground">Origen</dt><dd>WhatsApp</dd></div>
+            </dl>
+          </div>
+        </template>
+      </div>
+    </div>
+  </main>
+</div>
+<div id="fz-bottomnav"></div>
+
+<script src="./data.js"></script>
+<script>FZ.mountShell("transacciones");</script>
+<script>
+  function txPage() {
+    var D = FZDATA;
+    function blankForm() { return { type: "gasto", amount: "", description: "", category: "", subcategory: "", date: D.iso(D.today), method: "source", source: "ms1", card: "", currency: "PEN", installments: 1 }; }
+    return {
+      D: D, rows: D.transactions.slice(), q: "", page: 1, adv: false, menu: null, selected: [],
+      f: { type: "all", period: "all", limit: "15", cc: "include", month: "", cat: "", src: "", from: "", to: "" },
+      createOpen: false, viewing: null, form: blankForm(), error: "",
+      init: function () {},
+      get advCount() { var f = this.f; return [f.month, f.cat, f.src, f.from, f.to].filter(Boolean).length; },
+      get filtered() {
+        var f = this.f, q = this.q.trim().toLowerCase(), D2 = D;
+        var minDate = null;
+        if (f.period !== "all") { var d = new Date(D2.today); d.setDate(d.getDate() - (+f.period)); minDate = D2.iso(d); }
+        return this.rows.filter(function (t) {
+          if (f.type !== "all" && t.type !== f.type) return false;
+          if (minDate && t.date < minDate) return false;
+          if (f.cc === "exclude" && t.card) return false;
+          if (f.cc === "only" && !t.card) return false;
+          if (f.month !== "" && FZ.parseDate(t.date).getMonth() !== +f.month) return false;
+          if (f.cat && t.category !== f.cat) return false;
+          if (f.src && t.source !== f.src && t.card !== f.src) return false;
+          if (f.from && t.date < f.from) return false;
+          if (f.to && t.date > f.to) return false;
+          if (q) {
+            var c = D2.catById(t.category);
+            var hay = (t.description + " " + (c ? c.name : "") + " " + (t.subcategory || "")).toLowerCase();
+            if (hay.indexOf(q) === -1) return false;
+          }
+          return true;
+        });
+      },
+      get sumIncome() { return this.filtered.reduce(function (s, t) { return t.type === "ingreso" ? s + D.toPEN(t) : s; }, 0); },
+      get sumExpense() { return this.filtered.reduce(function (s, t) { return t.type === "gasto" ? s + D.toPEN(t) : s; }, 0); },
+      get limitN() { return this.f.limit === "all" ? 0 : +this.f.limit; },
+      get totalPages() { var n = this.limitN; return n ? Math.max(1, Math.ceil(this.filtered.length / n)) : 1; },
+      get pageRows() { var n = this.limitN; if (!n) return this.filtered; var p = Math.min(this.page, this.totalPages); return this.filtered.slice((p - 1) * n, p * n); },
+      get pageNumbers() {
+        var tp = this.totalPages, cp = this.page, out = [];
+        for (var i = 0; i < Math.min(5, tp); i++) {
+          var n; if (tp <= 5 || cp <= 3) n = i + 1; else if (cp >= tp - 2) n = tp - 4 + i; else n = cp - 2 + i;
+          out.push(n);
+        }
+        return out;
+      },
+      get showingText() {
+        var total = this.filtered.length, n = this.limitN;
+        if (!n || n >= total) return "Mostrando " + total + " transaccion" + (total !== 1 ? "es" : "");
+        var p = Math.min(this.page, this.totalPages);
+        return "Mostrando " + ((p - 1) * n + 1) + "-" + Math.min(p * n, total) + " de " + total + " transacciones";
+      },
+      get allPageSelected() { var s = this.selected; return this.pageRows.length > 0 && this.pageRows.every(function (t) { return s.indexOf(t.id) !== -1; }); },
+      togglePage: function () {
+        var ids = this.pageRows.map(function (t) { return t.id; });
+        if (this.allPageSelected) this.selected = this.selected.filter(function (id) { return ids.indexOf(id) === -1; });
+        else { var s = this.selected; ids.forEach(function (id) { if (s.indexOf(id) === -1) s.push(id); }); }
+      },
+      toggle: function (id) { var i = this.selected.indexOf(id); if (i === -1) this.selected.push(id); else this.selected.splice(i, 1); },
+      catName: function (t) { var c = D.catById(t.category); return c ? c.name : "Sin categoria"; },
+      srcName: function (t) { if (t.card) return D.cardById(t.card).name; var s = D.srcById(t.source); return s ? s.name : "N/A"; },
+      srcType: function (t) { if (t.card) return "Tarjeta de Credito"; var s = D.srcById(t.source); return s ? D.MONEY_SOURCE_TYPE_LABELS[s.type] : ""; },
+      resetFilters: function () { this.f = { type: "all", period: "all", limit: this.f.limit, cc: "include", month: "", cat: "", src: "", from: "", to: "" }; this.q = ""; this.page = 1; },
+      openCreate: function () { this.form = blankForm(); this.error = ""; this.createOpen = true; var self = this; this.$nextTick(function () { var el = document.getElementById("n-amount"); if (el) el.focus(); }); },
+      closeAll: function () { this.createOpen = false; this.viewing = null; this.menu = null; },
+      openMenu: function (t, ev) {
+        if (this.menu && this.menu.id === t.id) { this.menu = null; return; }
+        var r = ev.currentTarget.getBoundingClientRect(), h = 190, w = 176;
+        var top = r.bottom + 4; if (top + h > window.innerHeight) top = Math.max(8, r.top - h - 4);
+        this.menu = { id: t.id, t: t, top: top, left: Math.max(8, Math.min(r.right - w, window.innerWidth - w - 8)) };
+      },
+      view: function (t) { this.menu = null; this.viewing = t; },
+      remove: function (id) {
+        this.menu = null;
+        this.rows = this.rows.filter(function (t) { return t.id !== id; });
+        this.selected = this.selected.filter(function (x) { return x !== id; });
+        if (this.page > this.totalPages) this.page = this.totalPages;
+        FZ.toast("Exito", "Transaccion eliminada (solo en esta demo)");
+      },
+      deleteSelected: function () {
+        var s = this.selected, n = s.length;
+        this.rows = this.rows.filter(function (t) { return s.indexOf(t.id) === -1; });
+        this.selected = [];
+        if (this.page > this.totalPages) this.page = this.totalPages;
+        FZ.toast("Exito", n + " transaccion(es) eliminada(s) (solo en esta demo)");
+      },
+      submit: function () {
+        var f = this.form;
+        var amount = parseFloat(f.amount);
+        if (!(amount > 0)) { this.error = "Ingresa un monto valido"; return; }
+        if (!f.description.trim()) { this.error = "La descripcion es obligatoria"; return; }
+        if (!f.category) { this.error = "Selecciona una categoria"; return; }
+        if (!f.date) { this.error = "Selecciona una fecha"; return; }
+        var useCard = f.type === "gasto" && f.method === "card";
+        if (useCard && !f.card) { this.error = "Selecciona una tarjeta"; return; }
+        if (!useCard && !f.source) { this.error = "Selecciona una fuente de dinero"; return; }
+        var now = new Date();
+        var t = {
+          id: D.nextId(), date: f.date, time: ("0" + now.getHours()).slice(-2) + ":" + ("0" + now.getMinutes()).slice(-2),
+          description: f.description.trim(), amount: Math.round(amount * 100) / 100, currency: useCard ? f.currency : "PEN",
+          type: f.type, category: f.category, subcategory: f.subcategory || D.catById(f.category).subs[0],
+          source: useCard ? null : f.source, card: useCard ? f.card : null, installments: useCard ? f.installments : 1, status: "completado", via: null
+        };
+        this.rows.unshift(t);
+        this.rows.sort(function (a, b) { return a.date === b.date ? (a.time < b.time ? 1 : -1) : (a.date < b.date ? 1 : -1); });
+        this.createOpen = false;
+        this.page = 1;
+        FZ.toast("Exito", "Transaccion creada (solo en esta demo, se pierde al recargar)");
+      }
+    };
+  }
+</script>
+<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.9/dist/cdn.min.js"></script>
+</body>
+</html>
